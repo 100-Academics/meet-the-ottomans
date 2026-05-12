@@ -55,16 +55,10 @@ const increment = () => {
 const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
 const questionTextEl = document.getElementById('question-text') as HTMLElement | null;
 
-let currentQuestion: Question | undefined;
-
 if (yesBtn && questionTextEl) {
   yesBtn.addEventListener('click', () => {
-    const gameTimePeriod = 0;
-
-    currentQuestion = undefined;
-
-    currentQuestion = Question.createRandom(gameTimePeriod, [1, 2]);
-    questionTextEl.textContent = currentQuestion.getQuestionContent();
+    const content = Question.getRandomQuestion() || '(no question loaded)';
+    questionTextEl.textContent = content;
   });
 }
 

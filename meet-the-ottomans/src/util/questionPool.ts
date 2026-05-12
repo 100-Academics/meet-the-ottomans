@@ -6,11 +6,20 @@ export class questionPool{
             0: "What was the name of the Ottoman Empire's founder?",
             1: "In which year did the Ottoman Empire conquer Constantinople?",
             2: "Who was the longest-reigning Sultan of the Ottoman Empire?"
+        },
+        1: {
+            0: "temp",
+            1: "temp2",
+            2: "temp3"
         }
     };
 
     constructor(initial?: Record<number, Record<number, string>>){
         if (initial) this.questions = initial;
+    }
+
+    public getTimePeriods(): number[] {
+        return Object.keys(this.questions).map(Number);
     }
 
     public getQuestion(timePeriod: number, questionId: number): string {

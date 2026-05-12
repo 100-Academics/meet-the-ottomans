@@ -18,6 +18,7 @@ import {
   TouchDevice,
   Mouse,
   MeshInstance,
+  Texture,
   StandardMaterial,
   Layer,
   Asset,
@@ -94,7 +95,7 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
   app.start();
 
   // Set up environment lighting (no skybox, just IBL)
-  app.scene.envAtlas = assets.envAtlas.resource;
+  app.scene.envAtlas = assets.envAtlas.resource as Texture;
   const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   if (skyboxLayer) {
     skyboxLayer.enabled = false;
@@ -152,9 +153,10 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
 
     picker.prepare(camera.camera, app.scene, [layer]);
 
-    return picker.getSelectionAsync(x * pickerScale, y * pickerScale, 1, 1).then((meshInstances: MeshInstance[]): boolean => {
-      if (meshInstances.length === 0) return false;
-      return meshInstances[0] === sphere.render?.meshInstances[0];
+    return picker.getSelectionAsync(x * pickerScale, y * pickerScale, 1, 1).then((meshInstances): boolean => {
+      const selectedMesh = meshInstances.find((instance): instance is MeshInstance => instance instanceof MeshInstance);
+      if (!selectedMesh) return false;
+      return selectedMesh === sphere.render?.meshInstances[0];
     });
   };
 

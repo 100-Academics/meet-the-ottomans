@@ -1,15 +1,6 @@
 import { questionPool } from "./questionPool";
 
-const pool = new questionPool({
-    1: {
-        0: "Who founded the Ottoman Empire?",
-        1: "In which century did the Ottomans rise to power?"
-    },
-    2: {
-        0: "In which year did the Ottomans conquer Constantinople?",
-        1: "Which Ottoman sultan was known as Suleiman the Magnificent?"
-    }
-});
+const pool = new questionPool();
 
 export class Question { // set it to undefined when it finishes
     private questionTimePeriod: number;
@@ -45,12 +36,29 @@ export class Question { // set it to undefined when it finishes
         return pool.getQuestion(this.questionTimePeriod, questionId);
     }
 
-    static createRandom(gameTimePeriod: number, allowedTimePeriods: number[] = [1, 2]): Question {
-        const availablePeriods = allowedTimePeriods.filter((period) => pool.getQuestionIds(period).length > 0);
-        const selectedPeriods = availablePeriods.length > 0 ? availablePeriods : [1, 2];
-        const randomPeriod = selectedPeriods[Math.floor(Math.random() * selectedPeriods.length)];
-        const questionIds = pool.getQuestionIds(randomPeriod);
-        const randomQuestionId = questionIds[Math.floor(Math.random() * questionIds.length)] ?? 0;
-        return new Question(randomPeriod, randomQuestionId, gameTimePeriod);
+    static getRandomTimePeriod(): number {
+        const timePeriods = Object.keys(pool['questions']).map(Number);
+        if (timePeriods.length === 0) return -1;
+        const randomIndex = Math.floor(Math.random() * timePeriods.length);
+        return timePeriods[randomIndex];
+    }
+
+    static getRandomQuestionId(timePeriod: number): number {
+        const questionIds = pool.getQuestionIds(timePeriod);
+        if (questionIds.length === 0) return -1;
+        const randomIndex = Math.floor(Math.random() * questionIds.length);
+        return questionIds[randomIndex];
+    }
+    
+    static getRandomQuestion(): string {
+        const timePeriods = pool.getTimePeriods();
+        if (timePeriods.length === 0) return "";
+
+        const randomTimePeriod = timePeriods[Math.floor(Math.random() * timePeriods.length)];
+        const questionIds = pool.getQuestionIds(randomTimePeriod);
+        if (questionIds.length === 0) return "";
+
+        const randomQuestionId = questionIds[Math.floor(Math.random() * questionIds.length)];
+        return pool.getQuestion(randomTimePeriod, randomQuestionId);
     }
 }
