@@ -29,8 +29,13 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
         <p>
           Edit <code>src/App.ts</code> and save to test HMR
         </p>
-        <span id="question" class="pill">
-        </p>
+        <div class="pill" id="question-wrap">
+          <div id="question-text">(no question loaded)</div>
+          <div class="btn-row">
+            <button id="yes-btn" class="btn">Yes</button>
+            <button id="no-btn" class="btn">No</button>
+          </div>
+        </div>
       </div>
       <p class="read-the-docs">
         Click on the PlayCanvas and TypeScript logos to learn more
@@ -47,24 +52,21 @@ const increment = () => {
 };
 
 
-const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement;
-const questionTextEl = document.getElementById('question-text') as HTMLElement;
+const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
+const questionTextEl = document.getElementById('question-text') as HTMLElement | null;
 
 let currentQuestion: Question | undefined;
 
-yesBtn.addEventListener('click', () => {
-  // choose these from your game state (example values shown)
-  const timePeriod = 0;
-  const questionId = 0;
-  const gameTimePeriod = 0;
+if (yesBtn && questionTextEl) {
+  yesBtn.addEventListener('click', () => {
+    const gameTimePeriod = 0;
 
-  // drop previous reference so it can be collected
-  currentQuestion = undefined;
+    currentQuestion = undefined;
 
-  // create new question and display it
-  currentQuestion = new Question(timePeriod, questionId, gameTimePeriod);
-  questionTextEl.textContent = currentQuestion.getQuestionContent();
-});
+    currentQuestion = Question.createRandom(gameTimePeriod, [1, 2]);
+    questionTextEl.textContent = currentQuestion.getQuestionContent();
+  });
+}
 
 
 setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, increment);

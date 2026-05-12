@@ -138,3 +138,16 @@ button:focus-visible {
   padding: 0.5rem 1rem;
   border-radius: 0.5rem;
 }
+
+#question-wrap,
+.btn-row,
+.btn {
+  pointer-events: auto;
+}
+
+.btn-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.5rem;
+}

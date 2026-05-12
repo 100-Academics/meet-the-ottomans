@@ -19,6 +19,12 @@ export class questionPool{
         return period[questionId] ?? "";
     }
 
+    public getQuestionIds(timePeriod: number): number[] {
+        const period = this.questions[timePeriod];
+        if (!period) return [];
+        return Object.keys(period).map(Number);
+    }
+
     public setQuestion(timePeriod: number, questionId: number, text: string): void {
         if (!this.questions[timePeriod]) this.questions[timePeriod] = {};
         this.questions[timePeriod][questionId] = text;
