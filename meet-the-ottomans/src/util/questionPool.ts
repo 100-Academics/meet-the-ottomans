@@ -11,6 +11,12 @@ export class questionPool{
             0: "temp",
             1: "temp2",
             2: "temp3"
+        },
+        2:
+        {
+            0: "of man",
+            1: "daniel",
+            2: "this instant"
         }
     };
 
