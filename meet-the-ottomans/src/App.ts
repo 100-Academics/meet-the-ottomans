@@ -23,9 +23,9 @@ import {
   Layer,
   Asset,
   AssetListLoader,
-  TEXTURETYPE_RGBP
+  TEXTURETYPE_RGBP,
+  createSphere,
 } from 'playcanvas';
-
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 
@@ -33,9 +33,17 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
 
 import { throttle } from './utils';
+import heightmapUrl from './assets/world/heightmap_21600x10800.jpg';
+import textureUrl from './assets/world/earth_texture.jpg'
+
+// @ts-expect-error - local JS utility has no .d.ts declarations
+import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
+// @ts-expect-error - local JS utility has no .d.ts declarations
+import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
-const DEFAULT_COLOR = new Color(0.827, 0.827, 0.827);
+const DEFAULT_COLOR = new Color(1, 1, 1);
+const SPHERE_SEGMENTS = 1024;
 
 // Assets to load
 const assets = {
@@ -101,18 +109,22 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
     skyboxLayer.enabled = false;
   }
 
-  // Create sphere entity
-  const sphere = new Entity('sphere');
-  sphere.setPosition(new Vec3(0, 0.5, 0));
-
   // Create a new material
   const material = new StandardMaterial();
   material.diffuse.copy(DEFAULT_COLOR);
+  (material as any).vertexColors = true;
   material.update();
 
+  // Create sphere entity (heightmap-ready sphere)
+  const sphere = new Entity('heightmap-sphere');
+  sphere.setPosition(new Vec3(0, 0.5, 0));
+  const sphereMesh = createSphere(app.graphicsDevice, {
+    radius: 1,
+    latitudeBands: SPHERE_SEGMENTS,
+    longitudeBands: SPHERE_SEGMENTS
+  });
   sphere.addComponent('render', {
-    type: 'sphere',
-    material: material
+    meshInstances: [new MeshInstance(sphereMesh, material)]
   });
   app.root.addChild(sphere);
 
@@ -179,6 +191,20 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
       }
     });
   });
+  const loadImage = (url: string) =>
+      new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img)
+        img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
+        img.src = url;
+      })
+
+
+  const heightImg = await loadImage(heightmapUrl);
+  applySphereHeightmap(sphere, heightImg, 0.25);
+
+  await applySphereTexture(sphere, textureUrl, device);
 }
 
 export { setupApp };
