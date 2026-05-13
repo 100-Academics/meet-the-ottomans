@@ -8,7 +8,7 @@ export class Question { // set it to undefined when it finishes
     private questionId: number;
     private questionContent: string;
 
-    constructor(questionTimePeriod: number = 0, questionId: number = 0, gameTimePeriod: number = 0) {
+    constructor(questionTimePeriod: number = -1, questionId: number = -1, gameTimePeriod: number = -1) {
         this.questionTimePeriod = questionTimePeriod;
         this.questionId = questionId;
         this.gameTimePeriod = gameTimePeriod;
@@ -50,15 +50,19 @@ export class Question { // set it to undefined when it finishes
         return questionIds[randomIndex];
     }
     
-    static getRandomQuestion(): string {
+    static getRandomQuestion(timePeriod: number = -1): string {
         const timePeriods = pool.getTimePeriods();
-        if (timePeriods.length === 0) return "";
+        if (!timePeriods || timePeriods.length === 0) return "";
 
-        const randomTimePeriod = timePeriods[Math.floor(Math.random() * timePeriods.length)];
-        const questionIds = pool.getQuestionIds(randomTimePeriod);
-        if (questionIds.length === 0) return "";
+        let chosenTimePeriod = timePeriod;
+        if (chosenTimePeriod === -1) {
+            chosenTimePeriod = timePeriods[Math.floor(Math.random() * timePeriods.length)];
+        }
+
+        const questionIds = pool.getQuestionIds(chosenTimePeriod);
+        if (!questionIds || questionIds.length === 0) return "";
 
         const randomQuestionId = questionIds[Math.floor(Math.random() * questionIds.length)];
-        return pool.getQuestion(randomTimePeriod, randomQuestionId);
+        return pool.getQuestion(chosenTimePeriod, randomQuestionId);
     }
 }

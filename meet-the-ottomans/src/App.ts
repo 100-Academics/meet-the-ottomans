@@ -43,7 +43,7 @@ import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
-const SPHERE_SEGMENTS = 2048;
+const SPHERE_SEGMENTS = 256;
 
 // Assets to load
 const assets = {
@@ -202,7 +202,7 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
 
 
   const heightImg = await loadImage(heightmapUrl);
-  applySphereHeightmap(sphere, heightImg, 0.25);
+  //applySphereHeightmap(sphere, heightImg, 0.25);
 
   await applySphereTexture(sphere, textureUrl, device);
 }

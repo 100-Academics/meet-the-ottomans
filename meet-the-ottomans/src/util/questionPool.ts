@@ -2,17 +2,18 @@ export class questionPool{
 
     // map: timePeriod -> (questionId -> questionText)
     private questions: Record<number, Record<number, string>> = {
-        0: {
+        1: { // starts at 1 bc of button stuff
+             // question indicies can and should start at 0
             0: "What was the name of the Ottoman Empire's founder?",
             1: "In which year did the Ottoman Empire conquer Constantinople?",
             2: "Who was the longest-reigning Sultan of the Ottoman Empire?"
         },
-        1: {
+        2: {
             0: "temp",
             1: "temp2",
             2: "temp3"
         },
-        2:
+        3:
         {
             0: "of man",
             1: "daniel",
