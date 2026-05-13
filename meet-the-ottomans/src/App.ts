@@ -25,15 +25,12 @@ import {
   AssetListLoader,
   TEXTURETYPE_RGBP,
   createSphere,
+  EVENT_MOUSEDOWN,
 } from 'playcanvas';
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 
-// @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
-import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
-
 import { throttle } from './utils';
-import heightmapUrl from './assets/world/heightmap_5400x2700.jpg';
 import textureUrl from './assets/world/earth_texture.jpg'
 
 // @ts-expect-error - local JS utility has no .d.ts declarations
@@ -135,10 +132,7 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
   });
   camera.setPosition(new Vec3(4, 1, 4));
   app.root.addChild(camera);
-
-  // Create camera controls
-  camera.addComponent('script');
-  camera.script?.create(CameraControls);
+  camera.lookAt(sphere.getPosition());
 
   // Create grid entity
   const grid = new Entity('grid');
@@ -172,6 +166,22 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
     });
   };
 
+  let isDragging = false;
+
+  app.mouse?.on(EVENT_MOUSEDOWN, (event) => {
+    isDragging = event.button === 0;
+  });
+
+  app.mouse?.on(EVENT_MOUSEUP, () => {
+    isDragging = false;
+  });
+
+  app.mouse?.on(EVENT_MOUSEMOVE, (event) => {
+    if (isDragging) {
+      sphere.rotateLocal(0, event.dx * 0.2, 0);
+    }
+  });
+
   // On mouse move, check if hovering over sphere and update cursor/color
   app.mouse?.on(EVENT_MOUSEMOVE, throttle((event) => {
     if (!worldLayer) return;
@@ -191,19 +201,6 @@ async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
       }
     });
   });
-  const loadImage = (url: string) =>
-      new Promise<HTMLImageElement>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => resolve(img)
-        img.onerror = () => reject(new Error(`Failed to load image: ${url}`));
-        img.src = url;
-      })
-
-
-  const heightImg = await loadImage(heightmapUrl);
-  //applySphereHeightmap(sphere, heightImg, 0.25);
-
   await applySphereTexture(sphere, textureUrl, device);
 }
 
