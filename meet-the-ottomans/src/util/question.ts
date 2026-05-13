@@ -2,7 +2,7 @@ import { questionPool } from "./questionPool";
 
 const pool = new questionPool();
 
-export class Question { // set it to undefined when it finishes
+export class Question {
     private questionTimePeriod: number;
     private gameTimePeriod: number;
     private questionId: number;
@@ -50,7 +50,7 @@ export class Question { // set it to undefined when it finishes
         return questionIds[randomIndex];
     }
     
-    static getRandomQuestion(timePeriod: number = -1): string {
+    static getRandomQuestion(timePeriod: number = -1): string { // TODO make it grab from the wrong time period every now and then
         const timePeriods = pool.getTimePeriods();
         if (!timePeriods || timePeriods.length === 0) return "";
 

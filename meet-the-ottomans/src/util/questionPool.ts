@@ -2,6 +2,11 @@ export class questionPool{
 
     // map: timePeriod -> (questionId -> questionText)
     private questions: Record<number, Record<number, string>> = {
+        0:{
+            0: "How do you see this?",
+            1: "You shouldn't be here",
+            2: "Your end is nigh."
+        },
         1: { // starts at 1 bc of button stuff
              // question indicies can and should start at 0
             0: "What was the name of the Ottoman Empire's founder?",
