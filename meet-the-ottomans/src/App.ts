@@ -33,7 +33,7 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
 
 import { throttle } from './utils';
-import heightmapUrl from './assets/world/heightmap_21600x10800.jpg';
+import heightmapUrl from './assets/world/heightmap_5400x2700.jpg';
 import textureUrl from './assets/world/earth_texture.jpg'
 
 // @ts-expect-error - local JS utility has no .d.ts declarations
@@ -43,7 +43,7 @@ import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
-const SPHERE_SEGMENTS = 1024;
+const SPHERE_SEGMENTS = 2048;
 
 // Assets to load
 const assets = {
