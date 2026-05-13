@@ -55,8 +55,14 @@ const assets = {
  * @param canvas - The canvas element
  * @param onClick - The function to call when the user clicks on the sphere
  */
-async function setupApp(canvas: HTMLCanvasElement, onClick: () => void) {
-
+// App.ts
+async function setupApp(
+  canvas: HTMLCanvasElement,
+  onClick: () => void,
+  getSelectedTimePeriod: () => number //yucky
+) {
+  const period = getSelectedTimePeriod(); // TODO USE
+  
   if (!canvas) {
     throw new Error('Canvas not found');
   }

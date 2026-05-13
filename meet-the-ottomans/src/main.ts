@@ -13,13 +13,6 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
     <div class="absolute overlay">
       <div class="grow">
         <header>
-          <h1>PlayCanvas + TypeScript</h1>
-          <a href="https://developer.playcanvas.com" target="_blank">
-            <img src="${playcanvasLogo}" class="playcanvas-logo logo" alt="PlayCanvas logo" />
-          </a>
-          <a href="https://www.typescriptlang.org/" target="_blank">
-            <img src="${typescriptLogo}" class="logo vanilla" alt="TypeScript logo" />
-          </a>
         </header>
       </div>
       <div>
@@ -92,4 +85,4 @@ if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
   });
 }
 
-setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, increment);
+setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, increment, () => selectedTimePeriod);

@@ -55,7 +55,7 @@ export class Question {
         if (!timePeriods || timePeriods.length === 0) return "";
 
         let chosenTimePeriod = timePeriod;
-        if (chosenTimePeriod === -1) {
+        if (chosenTimePeriod === -1) { // if no time period is selected, pick one at random.
             chosenTimePeriod = timePeriods[Math.floor(Math.random() * timePeriods.length)];
         }
 
