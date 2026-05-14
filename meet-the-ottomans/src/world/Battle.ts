@@ -1,5 +1,5 @@
 
-export class class Battle{
+export class Battle{
     private timePeriod: number; // what time period the battle takes place in
     private location: [number, number]; // location on the map. x, y = lat, long. Input as degrees. Will be converted to radians in the return function.
     private name: string; // name of the battle
