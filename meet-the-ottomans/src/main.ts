@@ -1,8 +1,6 @@
 import './style.css'
 import { setupApp } from './App'
 import { Question } from './util/question';
-import type { Battle } from './world/Battle';
-import { BODYMASK_NOT_STATIC_KINEMATIC } from 'playcanvas';
 
 let count = 0;
 

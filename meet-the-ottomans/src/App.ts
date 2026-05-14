@@ -38,6 +38,7 @@ import { Battle } from './world/Battle';
 import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../scripts/world/sphereTexture.js';
+import { unloadAll } from './util/unloadall.js';
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
@@ -259,13 +260,19 @@ async function setupApp(
     if (isDragging || !onClick) return;
     
     checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
-      if (intersectedEntity) {
-        const battle = entityToBattle.get(intersectedEntity);
-        if (battle) { // @ChaosMaster8673 here is where you implement scene switching.
-          console.log('Clicked on battle:', battle.getName());
-          onClick(battle);
-        }
+      if (!intersectedEntity) return;
+
+      const battle = entityToBattle.get(intersectedEntity);
+      if (!battle) return;
+
+      // @ChaosMaster8673: implement scene switching here
+      console.log('Clicked on battle:', battle.getName());
+      if (battle.getName() === 'Battle of Legnica') {
+        console.log('clicked on legnica');
+        unloadAll(app);
       }
+
+      onClick(battle);
     });
   });
   await applySphereTexture(sphere, textureUrl, device);
@@ -279,7 +286,7 @@ async function setupApp(
     entityToBattle.clear();
     hoveredBattle = null;
     currentBattle = null;
-
+  
     // Create battle markers for the selected period
     battles.forEach((battle) => {
       if (battle.getTimePeriod() === timePeriod) {
