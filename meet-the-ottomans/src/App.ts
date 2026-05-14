@@ -55,13 +55,29 @@ const assets = {
  * @param canvas - The canvas element
  * @param onClick - The function to call when the user clicks on the sphere
  */
+
+function pointOnSphere(radius: number, phi: number, theta: number): Vec3 {
+  return new Vec3(
+    radius * Math.sin(phi) * Math.cos(theta),
+    radius * Math.sin(phi) * Math.sin(theta),
+    radius * Math.cos(phi)
+  );
+}
+
+function normalOnSphere(point: Vec3): Vec3 {
+  return point.clone().normalize();
+}
+
+
+
+
 // App.ts
 async function setupApp(
   canvas: HTMLCanvasElement,
   onClick: () => void,
   getSelectedTimePeriod: () => number //yucky
 ) {
-  const period = getSelectedTimePeriod(); // TODO USE
+  getSelectedTimePeriod(); // TODO: wire selected period into world behavior
   
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -118,6 +134,10 @@ async function setupApp(
   (material as any).vertexColors = true;
   material.update();
 
+  const pointMaterial = new StandardMaterial();
+  pointMaterial.diffuse.copy(DEFAULT_COLOR);
+  pointMaterial.update();
+
   // Create sphere entity (heightmap-ready sphere)
   const sphere = new Entity('heightmap-sphere');
   sphere.setPosition(new Vec3(0, 0.5, 0));
@@ -151,7 +171,7 @@ async function setupApp(
   const picker = new Picker(app, 1, 1);
   const worldLayer = app.scene.layers.getLayerByName('World');
 
-  const intersectsSphere = (x: number, y: number, layer: Layer): Promise<boolean> => {
+  const intersectsPoint = (x: number, y: number, layer: Layer, pointEntity: Entity): Promise<boolean> => {
     if (!camera.camera) {
       return Promise.resolve(false);
     }
@@ -168,11 +188,12 @@ async function setupApp(
     return picker.getSelectionAsync(x * pickerScale, y * pickerScale, 1, 1).then((meshInstances): boolean => {
       const selectedMesh = meshInstances.find((instance): instance is MeshInstance => instance instanceof MeshInstance);
       if (!selectedMesh) return false;
-      return selectedMesh === sphere.render?.meshInstances[0];
+      return selectedMesh === pointEntity.render?.meshInstances[0];
     });
-  };
+  }
 
   let isDragging = false;
+  let pointEntity: Entity | null = null;
 
   app.mouse?.on(EVENT_MOUSEDOWN, (event) => {
     isDragging = event.button === 0;
@@ -190,24 +211,55 @@ async function setupApp(
 
   // On mouse move, check if hovering over sphere and update cursor/color
   app.mouse?.on(EVENT_MOUSEMOVE, throttle((event) => {
-    if (!worldLayer) return;
-    intersectsSphere(event.x, event.y, worldLayer).then((intersects) => {
-      material.diffuse.copy(intersects ? HOVER_COLOR : DEFAULT_COLOR);
+    if (!worldLayer || !pointEntity) return;
+    const currentPointEntity = pointEntity;
+    intersectsPoint(event.x, event.y, worldLayer, currentPointEntity).then((intersects) => {
+      pointMaterial.diffuse.copy(intersects ? HOVER_COLOR : DEFAULT_COLOR);
       document.body.style.cursor = intersects ? 'pointer' : 'default';
-      material.update();
+      pointMaterial.update();
     });
   }, 100));
 
   // On mouse up, check if clicked on sphere and call onClick
   app.mouse?.on(EVENT_MOUSEUP, (event) => {
-    if (!worldLayer || !onClick) return;
-    intersectsSphere(event.x, event.y, worldLayer).then((intersects) => {
+    if (!worldLayer || !onClick || !pointEntity) return;
+    const currentPointEntity = pointEntity;
+    intersectsPoint(event.x, event.y, worldLayer, currentPointEntity).then((intersects) => {
       if (intersects) {
-        onClick();
+        console.log('Clicked on point entity!');
+        (onClick())
       }
     });
+
   });
   await applySphereTexture(sphere, textureUrl, device);
+
+  const point = pointOnSphere(1, 0, 51.4934);
+  const normal = normalOnSphere(point);
+
+  console.log('Point on sphere:', point);
+  console.log('Normal at point:', normal);
+
+  pointEntity = new Entity();
+  pointEntity.addComponent('render', {
+    type: 'capsule',
+    material: pointMaterial
+  });
+  pointEntity.setLocalPosition(point);
+  pointEntity.setLocalScale(0.08, 0.08, 0.08);
+  
+  // Align the entity's up-axis (Y) with the normal vector
+  const upAxis = new Vec3(0, 1, 0);
+  const axis = new Vec3().cross(upAxis, normal).normalize();
+  const angle = Math.acos(Math.max(-1, Math.min(1, upAxis.dot(normal))));
+  if (axis.length() > 0.001) {
+    const halfSin = Math.sin(angle * 0.5);
+    pointEntity.setLocalRotation(axis.x * halfSin, axis.y * halfSin, axis.z * halfSin, Math.cos(angle * 0.5));
+  }
+  
+  sphere.addChild(pointEntity);
+
+
 }
 
 export { setupApp };
