@@ -84,8 +84,11 @@ async function setupApp(
   onClick: () => void,
   getSelectedTimePeriod: () => number //yucky
 ) {
-  getSelectedTimePeriod(); // TODO: wire selected period into world behavior
-  const battleNames: string[] = [];
+  getSelectedTimePeriod(); 
+  // precision on location here is very arbitrary. Four decimals should be enough.
+  const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
+                   new Battle(1, [32.5486, 35.4161], "Battle of Ain Jalut", new Entity()),
+                   new Battle(1, [41.0151, 28.9793], "Siege of Constantinople", new Entity()),];
   if (!canvas) {
     throw new Error('Canvas not found');
   }
@@ -240,44 +243,60 @@ async function setupApp(
   });
   await applySphereTexture(sphere, textureUrl, device);
 
-  // Create Battle instance at Greenwich Meridian
-  const greenwichLat = 51.4934;
-  const greenwichLon = 0;
-  const { phi, theta } = latLonToSpherical(greenwichLat, greenwichLon);
+  // Track battle entities for cleanup
+  let battleEntities: Entity[] = [];
 
-  const point = pointOnSphere(1, phi, theta);
-  const normal = normalOnSphere(point);
+  // Function to render battles for selected time period
+  const renderBattlesForPeriod = (timePeriod: number) => {
+    // Clear previous battle entities
+    battleEntities.forEach(entity => entity.destroy());
+    battleEntities = [];
+    currentBattle = null;
 
-  console.log('Battle location:', point);
-  console.log('Battle normal:', normal);
+    // Create battle markers for the selected period
+    battles.forEach((battle) => {
+      if (battle.getTimePeriod() === timePeriod) {
+        const [lat, lon] = battle.getLocation();
+        const { phi, theta } = latLonToSpherical(lat, lon);
 
-  // Create point entity for the battle
-  const pointEntity = new Entity('greenwich-battle');
-  pointEntity.addComponent('render', {
-    type: 'capsule',
-    material: pointMaterial
-  });
-  pointEntity.setLocalPosition(point);
-  pointEntity.setLocalScale(0.04, 0.08, 0.04);
+        const battlePoint = pointOnSphere(1, phi, theta);
+        const battleNormal = normalOnSphere(battlePoint);
 
-  // Align the entity's up-axis (Y) with the normal vector
-  const upAxis = new Vec3(0, 1, 0);
-  const axis = new Vec3().cross(upAxis, normal).normalize();
-  const angle = Math.acos(Math.max(-1, Math.min(1, upAxis.dot(normal))));
-  if (axis.length() > 0.001) {
-    const halfSin = Math.sin(angle * 0.5);
-    pointEntity.setLocalRotation(axis.x * halfSin, axis.y * halfSin, axis.z * halfSin, Math.cos(angle * 0.5));
-  }
-  
-  sphere.addChild(pointEntity);
+        const battleEntity = new Entity(battle.getName());
+        battleEntity.addComponent('render', {
+          type: 'capsule',
+          material: pointMaterial
+        });
+        battleEntity.setLocalPosition(battlePoint);
+        battleEntity.setLocalScale(0.04, 0.08, 0.04);
 
-  // Create Battle with the entity
-  battleNames.forEach((battle) => { // TODO
-    console.log("battle")
-  });
-  currentBattle = new Battle(1, [greenwichLat, greenwichLon], 'Example', pointEntity);
-  console.log('Created battle:', currentBattle.getName(), 'at location:', currentBattle.getLocation());
+        // Align the entity's up-axis (Y) with the normal vector
+        const upAxis = new Vec3(0, 1, 0);
+        const axis = new Vec3().cross(upAxis, battleNormal).normalize();
+        const angle = Math.acos(Math.max(-1, Math.min(1, upAxis.dot(battleNormal))));
+        if (axis.length() > 0.001) {
+          const halfSin = Math.sin(angle * 0.5);
+          battleEntity.setLocalRotation(axis.x * halfSin, axis.y * halfSin, axis.z * halfSin, Math.cos(angle * 0.5));
+        }
 
+        sphere.addChild(battleEntity);
+        battleEntities.push(battleEntity);
+
+        // Set the first battle as current
+        if (!currentBattle) {
+          currentBattle = battle;
+        }
+      }
+    });
+
+    console.log(`Rendered ${battleEntities.length} battles for period ${timePeriod}`);
+  };
+
+  // Initial render with selected time period
+  const selectedPeriod = getSelectedTimePeriod();
+  renderBattlesForPeriod(selectedPeriod);
+
+  return renderBattlesForPeriod;
 }
 
 export { setupApp };

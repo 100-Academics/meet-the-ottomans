@@ -17,10 +17,8 @@ export class Battle{
     }
 
     getLocation(): [number, number]{
-        // convert from degrees to radians
-        const lat = this.location[0] * Math.PI / 180;
-        const long = this.location[1] * Math.PI / 180;
-        return [lat, long];
+        // return location in degrees (same as stored)
+        return this.location;
     }
 
     getName(): string{

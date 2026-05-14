@@ -3,7 +3,7 @@ export class questionPool{
     // map: timePeriod -> (questionId -> questionText)
     private questions: Record<number, Record<number, string>> = {
         0:
-            {
+            { // N/A
             0: "How do you see this?",
             1: "You shouldn't be here",
             2: "Your end is nigh."

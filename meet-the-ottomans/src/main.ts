@@ -77,8 +77,9 @@ if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
       const period = index + 1;
       timePeriodText.textContent = `Selected Time Period: ${period}`;
       selectedTimePeriod = period;
+      renderBattlesForPeriod(selectedTimePeriod);
     });
   });
 }
 
-setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, increment, () => selectedTimePeriod);
+const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, increment, () => selectedTimePeriod);
