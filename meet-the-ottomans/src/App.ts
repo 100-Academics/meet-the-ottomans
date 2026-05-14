@@ -81,7 +81,7 @@ function latLonToSpherical(lat: number, lon: number): { phi: number; theta: numb
 // App.ts
 async function setupApp(
   canvas: HTMLCanvasElement,
-  onClick: () => void,
+  onClick: (battle: Battle) => void,
   getSelectedTimePeriod: () => number //yucky
 ) {
   getSelectedTimePeriod(); 
@@ -197,6 +197,7 @@ async function setupApp(
   // Track battle entities for cleanup
   let battleEntities: Entity[] = [];
   let battleMaterials: Map<Entity, StandardMaterial> = new Map();
+  let entityToBattle: Map<Entity, Battle> = new Map();
   let hoveredBattle: Entity | null = null;
 
   // Helper function to check if mouse intersects a battle entity
@@ -259,8 +260,11 @@ async function setupApp(
     
     checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
       if (intersectedEntity) {
-        console.log('Clicked on battle:', intersectedEntity.name);
-        onClick();
+        const battle = entityToBattle.get(intersectedEntity);
+        if (battle) { // @ChaosMaster8673 here is where you implement scene switching.
+          console.log('Clicked on battle:', battle.getName());
+          onClick(battle);
+        }
       }
     });
   });
@@ -272,6 +276,7 @@ async function setupApp(
     battleEntities.forEach(entity => entity.destroy());
     battleEntities = [];
     battleMaterials.clear();
+    entityToBattle.clear();
     hoveredBattle = null;
     currentBattle = null;
 
@@ -309,6 +314,7 @@ async function setupApp(
         sphere.addChild(battleEntity);
         battleEntities.push(battleEntity);
         battleMaterials.set(battleEntity, battleMaterial);
+        entityToBattle.set(battleEntity, battle);
 
         // Set the first battle as current
         if (!currentBattle) {

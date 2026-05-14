@@ -84,10 +84,9 @@ if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
   });
 }
 
-const switchScene = (battle: Battle) => {// @ChaosMaster8673 implement scene switching logic here. Can pass through the battle you click on ?
+const onClickStuff = () => {
   count++;
-  const battleName = battle.getName();
   counterElement.textContent = `Click Count: ${count}`;
 }
 
-const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, switchScene, () => selectedTimePeriod);
+const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, onClickStuff, () => selectedTimePeriod);
