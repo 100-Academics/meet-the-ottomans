@@ -89,7 +89,17 @@ async function setupApp(
   // precision on location here is very arbitrary. Four decimals should be enough.
   const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
                    new Battle(1, [32.5486, 35.4161], "Battle of Ain Jalut", new Entity()),
-                   new Battle(1, [41.0151, 28.9793], "Siege of Constantinople", new Entity()),];
+                   new Battle(1, [41.0151, 28.9793], "Siege of Constantinople", new Entity()),
+                   new Battle(2, [50.4637, 2.1389], "Battle of Agincourt", new Entity()),
+                   new Battle(2, [47.9025, 1.9090], "Siege of Orléans", new Entity()),
+                   new Battle(2, [41.0151, 28.9793], "Fall of Constantinople", new Entity()),
+                   new Battle(3, [38.25, 21.25], "Battle of Lepanto", new Entity()),
+                   new Battle(3, [45.183, 9.150], "Battle of Pavia (Italian Wars)", new Entity()),
+                   new Battle(3, [48.2017, 16.3350], "Siege of Vienna", new Entity()), // winged hussars my goat
+                   new Battle(4, [37.2388, 76.5098], "Battle of Yorktown", new Entity()),
+                   new Battle(4, [49.128, 16.763], "Battle of Three Emperors", new Entity())
+                   //TODO
+                  ];
   if (!canvas) {
     throw new Error('Canvas not found');
   }

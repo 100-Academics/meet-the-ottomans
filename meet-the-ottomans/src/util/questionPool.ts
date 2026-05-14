@@ -4,9 +4,9 @@ export class questionPool{
     private questions: Record<number, Record<number, string>> = {
         0:
             { // N/A
-            0: "How do you see this?",
-            1: "You shouldn't be here",
-            2: "Your end is nigh."
+                0: "How do you see this?",
+                1: "You shouldn't be here",
+                2: "Your end is nigh."
             },
         1:
             { // starts at 1 bc of button stuff
