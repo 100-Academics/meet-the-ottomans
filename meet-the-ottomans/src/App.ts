@@ -32,6 +32,7 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 
 import { throttle } from './utils';
 import textureUrl from './assets/world/earth_texture.jpg'
+import { Battle } from './world/Battle';
 
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
@@ -68,8 +69,14 @@ function normalOnSphere(point: Vec3): Vec3 {
   return point.clone().normalize();
 }
 
-
-
+function latLonToSpherical(lat: number, lon: number): { phi: number; theta: number } {
+  const latRad = lat * Math.PI / 180;
+  const lonRad = lon * Math.PI / 180;
+  return {
+    phi: Math.PI / 2 - latRad,
+    theta: Math.PI / 2 - lonRad
+  };
+}
 
 // App.ts
 async function setupApp(
@@ -78,7 +85,7 @@ async function setupApp(
   getSelectedTimePeriod: () => number //yucky
 ) {
   getSelectedTimePeriod(); // TODO: wire selected period into world behavior
-  
+  const battleNames: string[] = [];
   if (!canvas) {
     throw new Error('Canvas not found');
   }
@@ -171,7 +178,7 @@ async function setupApp(
   const picker = new Picker(app, 1, 1);
   const worldLayer = app.scene.layers.getLayerByName('World');
 
-  const intersectsPoint = (x: number, y: number, layer: Layer, pointEntity: Entity): Promise<boolean> => {
+  const intersectsBattle = (x: number, y: number, layer: Layer, battle: Battle): Promise<boolean> => {
     if (!camera.camera) {
       return Promise.resolve(false);
     }
@@ -188,12 +195,12 @@ async function setupApp(
     return picker.getSelectionAsync(x * pickerScale, y * pickerScale, 1, 1).then((meshInstances): boolean => {
       const selectedMesh = meshInstances.find((instance): instance is MeshInstance => instance instanceof MeshInstance);
       if (!selectedMesh) return false;
-      return selectedMesh === pointEntity.render?.meshInstances[0];
+      return selectedMesh === battle.getObj().render?.meshInstances[0];
     });
   }
 
   let isDragging = false;
-  let pointEntity: Entity | null = null;
+  let currentBattle: Battle | null = null;
 
   app.mouse?.on(EVENT_MOUSEDOWN, (event) => {
     isDragging = event.button === 0;
@@ -209,53 +216,50 @@ async function setupApp(
     }
   });
 
-  // On mouse move, check if hovering over sphere and update cursor/color
+  // On mouse move, check if hovering over battle and update cursor/color
   app.mouse?.on(EVENT_MOUSEMOVE, throttle((event) => {
-    if (!worldLayer || !pointEntity) return;
-    const currentPointEntity = pointEntity;
-    intersectsPoint(event.x, event.y, worldLayer, currentPointEntity).then((intersects) => {
+    if (!worldLayer || !currentBattle) return;
+    const battle = currentBattle;
+    intersectsBattle(event.x, event.y, worldLayer, battle).then((intersects) => {
       pointMaterial.diffuse.copy(intersects ? HOVER_COLOR : DEFAULT_COLOR);
       document.body.style.cursor = intersects ? 'pointer' : 'default';
       pointMaterial.update();
     });
   }, 100));
 
-  // On mouse up, check if clicked on sphere and call onClick
+  // On mouse up, check if clicked on battle and call onClick
   app.mouse?.on(EVENT_MOUSEUP, (event) => {
-    if (!worldLayer || !onClick || !pointEntity) return;
-    const currentPointEntity = pointEntity;
-    intersectsPoint(event.x, event.y, worldLayer, currentPointEntity).then((intersects) => {
+    if (!worldLayer || !onClick || !currentBattle) return;
+    const battle = currentBattle;
+    intersectsBattle(event.x, event.y, worldLayer, battle).then((intersects) => {
       if (intersects) {
-        console.log('Clicked on point entity!');
-        (onClick())
+        console.log('Clicked on battle:', battle.getName());
+        onClick();
       }
     });
-
   });
   await applySphereTexture(sphere, textureUrl, device);
 
-  //modify point if you want it to be elsewhere. This puts it at the Greenwich Meridian
-  const lat = 51.4934 * Math.PI / 180;
-  const lon = 0 * Math.PI / 180;
-
-// In spherical coords: phi = pi/2 - lat, theta = pi/2 - lon
-  const phi = Math.PI / 2 - lat;
-  const theta = Math.PI / 2 - lon;
+  // Create Battle instance at Greenwich Meridian
+  const greenwichLat = 51.4934;
+  const greenwichLon = 0;
+  const { phi, theta } = latLonToSpherical(greenwichLat, greenwichLon);
 
   const point = pointOnSphere(1, phi, theta);
   const normal = normalOnSphere(point);
 
-  console.log('Point on sphere:', point);
-  console.log('Normal at point:', normal);
+  console.log('Battle location:', point);
+  console.log('Battle normal:', normal);
 
-  pointEntity = new Entity();
+  // Create point entity for the battle
+  const pointEntity = new Entity('greenwich-battle');
   pointEntity.addComponent('render', {
     type: 'capsule',
     material: pointMaterial
   });
   pointEntity.setLocalPosition(point);
   pointEntity.setLocalScale(0.04, 0.08, 0.04);
-  
+
   // Align the entity's up-axis (Y) with the normal vector
   const upAxis = new Vec3(0, 1, 0);
   const axis = new Vec3().cross(upAxis, normal).normalize();
@@ -267,6 +271,12 @@ async function setupApp(
   
   sphere.addChild(pointEntity);
 
+  // Create Battle with the entity
+  battleNames.forEach((battle) => { // TODO
+    console.log("battle")
+  });
+  currentBattle = new Battle(1, [greenwichLat, greenwichLon], 'Example', pointEntity);
+  console.log('Created battle:', currentBattle.getName(), 'at location:', currentBattle.getLocation());
 
 }
 
