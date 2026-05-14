@@ -1,6 +1,8 @@
 import './style.css'
 import { setupApp } from './App'
 import { Question } from './util/question';
+import type { Battle } from './world/Battle';
+import { BODYMASK_NOT_STATIC_KINEMATIC } from 'playcanvas';
 
 let count = 0;
 
@@ -45,10 +47,10 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
 
 const counterElement = document.getElementById('counter')!;
 
-const increment = () => {
-  count++;
-  counterElement.textContent = `Click Count: ${count}`;
-};
+// const increment = () => {
+//   count++;
+//   counterElement.textContent = `Click Count: ${count}`;
+// };
 
 
 const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
@@ -82,4 +84,10 @@ if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
   });
 }
 
-const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, increment, () => selectedTimePeriod);
+const switchScene = (battle: Battle) => {// @ChaosMaster8673 implement scene switching logic here. Can pass through the battle you click on ?
+  count++;
+  const battleName = battle.getName();
+  counterElement.textContent = `Click Count: ${count}`;
+}
+
+const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, switchScene, () => selectedTimePeriod);

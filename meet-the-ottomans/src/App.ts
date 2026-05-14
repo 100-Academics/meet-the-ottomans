@@ -144,10 +144,6 @@ async function setupApp(
   (material as any).vertexColors = true;
   material.update();
 
-  const pointMaterial = new StandardMaterial();
-  pointMaterial.diffuse.copy(DEFAULT_COLOR);
-  pointMaterial.update();
-
   // Create sphere entity (heightmap-ready sphere)
   const sphere = new Entity('heightmap-sphere');
   sphere.setPosition(new Vec3(0, 0.5, 0));
@@ -181,27 +177,6 @@ async function setupApp(
   const picker = new Picker(app, 1, 1);
   const worldLayer = app.scene.layers.getLayerByName('World');
 
-  const intersectsBattle = (x: number, y: number, layer: Layer, battle: Battle): Promise<boolean> => {
-    if (!camera.camera) {
-      return Promise.resolve(false);
-    }
-
-    const pickerScale = 0.5;
-    picker.resize(canvas.clientWidth * pickerScale, canvas.clientHeight * pickerScale);
-
-    if (!layer) {
-      return Promise.resolve(false);
-    }
-
-    picker.prepare(camera.camera, app.scene, [layer]);
-
-    return picker.getSelectionAsync(x * pickerScale, y * pickerScale, 1, 1).then((meshInstances): boolean => {
-      const selectedMesh = meshInstances.find((instance): instance is MeshInstance => instance instanceof MeshInstance);
-      if (!selectedMesh) return false;
-      return selectedMesh === battle.getObj().render?.meshInstances[0];
-    });
-  }
-
   let isDragging = false;
   let currentBattle: Battle | null = null;
 
@@ -219,38 +194,85 @@ async function setupApp(
     }
   });
 
-  // On mouse move, check if hovering over battle and update cursor/color
+  // Track battle entities for cleanup
+  let battleEntities: Entity[] = [];
+  let battleMaterials: Map<Entity, StandardMaterial> = new Map();
+  let hoveredBattle: Entity | null = null;
+
+  // Helper function to check if mouse intersects a battle entity
+  const checkBattleIntersection = async (x: number, y: number): Promise<Entity | null> => {
+    if (!worldLayer || !camera.camera) return null;
+
+    const pickerScale = 0.5;
+    picker.resize(canvas.clientWidth * pickerScale, canvas.clientHeight * pickerScale);
+    picker.prepare(camera.camera, app.scene, [worldLayer]);
+
+    const meshInstances = await picker.getSelectionAsync(x * pickerScale, y * pickerScale, 1, 1);
+    const selectedMesh = meshInstances.find((instance): instance is MeshInstance => instance instanceof MeshInstance);
+    
+    if (!selectedMesh) return null;
+
+    // Find which battle entity was clicked
+    for (const entity of battleEntities) {
+      const renderComponent = entity.render;
+      if (renderComponent?.meshInstances[0] === selectedMesh) {
+        return entity;
+      }
+    }
+    
+    return null;
+  };
+
+  // On mouse move, check hovering over any battle and update colors
   app.mouse?.on(EVENT_MOUSEMOVE, throttle((event) => {
-    if (!worldLayer || !currentBattle) return;
-    const battle = currentBattle;
-    intersectsBattle(event.x, event.y, worldLayer, battle).then((intersects) => {
-      pointMaterial.diffuse.copy(intersects ? HOVER_COLOR : DEFAULT_COLOR);
-      document.body.style.cursor = intersects ? 'pointer' : 'default';
-      pointMaterial.update();
+    if (isDragging) return;
+    
+    checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
+      // Reset previously hovered entity color
+      if (hoveredBattle && hoveredBattle !== intersectedEntity) {
+        const material = battleMaterials.get(hoveredBattle);
+        if (material) {
+          material.diffuse.copy(DEFAULT_COLOR);
+          material.update();
+        }
+      }
+
+      // Update hovered entity
+      if (intersectedEntity) {
+        hoveredBattle = intersectedEntity;
+        const material = battleMaterials.get(intersectedEntity);
+        if (material) {
+          material.diffuse.copy(HOVER_COLOR);
+          material.update();
+        }
+        document.body.style.cursor = 'pointer';
+      } else {
+        hoveredBattle = null;
+        document.body.style.cursor = 'default';
+      }
     });
   }, 100));
 
   // On mouse up, check if clicked on battle and call onClick
   app.mouse?.on(EVENT_MOUSEUP, (event) => {
-    if (!worldLayer || !onClick || !currentBattle) return;
-    const battle = currentBattle;
-    intersectsBattle(event.x, event.y, worldLayer, battle).then((intersects) => {
-      if (intersects) {
-        console.log('Clicked on battle:', battle.getName());
+    if (isDragging || !onClick) return;
+    
+    checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
+      if (intersectedEntity) {
+        console.log('Clicked on battle:', intersectedEntity.name);
         onClick();
       }
     });
   });
   await applySphereTexture(sphere, textureUrl, device);
 
-  // Track battle entities for cleanup
-  let battleEntities: Entity[] = [];
-
   // Function to render battles for selected time period
   const renderBattlesForPeriod = (timePeriod: number) => {
     // Clear previous battle entities
     battleEntities.forEach(entity => entity.destroy());
     battleEntities = [];
+    battleMaterials.clear();
+    hoveredBattle = null;
     currentBattle = null;
 
     // Create battle markers for the selected period
@@ -262,10 +284,15 @@ async function setupApp(
         const battlePoint = pointOnSphere(1, phi, theta);
         const battleNormal = normalOnSphere(battlePoint);
 
+        // Create a unique material for this battle
+        const battleMaterial = new StandardMaterial();
+        battleMaterial.diffuse.copy(DEFAULT_COLOR);
+        battleMaterial.update();
+
         const battleEntity = new Entity(battle.getName());
         battleEntity.addComponent('render', {
           type: 'capsule',
-          material: pointMaterial
+          material: battleMaterial
         });
         battleEntity.setLocalPosition(battlePoint);
         battleEntity.setLocalScale(0.04, 0.08, 0.04);
@@ -281,6 +308,7 @@ async function setupApp(
 
         sphere.addChild(battleEntity);
         battleEntities.push(battleEntity);
+        battleMaterials.set(battleEntity, battleMaterial);
 
         // Set the first battle as current
         if (!currentBattle) {
