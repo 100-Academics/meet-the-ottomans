@@ -268,7 +268,6 @@ async function setupApp(
       // @ChaosMaster8673: implement scene switching here
       console.log('Clicked on battle:', battle.getName());
       if (battle.getName() === 'Battle of Legnica') {
-
         unloadAll(app);
       }
 
