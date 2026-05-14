@@ -59,8 +59,8 @@ const assets = {
 function pointOnSphere(radius: number, phi: number, theta: number): Vec3 {
   return new Vec3(
     radius * Math.sin(phi) * Math.cos(theta),
-    radius * Math.sin(phi) * Math.sin(theta),
-    radius * Math.cos(phi)
+    radius * Math.cos(phi),
+    radius * Math.sin(phi) * Math.sin(theta)
   );
 }
 
@@ -234,7 +234,15 @@ async function setupApp(
   });
   await applySphereTexture(sphere, textureUrl, device);
 
-  const point = pointOnSphere(1, 0, 51.4934);
+  //modify point if you want it to be elsewhere. This puts it at the Greenwich Meridian
+  const lat = 51.4934 * Math.PI / 180;
+  const lon = 0 * Math.PI / 180;
+
+// In spherical coords: phi = pi/2 - lat, theta = pi/2 - lon
+  const phi = Math.PI / 2 - lat;
+  const theta = Math.PI / 2 - lon;
+
+  const point = pointOnSphere(1, phi, theta);
   const normal = normalOnSphere(point);
 
   console.log('Point on sphere:', point);
@@ -246,7 +254,7 @@ async function setupApp(
     material: pointMaterial
   });
   pointEntity.setLocalPosition(point);
-  pointEntity.setLocalScale(0.08, 0.08, 0.08);
+  pointEntity.setLocalScale(0.04, 0.08, 0.04);
   
   // Align the entity's up-axis (Y) with the normal vector
   const upAxis = new Vec3(0, 1, 0);

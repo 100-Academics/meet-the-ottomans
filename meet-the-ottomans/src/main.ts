@@ -1,6 +1,4 @@
 import './style.css'
-import typescriptLogo from './assets/typescript.svg'
-import playcanvasLogo from './assets/playcanvas.png'
 import { setupApp } from './App'
 import { Question } from './util/question';
 
@@ -25,8 +23,7 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
         <div class="pill" id="question-wrap">
           <div id="question-text">(no question loaded)</div>
           <div class="btn-row">
-            <button id="yes-btn" class="btn">Yes</button>
-            <button id="no-btn" class="btn">No</button>
+            <button id="yes-btn" class="btn">Load question (test)</button>
           </div>
         </div>
         <div class="pill" id="time-periods">
@@ -80,7 +77,6 @@ if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
       const period = index + 1;
       timePeriodText.textContent = `Selected Time Period: ${period}`;
       selectedTimePeriod = period;
-      const question = new Question(1, 0, period);
     });
   });
 }
