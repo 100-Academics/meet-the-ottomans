@@ -97,7 +97,8 @@ async function setupApp(
                    new Battle(3, [45.183, 9.150], "Battle of Pavia (Italian Wars)", new Entity()),
                    new Battle(3, [48.2017, 16.3350], "Siege of Vienna", new Entity()), // winged hussars my goat
                    new Battle(4, [37.2388, 76.5098], "Battle of Yorktown", new Entity()),
-                   new Battle(4, [49.128, 16.763], "Battle of Three Emperors", new Entity())
+                   new Battle(4, [49.128, 16.763], "Battle of Three Emperors", new Entity()),
+                   new Battle(4, [39.8309, -77.2333], "Battle of Gettysburg", new Entity()),
                    //TODO
                   ];
   if (!canvas) {
