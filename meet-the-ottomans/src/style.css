@@ -152,3 +152,26 @@ button:focus-visible {
   justify-content: center;
   margin-top: 0.5rem;
 }
+
+/* Title screen styles */
+#title-screen {
+  width: min(700px, 90vw);
+  margin: 0 auto;
+  pointer-events: auto;
+  text-align: center;
+  position: absolute;
+  top: 20vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+}
+
+#title-screen h1 {
+  font-size: 2.6rem;
+  margin: 0.2rem 0 0.4rem 0;
+}
+
+#title-screen p {
+  color: #ccc;
+  margin: 0 0 1rem 0;
+}

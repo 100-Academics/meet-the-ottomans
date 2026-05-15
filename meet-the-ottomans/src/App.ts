@@ -10,6 +10,7 @@ import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 import { defaultScene } from './world/scenes/default';
+import { titleScreen } from './world/scenes/titleSceen';
 
 
 /**
@@ -19,7 +20,7 @@ import { defaultScene } from './world/scenes/default';
  */
 
 // App.ts
-var sceneNum = 0;
+var sceneNum = -2;
 async function setupApp(
   canvas: HTMLCanvasElement,
   onClick: (battle: Battle) => void,
@@ -27,9 +28,18 @@ async function setupApp(
 ) {
   const app = new AppBase(canvas);
   getSelectedTimePeriod(); // call this once to initialize the time period
-  if (sceneNum === 0) {
-    defaultScene(canvas, app, onClick, getSelectedTimePeriod, sceneNum);
+
+  // If we're starting on the title screen, show it and wait for the user to start
+  if (sceneNum === -2) {
+    const renderFn = await titleScreen(canvas, app, sceneNum, onClick, getSelectedTimePeriod);
+    return renderFn;
   }
+
+  if (sceneNum === 0) {
+    const renderFn = await defaultScene(canvas, app, onClick, getSelectedTimePeriod, sceneNum);
+    return renderFn;
+  }
+  return undefined;
 }
 
 export { setupApp };
