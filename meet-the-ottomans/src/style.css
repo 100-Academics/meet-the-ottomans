@@ -38,6 +38,10 @@ body {
   overflow: hidden;
 }
 
+html, #root {
+  height: 100%;
+}
+
 h1 {
   font-size: 2.4em;
   line-height: 1.1;
@@ -175,4 +179,13 @@ button:focus-visible {
 canvas#application-canvas {
   background-color: #242424;
   display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.overlay {
+  z-index: 10;
 }
