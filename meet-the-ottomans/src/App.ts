@@ -25,6 +25,8 @@ async function setupApp(
   getSelectedTimePeriod: () => number //yucky
 ) {
   const app = new AppBase(canvas);
+  getSelectedTimePeriod(); // call this once to initialize the time period
+  
   defaultScene(canvas, app, onClick, getSelectedTimePeriod);
 }
 

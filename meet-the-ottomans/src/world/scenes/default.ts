@@ -82,7 +82,7 @@ async function defaultScene(
 
 unloadAll(app);
 
- getSelectedTimePeriod(); 
+  getSelectedTimePeriod(); 
   // precision on location here is very arbitrary. Four decimals should be enough.
   const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
                    new Battle(1, [32.5486, 35.4161], "Battle of Ain Jalut", new Entity()),
@@ -345,8 +345,21 @@ unloadAll(app);
   };
 
   // Initial render with selected time period
-  const selectedPeriod = getSelectedTimePeriod();
-  renderBattlesForPeriod(selectedPeriod);
+  let lastTimePeriod = getSelectedTimePeriod();
+  renderBattlesForPeriod(lastTimePeriod);
+
+  // Monitor for time period changes and re-render
+  const timePeriodCheckInterval = setInterval(() => {
+    const currentTimePeriod = getSelectedTimePeriod();
+    if (currentTimePeriod !== lastTimePeriod) {
+      lastTimePeriod = currentTimePeriod;
+      renderBattlesForPeriod(currentTimePeriod);
+    }
+  }, 100);
+
+  app.once('destroy', () => {
+    clearInterval(timePeriodCheckInterval);
+  });
 
   return renderBattlesForPeriod;
 }
