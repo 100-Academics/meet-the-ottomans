@@ -20,6 +20,7 @@ import {
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
+import { loadModel } from '../../util/loadModel';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -139,27 +140,11 @@ export async function battleOfLegnicaScene(
   app.root.addChild(light);
 
     // Example battle entity - replace with actual battle data and models
-app.assets.loadFromUrl('/stanford_dragon_pbr.glb', 'container', function (err, asset) {
-  if (err) {
-    console.error('Failed to load model:', err);
-    return;
-  }
-  
-  if (!asset || !asset.resource) {
-    console.error('Asset loaded but no resource found');
-    return;
-  }
-
-  // FIX: Use the specific engine method to spawn the GLB entity hierarchy
-  const modelEntity = asset.resource.instantiateRenderEntity();
-  
-  modelEntity.name = 'Battle of Legnica';
-  modelEntity.setLocalPosition(0, 0, -5);
-  modelEntity.setLocalEulerAngles(0, 90, 90);
-  modelEntity.setLocalScale(0.05, 0.05, 0.05); // Keeping scale small because 1 is huge apparently
-  
-  app.root.addChild(modelEntity);
-  console.log('Model loaded and added to scene');
-});
+try {
+  const model = await loadModel('/stanford_dragon_pbr.glb', app);
+  console.log('Model loaded and added to scene', model.modelName);
+} catch (e) {
+  console.error('Failed to load model:', e);
+}
 
 }
