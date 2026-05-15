@@ -391,7 +391,8 @@ unloadAll(app);
       // @ChaosMaster8673: implement scene switching here
       console.log('Clicked on battle:', battle.getName());
       if (battle.getName() === 'Battle of Legnica') {
-        battleOfLegnicaScene(canvas, app, sceneNum, onClickWithCounter);
+        battleOfLegnicaScene(canvas, app, onClickWithCounter, sceneNum);
+        // ^^^ scene functions should always be defined as HTMLCanvasElement, AppBase, onClick callback, sceneNum
       }
 
       onClickWithCounter(battle);

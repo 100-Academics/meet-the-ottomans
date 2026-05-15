@@ -31,7 +31,8 @@ async function setupApp(
 
   // If we're starting on the title screen, show it and wait for the user to start
   if (sceneNum === -2) {
-    const renderFn = await titleScreen(canvas, app, onClick, getSelectedTimePeriod, sceneNum);
+    const renderFn = await titleScreen(canvas, app, onClick, getSelectedTimePeriod, sceneNum); 
+    // ^^^ scene functions should always be defined as HTMLCanvasElement, AppBase, onClick callback, getSelectedTimePeriod callback (if necessary), sceneNum
     return renderFn;
   }
 
