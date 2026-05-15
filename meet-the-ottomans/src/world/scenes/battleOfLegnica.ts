@@ -90,7 +90,8 @@ export async function battleOfLegnicaScene(
   // Create Camera
   const camera = new Entity('camera');
   camera.addComponent('camera', {
-    clearColor: new Color(0.14117647, 0.14117647, 0.14117647)
+    clearColor: new Color(0.14117647, 0.14117647, 0.14117647),
+    fov: 90
   });
   camera.setPosition(10, 10, 10);
   camera.lookAt(Vec3.ZERO);

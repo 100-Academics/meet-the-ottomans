@@ -20,7 +20,6 @@ import {
   MeshInstance,
   Texture,
   StandardMaterial,
-  Layer,
   Asset,
   AssetListLoader,
   TEXTURETYPE_RGBP,
@@ -33,6 +32,7 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { throttle } from '../../utils';
 import textureUrl from '../../assets/world/earth_texture.jpg'
 import { Battle } from '../Battle';
+import { Question } from '../../util/question';
 
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js';
@@ -83,7 +83,6 @@ async function defaultScene(
 ) {
 
 unloadAll(app);
-  getSelectedTimePeriod();
   // precision on location here is very arbitrary. Four decimals should be enough.
   const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
                    new Battle(1, [32.5486, 35.4161], "Battle of Ain Jalut", new Entity()),
@@ -145,6 +144,92 @@ unloadAll(app);
 
   app.start();
 
+  // Create overlay UI
+  const overlay = document.querySelector('.absolute.overlay') as HTMLElement;
+  let count = 0;
+  let selectedTimePeriod = -1;
+  const overlayHTML = `
+    <div class="absolute overlay">
+      <div class="grow">
+        <header>
+        </header>
+      </div>
+      <div>
+        <span id="counter" class="pill">
+          Click Count: ${count}
+        </span>
+        <p>
+          Edit <code>src/App.ts</code> and save to test HMR
+        </p>
+        <div class="pill" id="question-wrap">
+          <div id="question-text">(no question loaded)</div>
+          <div class="btn-row">
+            <button id="yes-btn" class="btn">Load question (test)</button>
+          </div>
+        </div>
+        <div class="pill" id="time-periods">
+          <div id="Selection">(Select thet time period you want!)</div>
+          <div id="time-period">(no time period selected)</div>
+          <div class="btn-row">
+            <button id="period1-btn" class="btn">1200-1300</button>
+            <button id="period2-btn" class="btn">1400-1500</button>
+            <button id="period3-btn" class="btn">1500-1650</button>
+            <button id="period4-btn" class="btn">1750-1900</button>
+            <button id="period5-btn" class="btn">1900-1945</button>
+            <button id="period6-btn" class="btn">1945-2026</button>
+          </div>
+        </div>
+      </div>
+      <p class="read-the-docs">
+        Click on the PlayCanvas and TypeScript logos to learn more
+      </p>
+    </div>
+  `;
+
+  // Insert overlay into overlay element
+  const overlayContainer = document.createElement('div');
+  overlayContainer.innerHTML = overlayHTML;
+  overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
+
+  // Set up overlay event listeners
+  const counterElement = document.getElementById('counter')!;
+  const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
+  const questionTextEl = document.getElementById('question-text') as HTMLElement | null;
+  const timePeriodButtons = [
+    document.getElementById('period1-btn') as HTMLButtonElement | null,
+    document.getElementById('period2-btn') as HTMLButtonElement | null,
+    document.getElementById('period3-btn') as HTMLButtonElement | null,
+    document.getElementById('period4-btn') as HTMLButtonElement | null,
+    document.getElementById('period5-btn') as HTMLButtonElement | null,
+    document.getElementById('period6-btn') as HTMLButtonElement | null,
+  ];
+  const timePeriodText = document.getElementById('time-period') as HTMLElement | null;
+
+  if (yesBtn && questionTextEl) {
+    yesBtn.addEventListener('click', () => {
+      const content = Question.getRandomQuestion(selectedTimePeriod) || '(no question loaded)';
+      questionTextEl.textContent = content;
+    });
+  }
+
+  if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
+    timePeriodButtons.forEach((btn, index) => {
+      btn!.addEventListener('click', () => {
+        const period = index + 1;
+        selectedTimePeriod = period;
+        timePeriodText.textContent = `Selected Time Period: ${period}`;
+        renderBattlesForPeriod(period);
+      });
+    });
+  }
+
+  // Set up event listener to increment counter
+  const onClickWithCounter = (battle: Battle) => {
+    count++;
+    counterElement.textContent = `Click Count: ${count}`;
+    onClick(battle);
+  };
+
   // Set up environment lighting (no skybox, just IBL)
   app.scene.envAtlas = assets.envAtlas.resource as Texture;
   const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
@@ -200,6 +285,9 @@ unloadAll(app);
   document.body.appendChild(hoverLabel);
   app.once('destroy', () => {
     try { hoverLabel.remove(); } catch(e) { /* ignore */ }
+    try { 
+      overlay.innerHTML = '';
+    } catch(e) { /* ignore */ }
   });
 
   let isDragging = false;
@@ -292,7 +380,7 @@ unloadAll(app);
 
   // On mouse up, check if clicked on battle and call onClick
   app.mouse?.on(EVENT_MOUSEUP, (event) => {
-    if (isDragging || !onClick) return;
+    if (isDragging || !onClickWithCounter) return;
     
     checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
       if (!intersectedEntity) return;
@@ -303,10 +391,10 @@ unloadAll(app);
       // @ChaosMaster8673: implement scene switching here
       console.log('Clicked on battle:', battle.getName());
       if (battle.getName() === 'Battle of Legnica') {
-        battleOfLegnicaScene(canvas, app, sceneNum, onClick);
+        battleOfLegnicaScene(canvas, app, sceneNum, onClickWithCounter);
       }
 
-      onClick(battle);
+      onClickWithCounter(battle);
     });
   });
   await applySphereTexture(sphere, textureUrl, device);
@@ -368,15 +456,16 @@ unloadAll(app);
   };
 
   // Initial render with selected time period
-  let lastTimePeriod = getSelectedTimePeriod();
-  renderBattlesForPeriod(lastTimePeriod);
+  let lastTimePeriod = selectedTimePeriod;
+  if (selectedTimePeriod > 0) {
+    renderBattlesForPeriod(selectedTimePeriod);
+  }
 
   // Monitor for time period changes and re-render
   const timePeriodCheckInterval = setInterval(() => {
-    const currentTimePeriod = getSelectedTimePeriod();
-    if (currentTimePeriod !== lastTimePeriod) {
-      lastTimePeriod = currentTimePeriod;
-      renderBattlesForPeriod(currentTimePeriod);
+    if (selectedTimePeriod !== lastTimePeriod && selectedTimePeriod > 0) {
+      lastTimePeriod = selectedTimePeriod;
+      renderBattlesForPeriod(selectedTimePeriod);
     }
   }, 100);
 

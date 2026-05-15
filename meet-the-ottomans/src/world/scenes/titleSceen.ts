@@ -5,9 +5,9 @@ import { defaultScene } from './default';
 async function titleScreen(
   canvas: HTMLCanvasElement,
   app: AppBase,
-  sceneNum: number,
   onClick: (battle: Battle) => void,
-  getSelectedTimePeriod: () => number
+  getSelectedTimePeriod: () => number,
+  sceneNum: number
 ) {
   // Create a simple DOM title overlay
   const overlay = document.querySelector('.overlay') as HTMLElement | null;
@@ -17,8 +17,7 @@ async function titleScreen(
   titleWrap.className = 'pill';
   titleWrap.innerHTML = `
     <h1>Meet The Ottomans</h1>
-    <p>You WILL of man Daniel this instant. </p>
-    <p>I am a sexy, horny beast that will hunt Daniel down and fuck him.</p>
+    <p>Triple straight zeroes</p>
     <div class="btn-row">
       <button id="start-btn" class="btn">Start</button>
     </div>
