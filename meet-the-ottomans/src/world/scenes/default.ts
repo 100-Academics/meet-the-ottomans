@@ -77,12 +77,13 @@ async function defaultScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
   onClick: (battle: Battle) => void,
-  getSelectedTimePeriod: () => number //yucky
+  getSelectedTimePeriod: () => number,
+  sceneNum: number
 ) {
 
 unloadAll(app);
 
-  getSelectedTimePeriod(); 
+  getSelectedTimePeriod();
   // precision on location here is very arbitrary. Four decimals should be enough.
   const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
                    new Battle(1, [32.5486, 35.4161], "Battle of Ain Jalut", new Entity()),

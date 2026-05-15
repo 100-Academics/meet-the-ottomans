@@ -19,6 +19,7 @@ import { defaultScene } from './world/scenes/default';
  */
 
 // App.ts
+var sceneNum = 0;
 async function setupApp(
   canvas: HTMLCanvasElement,
   onClick: (battle: Battle) => void,
@@ -26,8 +27,9 @@ async function setupApp(
 ) {
   const app = new AppBase(canvas);
   getSelectedTimePeriod(); // call this once to initialize the time period
-  
-  defaultScene(canvas, app, onClick, getSelectedTimePeriod);
+  if (sceneNum === 0) {
+    defaultScene(canvas, app, onClick, getSelectedTimePeriod, sceneNum);
+  }
 }
 
 export { setupApp };
