@@ -99,7 +99,13 @@ async function setupApp(
                    new Battle(4, [37.2388, 76.5098], "Battle of Yorktown", new Entity()),
                    new Battle(4, [49.128, 16.763], "Battle of Three Emperors", new Entity()),
                    new Battle(4, [39.8309, -77.2333], "Battle of Gettysburg", new Entity()),
-                   //TODO
+                   new Battle(5, [49.20806, 5.42194], "Battle of Verdun", new Entity()),
+                   new Battle(5, [40.23923, 26.27684], "Battle of Gallipoli", new Entity()),
+                   new Battle(5, [48.8024, 44.6053], "Battle of Stalingrad", new Entity()),
+                   new Battle(6, [40.4833, 127.2000], "Battle of Chosin Reservoir", new Entity()),
+                   new Battle(6, [10.82310, 106.62966], "Fall of Saigon", new Entity()),
+                   new Battle(6, [30.56, 32.32], " Operation Abirey-Halev", new Entity())
+                   
                   ];
   if (!canvas) {
     throw new Error('Canvas not found');
