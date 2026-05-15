@@ -67,7 +67,7 @@ export async function battleOfLegnicaScene(
   // Create Camera
   const camera = new Entity('camera');
   camera.addComponent('camera', {
-    clearColor: new Color(0.1, 0.1, 0.1)
+    clearColor: new Color(0.14117647, 0.14117647, 0.14117647)
   });
   camera.setPosition(10, 10, 10);
   camera.lookAt(Vec3.ZERO);

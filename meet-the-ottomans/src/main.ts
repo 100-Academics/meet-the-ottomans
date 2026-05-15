@@ -33,6 +33,9 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
             <button id="period1-btn" class="btn">Period 1</button>
             <button id="period2-btn" class="btn">Period 2</button>
             <button id="period3-btn" class="btn">Period 3</button>
+            <button id="period4-btn" class="btn">Period 4</button>
+            <button id="period5-btn" class="btn">Period 5</button>
+            <button id="period6-btn" class="btn">Period 6</button>
           </div>
         </div>
       </div>
@@ -57,6 +60,9 @@ const timePeriodButtons = [
   document.getElementById('period1-btn') as HTMLButtonElement | null,
   document.getElementById('period2-btn') as HTMLButtonElement | null,
   document.getElementById('period3-btn') as HTMLButtonElement | null,
+  document.getElementById('period4-btn') as HTMLButtonElement | null,
+  document.getElementById('period5-btn') as HTMLButtonElement | null,
+  document.getElementById('period6-btn') as HTMLButtonElement | null,
 ];
 const timePeriodText = document.getElementById('time-period') as HTMLElement | null;
 

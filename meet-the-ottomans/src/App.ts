@@ -10,7 +10,7 @@ import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 import { defaultScene } from './world/scenes/default';
-import { titleScreen } from './world/scenes/titleSceen';
+import { titleScreen } from "./world/scenes/titleSceen.ts";
 
 
 /**

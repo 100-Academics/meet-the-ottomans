@@ -156,14 +156,9 @@ button:focus-visible {
 /* Title screen styles */
 #title-screen {
   width: min(700px, 90vw);
-  margin: 0 auto;
+  margin: 2rem auto;
   pointer-events: auto;
   text-align: center;
-  position: absolute;
-  top: 20vh;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
 }
 
 #title-screen h1 {
@@ -174,4 +169,10 @@ button:focus-visible {
 #title-screen p {
   color: #ccc;
   margin: 0 0 1rem 0;
+}
+
+/* Ensure the canvas background matches the page */
+canvas#application-canvas {
+  background-color: #242424;
+  display: block;
 }
