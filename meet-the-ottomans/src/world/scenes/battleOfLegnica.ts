@@ -37,9 +37,19 @@ export async function battleOfLegnicaScene(
     throw new Error('Canvas not found');
   }
 
+  // Hide page overlay (UI text/pills) while in this scene
+  const overlay = document.querySelector('.overlay') as HTMLElement | null;
+  const hiddenMap = new Map<HTMLElement, string | null>();
+  if (overlay) {
+    const children = Array.from(overlay.children) as HTMLElement[];
+    for (const child of children) {
+      hiddenMap.set(child, child.style.display || null);
+      child.style.display = 'none';
+    }
+  }
+
   if (!app.graphicsDevice) {
     const device = await createGraphicsDevice(canvas);
-
     const createOptions = new AppOptions();
     createOptions.graphicsDevice = device;
     createOptions.mouse = new Mouse(document.body);
@@ -65,7 +75,14 @@ export async function battleOfLegnicaScene(
     window.addEventListener('resize', resize);
     app.once('destroy', () => {
       window.removeEventListener('resize', resize);
+      // restore overlay display values
+      for (const [el, prev] of hiddenMap.entries()) {
+        if (prev === null) el.style.removeProperty('display');
+        else el.style.display = prev;
+      }
     });
+
+
 
     app.start();
   }
