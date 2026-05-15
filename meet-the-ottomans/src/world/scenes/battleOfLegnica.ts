@@ -4,6 +4,7 @@ import {
   Color,
   Vec3,
   Mouse,
+  Keyboard,
   TouchDevice,
   createGraphicsDevice,
   AppOptions,
@@ -12,6 +13,7 @@ import {
   ScriptComponentSystem,
   TextureHandler,
   ContainerHandler,
+  StandardMaterial,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO
 } from "playcanvas";
@@ -20,8 +22,7 @@ import { unloadAll } from '../../util/unloadall';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
-// @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
-import { CameraControls } from 'playcanvas/scripts/esm/camera-controls.mjs';
+import { FirstPersonCamera } from './FirstPersonCamera';
 import type { Battle } from "../Battle";
 
 export async function battleOfLegnicaScene(
@@ -42,6 +43,7 @@ export async function battleOfLegnicaScene(
     const createOptions = new AppOptions();
     createOptions.graphicsDevice = device;
     createOptions.mouse = new Mouse(document.body);
+    createOptions.keyboard = new Keyboard(window);
     createOptions.touch = new TouchDevice(document.body);
     createOptions.componentSystems = [
       RenderComponentSystem,
@@ -51,6 +53,10 @@ export async function battleOfLegnicaScene(
     createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
 
     app.init(createOptions);
+
+    if (!app.keyboard) {
+        app.keyboard = new Keyboard(window);
+    }
 
     app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
     app.setCanvasResolution(RESOLUTION_AUTO);
@@ -74,9 +80,23 @@ export async function battleOfLegnicaScene(
 
   // Add Camera Controls
   camera.addComponent('script');
-  camera.script?.create(CameraControls);
+  camera.script?.create(FirstPersonCamera);
 
   app.root.addChild(camera);
+
+  // Create Ground
+  const material = new StandardMaterial();
+  material.diffuse = new Color(0.1, 0.4, 0.1);
+  material.update();
+
+  const ground = new Entity('ground');
+  ground.addComponent('render', {
+      type: 'box',
+      material: material
+  });
+  ground.setLocalScale(100, 1, 100);
+  ground.setLocalPosition(0, -0.6, 0);
+  app.root.addChild(ground);
 
   // Create Grid
   const grid = new Entity('grid');
@@ -86,6 +106,8 @@ export async function battleOfLegnicaScene(
   app.root.addChild(grid);
 
   // Lighting
+  app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
+
   const light = new Entity('directional-light');
   light.addComponent('light', {
     type: 'directional',
