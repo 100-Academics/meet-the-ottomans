@@ -22,7 +22,7 @@ import { unloadAll } from '../../util/unloadall';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
-import { FirstPersonCamera } from './FirstPersonCamera';
+import { FirstPersonCamera } from '../../util/FirstPersonCamera';
 import type { Battle } from "../Battle";
 
 export async function battleOfLegnicaScene(
