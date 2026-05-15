@@ -39,6 +39,7 @@ import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js'
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
+import { battleOfLegnicaScene } from "./battleOfLegnica.js";
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
@@ -280,7 +281,7 @@ unloadAll(app);
       // @ChaosMaster8673: implement scene switching here
       console.log('Clicked on battle:', battle.getName());
       if (battle.getName() === 'Battle of Legnica') {
-        unloadAll(app);
+        battleOfLegnicaScene(canvas, app, sceneNum, onClick);
       }
 
       onClick(battle);
