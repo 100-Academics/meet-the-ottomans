@@ -191,6 +191,17 @@ unloadAll(app);
   const picker = new Picker(app, 1, 1);
   const worldLayer = app.scene.layers.getLayerByName('World');
 
+  // Create hover label for battle names
+  const hoverLabel = document.createElement('div');
+  hoverLabel.id = 'battle-hover-label';
+  hoverLabel.style.position = 'absolute';
+  hoverLabel.style.display = 'none';
+  hoverLabel.style.pointerEvents = 'none';
+  document.body.appendChild(hoverLabel);
+  app.once('destroy', () => {
+    try { hoverLabel.remove(); } catch(e) { /* ignore */ }
+  });
+
   let isDragging = false;
   let currentBattle: Battle | null = null;
 
@@ -240,7 +251,10 @@ unloadAll(app);
 
   // On mouse move, check hovering over any battle and update colors
   app.mouse?.on(EVENT_MOUSEMOVE, throttle((event) => {
-    if (isDragging) return;
+    if (isDragging) {
+      hoverLabel.style.display = 'none';
+      return;
+    }
     
     checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
       // Reset previously hovered entity color
@@ -261,9 +275,17 @@ unloadAll(app);
           material.update();
         }
         document.body.style.cursor = 'pointer';
+        const battle = entityToBattle.get(intersectedEntity);
+        if (battle) {
+          hoverLabel.textContent = battle.getName();
+          hoverLabel.style.left = (event.x + 12) + 'px';
+          hoverLabel.style.top = (event.y + 12) + 'px';
+          hoverLabel.style.display = 'block';
+        }
       } else {
         hoveredBattle = null;
         document.body.style.cursor = 'default';
+        hoverLabel.style.display = 'none';
       }
     });
   }, 100));

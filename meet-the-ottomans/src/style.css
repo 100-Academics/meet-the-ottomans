@@ -189,3 +189,15 @@ canvas#application-canvas {
 .overlay {
   z-index: 10;
 }
+
+/* Battle hover label */
+#battle-hover-label {
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  transform: translateY(-50%);
+  z-index: 2000;
+}

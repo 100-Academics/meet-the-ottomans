@@ -30,12 +30,12 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
           <div id="Selection">(Select thet time period you want!)</div>
           <div id="time-period">(no time period selected)</div>
           <div class="btn-row">
-            <button id="period1-btn" class="btn">Period 1</button>
-            <button id="period2-btn" class="btn">Period 2</button>
-            <button id="period3-btn" class="btn">Period 3</button>
-            <button id="period4-btn" class="btn">Period 4</button>
-            <button id="period5-btn" class="btn">Period 5</button>
-            <button id="period6-btn" class="btn">Period 6</button>
+            <button id="period1-btn" class="btn">1200-1300</button>
+            <button id="period2-btn" class="btn">1400-1500</button>
+            <button id="period3-btn" class="btn">1500-1650</button>
+            <button id="period4-btn" class="btn">1750-1900</button>
+            <button id="period5-btn" class="btn">1900-1945</button>
+            <button id="period6-btn" class="btn">1945-2026</button>
           </div>
         </div>
       </div>
