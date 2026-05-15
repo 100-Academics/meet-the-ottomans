@@ -80,6 +80,27 @@ export function loadModel(url: string, appArg?: any): Promise<Model> {
           console.warn("Failed to add model entity to app.root:", e);
         }
 
+        // Add a simple collision + static rigidbody so the model can participate
+        // in basic physics/collision checks (coarse box collision).
+        try {
+          if (typeof modelEntity.addComponent === 'function') {
+            // Only add if not already present
+            if (!modelEntity.collision) {
+              modelEntity.addComponent('collision', {
+                type: 'box'
+              });
+            }
+            if (!modelEntity.rigidbody) {
+              modelEntity.addComponent('rigidbody', {
+                type: 'static'
+              });
+            }
+          }
+        } catch (e) {
+          // Non-fatal: if collision components aren't available, keep going
+          console.warn('Failed to add collision/rigidbody to model entity:', e);
+        }
+
         const m = new Model(modelEntity);
         m.modelName = modelEntity.name;
 
