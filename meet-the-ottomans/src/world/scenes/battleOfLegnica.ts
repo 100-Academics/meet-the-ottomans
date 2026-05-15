@@ -16,7 +16,8 @@ import {
   ContainerHandler,
   StandardMaterial,
   FILLMODE_FILL_WINDOW,
-  RESOLUTION_AUTO
+  RESOLUTION_AUTO,
+  Model
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -142,7 +143,9 @@ export async function battleOfLegnicaScene(
     // Example battle entity - replace with actual battle data and models
 try {
   const model = await loadModel('/stanford_dragon_pbr.glb', app);
+  const model2 = await loadModel('/stanford_bunny_pbr.glb', app);
   console.log('Model loaded and added to scene', model.modelName);
+  console.log('Model loaded and added to scene', model2.modelName);
 } catch (e) {
   console.error('Failed to load model:', e);
 }
