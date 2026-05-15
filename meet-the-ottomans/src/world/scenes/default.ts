@@ -82,7 +82,6 @@ async function defaultScene(
 ) {
 
 unloadAll(app);
-
   getSelectedTimePeriod();
   // precision on location here is very arbitrary. Four decimals should be enough.
   const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
