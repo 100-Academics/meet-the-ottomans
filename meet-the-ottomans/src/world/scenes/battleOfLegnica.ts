@@ -23,6 +23,7 @@ import {
 
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
+import { applyMeshCollision } from '../../util/applyCollision';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -125,16 +126,17 @@ export async function battleOfLegnicaScene(
       type: 'box',
       material: material
   });
-  ground.addComponent('collision', {
-    type: 'box',
-    halfExtents: new Vec3(0.5, 0.5, 0.5)
-  });
-  ground.addComponent('rigidbody', {
-    type: 'static'
-  });
   ground.setLocalScale(100, 1, 100);
   ground.setLocalPosition(0, -0.6, 0);
   app.root.addChild(ground);
+  try {
+    applyMeshCollision(ground, {
+      rigidbodyType: 'static',
+      includeDescendants: false
+    });
+  } catch (error) {
+    console.warn('Ground collision setup failed', error);
+  }
 
   // Create Grid
   const grid = new Entity('grid');

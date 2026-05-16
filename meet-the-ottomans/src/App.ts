@@ -21,7 +21,10 @@ async function setupApp(
   
 
   const AmmoLib = await loadAmmo();
-  console.log("Ammo initialized", AmmoLib);
+  console.log("Ammo initialized", {
+    runtime: (globalThis as { __ammoRuntime?: unknown }).__ammoRuntime ?? "unknown",
+    api: AmmoLib
+  });
   
   
   

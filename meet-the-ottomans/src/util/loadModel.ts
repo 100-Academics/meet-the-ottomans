@@ -1,4 +1,5 @@
-import { Vec3, type AppBase, type Asset, type BoundingBox, type Entity, type MeshInstance } from "playcanvas";
+import { Vec3, type AppBase, type Asset, type Entity } from "playcanvas";
+import { applyMeshCollision } from "./applyCollision";
 
 export class Model {
   modelEntity: Entity;
@@ -16,37 +17,9 @@ export class Model {
 export interface LoadModelOptions {
   rigidbodyType?: 'static' | 'dynamic' | 'kinematic';
   mass?: number;
-}
-
-function collectMeshInstances(entity: Entity, out: MeshInstance[] = []): MeshInstance[] {
-  const meshInstances = entity.render?.meshInstances;
-  if (meshInstances && meshInstances.length > 0) {
-    out.push(...meshInstances);
-  }
-
-  for (const child of entity.children) {
-    collectMeshInstances(child as Entity, out);
-  }
-
-  return out;
-}
-
-function getCombinedWorldBounds(entity: Entity): BoundingBox | null {
-  const meshInstances = collectMeshInstances(entity);
-  let bounds: BoundingBox | null = null;
-
-  for (const meshInstance of meshInstances) {
-    const aabb = meshInstance.aabb;
-    if (!aabb) continue;
-
-    if (!bounds) {
-      bounds = aabb.clone();
-    } else {
-      bounds.add(aabb);
-    }
-  }
-
-  return bounds;
+  autoCollision?: boolean;
+  convexHull?: boolean;
+  includeDescendants?: boolean;
 }
 
 export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptions = {}): Promise<Model> {
@@ -115,47 +88,18 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
           console.warn("Failed to add model entity to app.root:", e);
         }
 
-        // Add coarse collision + rigidbody so scene scripts can raycast and collide against models.
-        try {
+        if (options.autoCollision ?? true) {
           const rigidbodyType = options.rigidbodyType ?? 'dynamic';
-
-          if (typeof modelEntity.addComponent === 'function' && app.systems?.collision && app.systems?.rigidbody) {
-            if (!modelEntity.collision) {
-              const combinedBounds = getCombinedWorldBounds(modelEntity);
-              const collisionData: {
-                type: 'box';
-                halfExtents?: Vec3;
-                linearOffset?: Vec3;
-              } = { type: 'box' };
-
-              if (combinedBounds) {
-                const localCenter = modelEntity.getWorldTransform().clone().invert().transformPoint(combinedBounds.center.clone());
-                const halfExtents = combinedBounds.halfExtents.clone();
-                halfExtents.x = Math.max(halfExtents.x, 0.05);
-                halfExtents.y = Math.max(halfExtents.y, 0.05);
-                halfExtents.z = Math.max(halfExtents.z, 0.05);
-                collisionData.halfExtents = halfExtents;
-                collisionData.linearOffset = localCenter;
-              }
-
-              modelEntity.addComponent('collision', collisionData);
-            }
-
-            if (!modelEntity.rigidbody) {
-              const rigidbodyData: {
-                type: 'static' | 'dynamic' | 'kinematic';
-                mass?: number;
-              } = { type: rigidbodyType };
-
-              if (rigidbodyType === 'dynamic') {
-                rigidbodyData.mass = options.mass ?? 10;
-              }
-
-              modelEntity.addComponent('rigidbody', rigidbodyData);
-            }
+          try {
+            applyMeshCollision(modelEntity, {
+              rigidbodyType,
+              mass: options.mass,
+              convexHull: options.convexHull,
+              includeDescendants: options.includeDescendants
+            });
+          } catch (error) {
+            console.warn(`Collision setup failed for "${modelEntity.name}"`, error);
           }
-        } catch (e) {
-          console.warn('Failed to add collision/rigidbody to model entity:', e);
         }
 
         const m = new Model(modelEntity);
