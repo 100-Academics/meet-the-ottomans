@@ -1,4 +1,4 @@
-import { AppBase } from "playcanvas";
+import { AppBase, WasmModule } from "playcanvas";
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 
@@ -11,6 +11,7 @@ import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
 import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
+import Ammo from "ammojs-typed";
 
 
 /**
@@ -26,9 +27,19 @@ async function setupApp(
   onClick: (battle: Battle) => void,
   getSelectedTimePeriod: () => number //yucky
 ) {
+  
+
+  const AmmoLib = await Ammo();
+  console.log("Ammo initialized", AmmoLib);
+  // safer than window
+  (globalThis as any).Ammo = AmmoLib;
+  
+  
+  
+
   const app = new AppBase(canvas);
   getSelectedTimePeriod(); // call this once to initialize the time period
-
+  
   // If we're starting on the title screen, show it and wait for the user to start
   if (sceneNum === -2) {
     const renderFn = await titleScreen(canvas, app, onClick, getSelectedTimePeriod, sceneNum); 

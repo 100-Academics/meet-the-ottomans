@@ -1,14 +1,14 @@
-import type { Vec3 } from "playcanvas";
+import type { Entity, Vec3 } from "playcanvas";
 import type { Asset } from "playcanvas";
 
 export class Model {
-  modelEntity: any;
+  modelEntity: Entity;
   modelName?: string;
   modelPosition?: Vec3;
   modelRotation?: Vec3;
   modelScale?: Vec3;
 
-  constructor(modelEntity: any) {
+  constructor(modelEntity: Entity) {
     this.modelEntity = modelEntity;
     this.modelName = modelEntity?.name;
   }
@@ -92,7 +92,8 @@ export function loadModel(url: string, appArg?: any): Promise<Model> {
             }
             if (!modelEntity.rigidbody) {
               modelEntity.addComponent('rigidbody', {
-                type: 'static'
+                type: 'dynamic',
+                mass: 10
               });
             }
           }

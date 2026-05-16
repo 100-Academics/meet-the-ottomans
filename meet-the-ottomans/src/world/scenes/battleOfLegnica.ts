@@ -146,9 +146,10 @@ try {
   const model2 = await loadModel('/stanford_dragon_pbr.glb', app);
   console.log('Model loaded and added to scene', model.modelName);
   console.log('Model loaded and added to scene', model2.modelName);
+  
   model2.modelEntity.setLocalPosition(5, 0, 0);  
   } catch (e) {
     console.error('Failed to load model:', e);
   }
-
+  
 }

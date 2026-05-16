@@ -1,5 +1,6 @@
 import './style.css'
 import { setupApp } from './App'
+import Ammo from 'ammojs3';
 
 document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
   <div>
@@ -10,7 +11,11 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
 `
 
 const onClickStuff = () => {
-  // Click handler - now managed in scenes
+  // Click handler - managed in scenes
 }
+
+
+
+
 
 const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, onClickStuff, () => -1);
