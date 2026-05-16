@@ -1,17 +1,8 @@
-import { AppBase, WasmModule } from "playcanvas";
-// @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
-import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
-
-
+import { AppBase } from "playcanvas";
 import { Battle } from './world/Battle';
-
-// @ts-expect-error - local JS utility has no .d.ts declarations
-import { applySphereHeightmap } from '../scripts/world/sphereHeightmap.js';
-// @ts-expect-error - local JS utility has no .d.ts declarations
-import { applySphereTexture } from '../scripts/world/sphereTexture.js';
 import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
-import Ammo from "ammojs-typed";
+import { loadAmmo } from "./ammo.js";
 
 
 /**
@@ -29,10 +20,8 @@ async function setupApp(
 ) {
   
 
-  const AmmoLib = await Ammo();
+  const AmmoLib = await loadAmmo();
   console.log("Ammo initialized", AmmoLib);
-  // safer than window
-  (globalThis as any).Ammo = AmmoLib;
   
   
   

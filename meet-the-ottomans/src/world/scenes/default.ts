@@ -5,6 +5,9 @@ import {
   RenderComponentSystem,
   CameraComponentSystem,
   ScriptComponentSystem,
+  LightComponentSystem,
+  CollisionComponentSystem,
+  RigidBodyComponentSystem,
   TextureHandler,
   ContainerHandler,
   FILLMODE_FILL_WINDOW,
@@ -119,7 +122,10 @@ unloadAll(app);
   createOptions.componentSystems = [
     RenderComponentSystem,
     CameraComponentSystem,
-    ScriptComponentSystem
+    ScriptComponentSystem,
+    LightComponentSystem,
+    CollisionComponentSystem,
+    RigidBodyComponentSystem
   ];
   createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
 

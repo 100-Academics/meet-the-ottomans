@@ -12,12 +12,13 @@ import {
   CameraComponentSystem,
   ScriptComponentSystem,
   LightComponentSystem,
+  CollisionComponentSystem,
+  RigidBodyComponentSystem,
   TextureHandler,
   ContainerHandler,
   StandardMaterial,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
-  Model
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -31,10 +32,12 @@ import type { Battle } from "../Battle";
 export async function battleOfLegnicaScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
-  onClick: (battle: Battle) => void,
-  sceneNum: number
+  _onClick: (battle: Battle) => void,
+  _sceneNum: number
 ) {
   unloadAll(app);
+  app.mouse?.off();
+  app.keyboard?.off();
 
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -62,7 +65,9 @@ export async function battleOfLegnicaScene(
       RenderComponentSystem,
       CameraComponentSystem,
       ScriptComponentSystem,
-      LightComponentSystem
+      LightComponentSystem,
+      CollisionComponentSystem,
+      RigidBodyComponentSystem
     ];
     createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
 
@@ -91,6 +96,10 @@ export async function battleOfLegnicaScene(
     app.start();
   }
 
+  if (!app.keyboard) {
+    app.keyboard = new Keyboard(window);
+  }
+
   // Create Camera
   const camera = new Entity('camera');
   camera.addComponent('camera', {
@@ -116,6 +125,13 @@ export async function battleOfLegnicaScene(
       type: 'box',
       material: material
   });
+  ground.addComponent('collision', {
+    type: 'box',
+    halfExtents: new Vec3(0.5, 0.5, 0.5)
+  });
+  ground.addComponent('rigidbody', {
+    type: 'static'
+  });
   ground.setLocalScale(100, 1, 100);
   ground.setLocalPosition(0, -0.6, 0);
   app.root.addChild(ground);
@@ -130,20 +146,24 @@ export async function battleOfLegnicaScene(
   // Lighting
   app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
 
-  const light = new Entity('directional-light');
-  light.addComponent('light', {
-    type: 'directional',
-    color: new Color(1, 1, 1),
-    intensity: 1,
-    castShadows: true
-  });
-  light.setLocalEulerAngles(45, 30, 0);
-  app.root.addChild(light);
+  if (app.systems.light) {
+    const light = new Entity('directional-light');
+    light.addComponent('light', {
+      type: 'directional',
+      color: new Color(1, 1, 1),
+      intensity: 1,
+      castShadows: true
+    });
+    light.setLocalEulerAngles(45, 30, 0);
+    app.root.addChild(light);
+  }
 
     // Example battle entity - replace with actual battle data and models
 try {
-  const model = await loadModel('/stanford_dragon_pbr.glb', app);
-  const model2 = await loadModel('/stanford_dragon_pbr.glb', app);
+  const model = await loadModel('/stanford_dragon_pbr.glb', app, { rigidbodyType: 'static' });
+  const model2 = await loadModel('/stanford_dragon_pbr.glb', app, { rigidbodyType: 'static' });
+  model.modelEntity.tags.add('model-obstacle');
+  model2.modelEntity.tags.add('model-obstacle');
   console.log('Model loaded and added to scene', model.modelName);
   console.log('Model loaded and added to scene', model2.modelName);
   

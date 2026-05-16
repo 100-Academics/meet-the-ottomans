@@ -1,4 +1,4 @@
-import { ScriptType, Vec3, math, Mouse, KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE } from 'playcanvas';
+import { ScriptType, Vec3, math, Mouse, KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, type Entity } from 'playcanvas';
 
 export class FirstPersonCamera extends ScriptType {
     public eulers = new Vec3();
@@ -10,6 +10,8 @@ export class FirstPersonCamera extends ScriptType {
     public velocity = new Vec3();
     public playerHeight = 2;
     public groundHeight = 0;
+    public collisionProbePadding = 0.3;
+    public collisionTag = 'model-obstacle';
     
     private keys: Record<string, boolean> = {};
 
@@ -44,6 +46,88 @@ export class FirstPersonCamera extends ScriptType {
         this.eulers.x = math.clamp(this.eulers.x, -90, 90);
     }
 
+    private getEntityWorldAabb(entity: Entity): {
+        minX: number;
+        minY: number;
+        minZ: number;
+        maxX: number;
+        maxY: number;
+        maxZ: number;
+    } | null {
+        let minX = Number.POSITIVE_INFINITY;
+        let minY = Number.POSITIVE_INFINITY;
+        let minZ = Number.POSITIVE_INFINITY;
+        let maxX = Number.NEGATIVE_INFINITY;
+        let maxY = Number.NEGATIVE_INFINITY;
+        let maxZ = Number.NEGATIVE_INFINITY;
+        let found = false;
+
+        const visit = (node: Entity) => {
+            const meshInstances = node.render?.meshInstances;
+            if (meshInstances && meshInstances.length > 0) {
+                for (const meshInstance of meshInstances) {
+                    const aabb = meshInstance.aabb;
+                    if (!aabb) {
+                        continue;
+                    }
+                    const min = aabb.getMin();
+                    const max = aabb.getMax();
+                    minX = Math.min(minX, min.x);
+                    minY = Math.min(minY, min.y);
+                    minZ = Math.min(minZ, min.z);
+                    maxX = Math.max(maxX, max.x);
+                    maxY = Math.max(maxY, max.y);
+                    maxZ = Math.max(maxZ, max.z);
+                    found = true;
+                }
+            }
+
+            for (const child of node.children) {
+                visit(child as Entity);
+            }
+        };
+
+        visit(entity);
+
+        if (!found) {
+            return null;
+        }
+
+        return { minX, minY, minZ, maxX, maxY, maxZ };
+    }
+
+    private isBlocked(nextPos: Vec3): boolean {
+        const obstacles = this.app.root.findByTag(this.collisionTag) as Entity[];
+        if (!obstacles || obstacles.length === 0) {
+            return false;
+        }
+
+        const playerRadius = this.collisionProbePadding;
+        const playerMinY = nextPos.y - this.playerHeight;
+        const playerMaxY = nextPos.y + 0.2;
+
+        for (const obstacle of obstacles) {
+            if (obstacle === this.entity) {
+                continue;
+            }
+
+            const aabb = this.getEntityWorldAabb(obstacle);
+            if (!aabb) {
+                continue;
+            }
+
+            const xOverlap = nextPos.x + playerRadius > aabb.minX && nextPos.x - playerRadius < aabb.maxX;
+            const zOverlap = nextPos.z + playerRadius > aabb.minZ && nextPos.z - playerRadius < aabb.maxZ;
+            const yOverlap = playerMaxY > aabb.minY && playerMinY < aabb.maxY;
+
+            if (xOverlap && zOverlap && yOverlap) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     update(dt: number) {
         this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, 0);
 
@@ -73,7 +157,10 @@ export class FirstPersonCamera extends ScriptType {
         
         if (moveDir.lengthSq() > 0) {
             moveDir.normalize().mulScalar(this.moveSpeed * dt);
-            pos.add(moveDir);
+            const proposedPos = pos.clone().add(moveDir);
+            if (!this.isBlocked(proposedPos)) {
+                pos.copy(proposedPos);
+            }
         }
 
         // Space to jump

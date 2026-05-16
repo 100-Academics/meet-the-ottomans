@@ -1,6 +1,5 @@
 import './style.css'
 import { setupApp } from './App'
-import Ammo from 'ammojs3';
 
 document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
   <div>

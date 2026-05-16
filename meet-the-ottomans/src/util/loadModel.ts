@@ -1,5 +1,4 @@
-import type { Entity, Vec3 } from "playcanvas";
-import type { Asset } from "playcanvas";
+import { Vec3, type AppBase, type Asset, type BoundingBox, type Entity, type MeshInstance } from "playcanvas";
 
 export class Model {
   modelEntity: Entity;
@@ -14,8 +13,44 @@ export class Model {
   }
 }
 
-export function loadModel(url: string, appArg?: any): Promise<Model> {
-  const app = appArg ?? (globalThis as any).app;
+export interface LoadModelOptions {
+  rigidbodyType?: 'static' | 'dynamic' | 'kinematic';
+  mass?: number;
+}
+
+function collectMeshInstances(entity: Entity, out: MeshInstance[] = []): MeshInstance[] {
+  const meshInstances = entity.render?.meshInstances;
+  if (meshInstances && meshInstances.length > 0) {
+    out.push(...meshInstances);
+  }
+
+  for (const child of entity.children) {
+    collectMeshInstances(child as Entity, out);
+  }
+
+  return out;
+}
+
+function getCombinedWorldBounds(entity: Entity): BoundingBox | null {
+  const meshInstances = collectMeshInstances(entity);
+  let bounds: BoundingBox | null = null;
+
+  for (const meshInstance of meshInstances) {
+    const aabb = meshInstance.aabb;
+    if (!aabb) continue;
+
+    if (!bounds) {
+      bounds = aabb.clone();
+    } else {
+      bounds.add(aabb);
+    }
+  }
+
+  return bounds;
+}
+
+export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptions = {}): Promise<Model> {
+  const app = appArg ?? ((globalThis as any).app as AppBase | undefined);
   if (!app || !app.assets) {
     return Promise.reject(new Error("PlayCanvas `app` not found on globalThis and no appArg provided"));
   }
@@ -80,25 +115,46 @@ export function loadModel(url: string, appArg?: any): Promise<Model> {
           console.warn("Failed to add model entity to app.root:", e);
         }
 
-        // Add a simple collision + static rigidbody so the model can participate
-        // in basic physics/collision checks (coarse box collision).
+        // Add coarse collision + rigidbody so scene scripts can raycast and collide against models.
         try {
-          if (typeof modelEntity.addComponent === 'function') {
-            // Only add if not already present
+          const rigidbodyType = options.rigidbodyType ?? 'dynamic';
+
+          if (typeof modelEntity.addComponent === 'function' && app.systems?.collision && app.systems?.rigidbody) {
             if (!modelEntity.collision) {
-              modelEntity.addComponent('collision', {
-                type: 'box'
-              });
+              const combinedBounds = getCombinedWorldBounds(modelEntity);
+              const collisionData: {
+                type: 'box';
+                halfExtents?: Vec3;
+                linearOffset?: Vec3;
+              } = { type: 'box' };
+
+              if (combinedBounds) {
+                const localCenter = modelEntity.getWorldTransform().clone().invert().transformPoint(combinedBounds.center.clone());
+                const halfExtents = combinedBounds.halfExtents.clone();
+                halfExtents.x = Math.max(halfExtents.x, 0.05);
+                halfExtents.y = Math.max(halfExtents.y, 0.05);
+                halfExtents.z = Math.max(halfExtents.z, 0.05);
+                collisionData.halfExtents = halfExtents;
+                collisionData.linearOffset = localCenter;
+              }
+
+              modelEntity.addComponent('collision', collisionData);
             }
+
             if (!modelEntity.rigidbody) {
-              modelEntity.addComponent('rigidbody', {
-                type: 'dynamic',
-                mass: 10
-              });
+              const rigidbodyData: {
+                type: 'static' | 'dynamic' | 'kinematic';
+                mass?: number;
+              } = { type: rigidbodyType };
+
+              if (rigidbodyType === 'dynamic') {
+                rigidbodyData.mass = options.mass ?? 10;
+              }
+
+              modelEntity.addComponent('rigidbody', rigidbodyData);
             }
           }
         } catch (e) {
-          // Non-fatal: if collision components aren't available, keep going
           console.warn('Failed to add collision/rigidbody to model entity:', e);
         }
 
