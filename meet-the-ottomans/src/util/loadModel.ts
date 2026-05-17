@@ -1,6 +1,12 @@
 import { Vec3, type AppBase, type Asset, type Entity } from "playcanvas";
 import { applyMeshCollision } from "./applyCollision";
 
+const modelAssetUrls = import.meta.glob("../assets/**/*.{glb,gltf}", {
+  eager: true,
+  query: "?url",
+  import: "default",
+}) as Record<string, string>;
+
 export class Model {
   modelEntity: Entity;
   modelName?: string;
@@ -55,18 +61,44 @@ function toVec3(value?: Vec3 | [number, number, number]): Vec3 | undefined {
   return new Vec3(value[0], value[1], value[2]);
 }
 
+function resolveModelUrl(url: string): string {
+  const normalizedPath = url.replace(/\\/g, "/").split("?")[0].replace(/^\/+/, "");
+  const pathWithoutAssetsPrefix = normalizedPath.startsWith("assets/")
+    ? normalizedPath.slice("assets/".length)
+    : normalizedPath;
+
+  const candidates = [
+    `../assets/${normalizedPath}`,
+    `../assets/models/${pathWithoutAssetsPrefix}`,
+    `../assets/world/${normalizedPath}`,
+    `../${normalizedPath}`,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = modelAssetUrls[candidate];
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return url;
+}
+
 export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptions = {}): Promise<Model> {
   const app = appArg ?? ((globalThis as any).app as AppBase | undefined);
   if (!app || !app.assets) {
     return Promise.reject(new Error("PlayCanvas `app` not found on globalThis and no appArg provided"));
   }
 
+  const resolvedUrl = resolveModelUrl(url);
+
   return new Promise((resolve, reject) => {
     try {
-      app.assets.loadFromUrl(url, "container", (err: any, asset?: Asset) => {
+      app.assets.loadFromUrl(resolvedUrl, "container", (err: any, asset?: Asset) => {
         if (err) {
-          console.error("Failed to load model:", err);
-          return reject(err);
+          const withContext = new Error(`Failed to load model from "${url}" (resolved: "${resolvedUrl}")`);
+          console.error(withContext.message, err);
+          return reject(withContext);
         }
 
         if (!asset || !(asset as any).resource) {

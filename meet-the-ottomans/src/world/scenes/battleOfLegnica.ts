@@ -35,6 +35,9 @@ export async function battleOfLegnicaScene(
   unloadAll(app);
   app.mouse?.off();
   app.keyboard?.off();
+  document.body.style.cursor = 'default';
+  const staleHoverLabel = document.getElementById('battle-hover-label');
+  staleHoverLabel?.remove();
 
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -113,20 +116,34 @@ export async function battleOfLegnicaScene(
   app.root.addChild(camera);
 
   // Create Ground
-  try {
-    const ground = await loadModel('/world/battlefields/example.gltf', app, {
-      rigidbodyType: 'static',
-      includeDescendants: true,
-      position: new Vec3(0, 0, 0),
-      rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(0.001, 0.001, 0.001)
-    });
-    ground.modelEntity.name = 'ground';
-    ground.modelEntity.tags.add('ground');
-    console.log('Ground model loaded and added to scene', ground.modelName);
+  const groundOptions = {
+    rigidbodyType: 'static' as const,
+    includeDescendants: true,
+    position: new Vec3(0, 0, 0),
+    rotation: new Vec3(0, 0, 0),
+    scale: new Vec3(0.001, 0.001, 0.001)
+  };
+  const battlefieldCandidates = [
+    '/world/battlefields/example.gltf',
+    '/world/battlefields/legnica.glb'
+  ];
 
-  } catch (error) {
-    console.warn('Ground collision setup failed', error);
+  let groundLoaded = false;
+  for (const battlefieldPath of battlefieldCandidates) {
+    try {
+      const ground = await loadModel(battlefieldPath, app, groundOptions);
+      ground.modelEntity.name = 'ground';
+      ground.modelEntity.tags.add('ground');
+      console.log(`Ground model loaded and added to scene (${battlefieldPath})`, ground.modelName);
+      groundLoaded = true;
+      break;
+    } catch (error) {
+      console.warn(`Ground model load failed (${battlefieldPath})`, error);
+    }
+  }
+
+  if (!groundLoaded) {
+    console.warn('Ground collision setup failed: no battlefield model could be loaded');
   }
 
 
