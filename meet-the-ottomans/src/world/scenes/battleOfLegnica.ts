@@ -32,6 +32,8 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { FirstPersonCamera } from '../../util/FirstPersonCamera';
 import type { Battle } from "../Battle";
 
+const groundModelPath = '/world/battlefields/Legnica.glb';
+
 /**
  * Checks if an entity or any of its parents in the hierarchy has the specified tag.
  * Walks up the parent chain from the given entity to see if the tag exists anywhere.
@@ -73,6 +75,7 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
 
   // If the physics system isn't available, we can't raycast
   if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
+    console.log('[Raycast] rigidbody system or raycast function not available');
     return undefined;
   }
 
@@ -362,7 +365,7 @@ export async function battleOfLegnicaScene(
 
   // Load and set up the battlefield ground model
   try {
-    const groundModelPath = '/world/battlefields/Huashan.glb';
+
     const ground = await loadModel(groundModelPath, app, {
       rigidbodyType: 'static',  // Ground doesn't move, it's static
       includeDescendants: true, // Load child entities too
@@ -508,5 +511,7 @@ export async function battleOfLegnicaScene(
     light.setLocalEulerAngles(45, 30, 0);  // Light coming from above and at an angle
     app.root.addChild(light);
   }
+
+  // TODO enemy placement
 
 }
