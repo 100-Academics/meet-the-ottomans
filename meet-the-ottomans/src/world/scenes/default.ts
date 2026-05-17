@@ -29,8 +29,6 @@ import {
   createSphere,
   EVENT_MOUSEDOWN,
 } from "playcanvas";
-// @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
-import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 
 import { throttle } from '../../utils';
 import textureUrl from '../../assets/world/earth_texture.jpg'
@@ -270,13 +268,6 @@ unloadAll(app);
   camera.setPosition(new Vec3(4, 1, 4));
   app.root.addChild(camera);
   camera.lookAt(sphere.getPosition());
-
-  // Create grid entity
-  const grid = new Entity('grid');
-  grid.addComponent('script');
-  grid.script?.create(Grid);
-  grid.setLocalScale(1000, 1000, 1000);
-  app.root.addChild(grid);
 
   // Create a picker for mouse interaction
   const picker = new Picker(app, 1, 1);
