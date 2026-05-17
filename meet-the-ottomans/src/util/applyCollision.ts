@@ -212,9 +212,8 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
 
   if (!isAmmojs3Runtime()) {
     console.warn(
-      `Using primitive collision fallback for "${entity.name}" because ammojs3 runtime is not active (runtime="${getAmmoRuntimeName() || "unknown"}")`
+      `ammojs3 runtime is not active (runtime="${getAmmoRuntimeName() || "unknown"}"), attempting mesh collision for "${entity.name}" with best-effort fallback`
     );
-    return applyPrimitiveFallbackCollision(entity, includeDescendants);
   }
 
   ensureCompoundParentCollision(entity);

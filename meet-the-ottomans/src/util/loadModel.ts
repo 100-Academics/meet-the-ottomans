@@ -7,6 +7,49 @@ const modelAssetUrls = import.meta.glob("../assets/**/*.{glb,gltf}", {
   import: "default",
 }) as Record<string, string>;
 
+const MODEL_ASSET_PREFIX = "../assets/";
+
+function normalizeRequestedModelPath(url: string): string {
+  const normalizedPath = url.replace(/\\/g, "/").split("?")[0].replace(/^\/+/, "");
+  return normalizedPath.startsWith("assets/")
+    ? normalizedPath.slice("assets/".length)
+    : normalizedPath;
+}
+
+function buildModelPathIndex(): Map<string, string> {
+  const index = new Map<string, string>();
+
+  for (const [sourcePath, resolvedUrl] of Object.entries(modelAssetUrls)) {
+    if (!sourcePath.startsWith(MODEL_ASSET_PREFIX)) {
+      continue;
+    }
+
+    const assetRelativePath = sourcePath.slice(MODEL_ASSET_PREFIX.length);
+    const aliases = new Set<string>([
+      assetRelativePath,
+      `assets/${assetRelativePath}`,
+    ]);
+
+    if (assetRelativePath.startsWith("models/")) {
+      aliases.add(assetRelativePath.slice("models/".length));
+    }
+
+    if (assetRelativePath.startsWith("world/")) {
+      aliases.add(assetRelativePath.slice("world/".length));
+    }
+
+    for (const alias of aliases) {
+      if (!index.has(alias)) {
+        index.set(alias, resolvedUrl);
+      }
+    }
+  }
+
+  return index;
+}
+
+const modelPathIndex = buildModelPathIndex();
+
 export class Model {
   modelEntity: Entity;
   modelName?: string;
@@ -62,10 +105,7 @@ function toVec3(value?: Vec3 | [number, number, number]): Vec3 | undefined {
 }
 
 function resolveModelUrl(url: string): string | undefined {
-  const normalizedPath = url.replace(/\\/g, "/").split("?")[0].replace(/^\/+/, "");
-  const pathWithoutAssetsPrefix = normalizedPath.startsWith("assets/")
-    ? normalizedPath.slice("assets/".length)
-    : normalizedPath;
+  const pathWithoutAssetsPrefix = normalizeRequestedModelPath(url);
   const pathWithoutModelsPrefix = pathWithoutAssetsPrefix.startsWith("models/")
     ? pathWithoutAssetsPrefix.slice("models/".length)
     : pathWithoutAssetsPrefix;
@@ -74,13 +114,15 @@ function resolveModelUrl(url: string): string | undefined {
     : pathWithoutAssetsPrefix;
 
   const candidates = [
-    `../assets/${pathWithoutAssetsPrefix}`,
-    `../assets/models/${pathWithoutModelsPrefix}`,
-    `../assets/world/${pathWithoutWorldPrefix}`,
+    pathWithoutAssetsPrefix,
+    pathWithoutModelsPrefix,
+    pathWithoutWorldPrefix,
+    `models/${pathWithoutModelsPrefix}`,
+    `world/${pathWithoutWorldPrefix}`,
   ];
 
   for (const candidate of candidates) {
-    const resolved = modelAssetUrls[candidate];
+    const resolved = modelPathIndex.get(candidate);
     if (resolved) {
       return resolved;
     }

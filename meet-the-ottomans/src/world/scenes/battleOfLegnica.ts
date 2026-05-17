@@ -16,6 +16,10 @@ import {
   RigidBodyComponentSystem,
   TextureHandler,
   ContainerHandler,
+  Asset,
+  AssetListLoader,
+  TEXTURETYPE_RGBP,
+  Texture,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
 } from "playcanvas";
@@ -99,6 +103,30 @@ export async function battleOfLegnicaScene(
     app.keyboard = new Keyboard(window);
   }
 
+  const envAtlasAsset = app.assets.find('battle-env-atlas') ?? new Asset(
+    'battle-env-atlas',
+    'texture',
+    { url: '/environment-map.png' },
+    {
+      type: TEXTURETYPE_RGBP,
+      mipmaps: false
+    }
+  );
+
+  if (!app.assets.find('battle-env-atlas')) {
+    app.assets.add(envAtlasAsset);
+  }
+
+  await new Promise<void>((resolve) => {
+    if (envAtlasAsset.loaded) {
+      resolve();
+      return;
+    }
+    new AssetListLoader([envAtlasAsset], app.assets).load(() => resolve());
+  });
+
+  app.scene.envAtlas = envAtlasAsset.resource as Texture;
+
   // Create Camera
   const camera = new Entity('camera');
   camera.addComponent('camera', {
@@ -110,13 +138,17 @@ export async function battleOfLegnicaScene(
 
   // Add Camera Controls
   camera.addComponent('script');
-  camera.script?.create(FirstPersonCamera);
+  const cameraController = camera.script?.create(FirstPersonCamera) as FirstPersonCamera | undefined;
+  if (cameraController) {
+    cameraController.groundTag = 'ground';
+  }
 
   app.root.addChild(camera);
 
   // Create Ground
   try {
-    const ground = await loadModel('/world/battlefields/hushan.glb', app, {
+    const groundModelPath = '/world/battlefields/legnica.glb';
+    const ground = await loadModel(groundModelPath, app, {
       rigidbodyType: 'static',
       includeDescendants: true,
       position: new Vec3(0, 0, 0),
@@ -125,7 +157,10 @@ export async function battleOfLegnicaScene(
     });
     ground.modelEntity.name = 'ground';
     ground.modelEntity.tags.add('ground');
-    console.log('Ground model loaded and added to scene', ground.modelName);
+    console.log('Ground model loaded and added to scene', {
+      path: groundModelPath,
+      name: ground.modelName
+    });
 
   } catch (error) {
     console.warn('Ground collision setup failed', error);
