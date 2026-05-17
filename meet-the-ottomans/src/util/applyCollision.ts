@@ -18,11 +18,16 @@ function isAmmojs3Runtime(): boolean {
   return getAmmoRuntimeName().startsWith("ammojs3");
 }
 
-function getRenderMeshes(entity: Entity): unknown[] {
+interface MeshColliderSource {
+  mesh: unknown;
+  node?: unknown;
+}
+
+function getMeshColliderSources(entity: Entity): MeshColliderSource[] {
   const render = entity.render as
     | {
         meshes?: unknown[];
-        meshInstances?: Array<{ mesh?: unknown }>;
+        meshInstances?: Array<{ mesh?: unknown; node?: unknown }>;
       }
     | undefined;
 
@@ -30,21 +35,23 @@ function getRenderMeshes(entity: Entity): unknown[] {
     return [];
   }
 
-  if (Array.isArray(render.meshes) && render.meshes.length > 0) {
-    return render.meshes;
-  }
-
   if (Array.isArray(render.meshInstances) && render.meshInstances.length > 0) {
     return render.meshInstances
-      .map((meshInstance) => meshInstance.mesh)
-      .filter((mesh): mesh is unknown => mesh !== undefined && mesh !== null);
+      .filter((meshInstance): meshInstance is { mesh: unknown; node?: unknown } => meshInstance.mesh !== undefined && meshInstance.mesh !== null)
+      .map((meshInstance) => ({ mesh: meshInstance.mesh, node: meshInstance.node }));
+  }
+
+  if (Array.isArray(render.meshes) && render.meshes.length > 0) {
+    return render.meshes
+      .filter((mesh): mesh is unknown => mesh !== undefined && mesh !== null)
+      .map((mesh) => ({ mesh, node: entity }));
   }
 
   return [];
 }
 
 function collectRenderableEntities(entity: Entity, includeDescendants: boolean, out: Entity[] = []): Entity[] {
-  if (getRenderMeshes(entity).length > 0) {
+  if (getMeshColliderSources(entity).length > 0) {
     out.push(entity);
   }
 
@@ -176,17 +183,34 @@ function ensureCompoundParentCollision(entity: Entity): void {
   }
 }
 
-function addSingleMeshCollider(parent: Entity, meshes: unknown[], convexHull: boolean): boolean {
+function addSingleMeshCollider(parent: Entity, source: MeshColliderSource, convexHull: boolean): boolean {
   const colliderEntity = new Entity(`${parent.name || "mesh"}-mesh-collider`);
   colliderEntity.tags.add(GENERATED_MESH_COLLIDER_TAG);
+  parent.addChild(colliderEntity);
 
   try {
+    const sourceNode = source.node as
+      | {
+          getPosition?: () => Vec3;
+          getEulerAngles?: () => Vec3;
+        }
+      | undefined;
+
+    const sourcePosition = sourceNode?.getPosition?.();
+    if (sourcePosition) {
+      colliderEntity.setPosition(sourcePosition);
+    }
+
+    const sourceEulerAngles = sourceNode?.getEulerAngles?.();
+    if (sourceEulerAngles) {
+      colliderEntity.setEulerAngles(sourceEulerAngles);
+    }
+
     colliderEntity.addComponent("collision", {
       type: "mesh",
-      render: { meshes },
+      render: { meshes: [source.mesh] },
       convexHull
     });
-    parent.addChild(colliderEntity);
     return true;
   } catch (error) {
     colliderEntity.destroy();
@@ -222,15 +246,21 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
   ensureCompoundParentCollision(entity);
 
   const useConvexHull = options.convexHull ?? rigidbodyType !== "static";
+  const meshCollisionMethod = useConvexHull ? "mesh-convex-hull" : "mesh-trimesh";
+  console.log(`[Collision] "${entity.name}" collision method candidate: ${meshCollisionMethod}`);
 
   let created = 0;
   for (const renderEntity of renderEntities) {
-    const meshes = getRenderMeshes(renderEntity);
-    if (meshes.length === 0) {
+    const meshSources = getMeshColliderSources(renderEntity);
+    if (meshSources.length === 0) {
       continue;
     }
 
-    if (addSingleMeshCollider(renderEntity, meshes, useConvexHull)) {
+    for (const meshSource of meshSources) {
+      if (!addSingleMeshCollider(renderEntity, meshSource, useConvexHull)) {
+        continue;
+      }
+
       created++;
       const pos = renderEntity.getPosition();
       console.log(`[Collision] Created ${useConvexHull ? "convex-hull" : "trimesh"} collider on "${renderEntity.name}" at (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`);
@@ -238,10 +268,11 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
   }
 
   if (created === 0) {
-    console.warn(`Falling back to primitive collision for "${entity.name}"`);
+    console.warn(`[Collision] "${entity.name}" collision method in use: primitive-cylinder (mesh creation failed)`);
     return applyPrimitiveFallbackCollision(entity, includeDescendants);
   }
 
+  console.log(`[Collision] "${entity.name}" collision method in use: ${meshCollisionMethod}`);
   console.log(`[Collision] "${entity.name}" complete — ${created} collider(s), rigidbody: ${entity.rigidbody?.type}, collision: ${entity.collision?.type}`);
   return created;
 }

@@ -32,6 +32,132 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { FirstPersonCamera } from '../../util/FirstPersonCamera';
 import type { Battle } from "../Battle";
 
+function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
+  let current: Entity | null = entity;
+  while (current) {
+    if (current.tags?.has(tag)) {
+      return true;
+    }
+    current = (current.parent as Entity | null) ?? null;
+  }
+  return false;
+}
+
+function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: string): number | undefined {
+  const rigidbodySystem = (app.systems as any).rigidbody as
+    | {
+        raycastAll?: (start: Vec3, end: Vec3) => Array<{ entity?: Entity | null; point?: Vec3; hitFraction?: number }> | undefined;
+        raycastFirst?: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
+      }
+    | undefined;
+
+  if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
+    return undefined;
+  }
+
+  const start = new Vec3(x, 300, z);
+  const end = new Vec3(x, -300, z);
+
+  if (typeof rigidbodySystem.raycastAll === 'function') {
+    const hits = rigidbodySystem.raycastAll(start, end);
+    if (hits && hits.length > 0) {
+      let bestFraction = Number.POSITIVE_INFINITY;
+      let bestFractionY: number | undefined;
+      let highestY: number | undefined;
+      for (const hit of hits) {
+        if (!hit?.point) {
+          continue;
+        }
+        if (!Number.isFinite(hit.point.y)) {
+          continue;
+        }
+        const hitEntity = hit.entity ?? null;
+        if (!hasTagInHierarchy(hitEntity, groundTag)) {
+          continue;
+        }
+        const hitFraction = hit.hitFraction;
+        if (Number.isFinite(hitFraction) && hitFraction < bestFraction) {
+          bestFraction = hitFraction;
+          bestFractionY = hit.point.y;
+        }
+        if (highestY === undefined || hit.point.y > highestY) {
+          highestY = hit.point.y;
+        }
+      }
+      if (bestFractionY !== undefined) {
+        return bestFractionY;
+      }
+      if (highestY !== undefined) {
+        return highestY;
+      }
+    }
+  }
+
+  const firstHit = rigidbodySystem.raycastFirst(start, end);
+  if (!firstHit?.point) {
+    return undefined;
+  }
+
+  const firstEntity = firstHit.entity ?? null;
+  if (!hasTagInHierarchy(firstEntity, groundTag)) {
+    return undefined;
+  }
+
+  return Number.isFinite(firstHit.point.y) ? firstHit.point.y : undefined;
+}
+
+function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number } | undefined {
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+  let found = false;
+
+  const visit = (node: Entity) => {
+    const meshInstances = node.render?.meshInstances;
+    if (meshInstances && meshInstances.length > 0) {
+      for (const meshInstance of meshInstances) {
+        const aabb = meshInstance.aabb;
+        if (!aabb) {
+          continue;
+        }
+
+        const min = aabb.getMin();
+        const max = aabb.getMax();
+        if (
+          !Number.isFinite(min.x) ||
+          !Number.isFinite(min.z) ||
+          !Number.isFinite(max.x) ||
+          !Number.isFinite(max.y) ||
+          !Number.isFinite(max.z)
+        ) {
+          continue;
+        }
+
+        minX = Math.min(minX, min.x);
+        maxX = Math.max(maxX, max.x);
+        minZ = Math.min(minZ, min.z);
+        maxZ = Math.max(maxZ, max.z);
+        maxY = Math.max(maxY, max.y);
+        found = true;
+      }
+    }
+
+    for (const child of node.children) {
+      visit(child as Entity);
+    }
+  };
+
+  visit(entity);
+
+  if (!found) {
+    return undefined;
+  }
+
+  return { minX, maxX, minZ, maxZ, maxY };
+}
+
 export async function battleOfLegnicaScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
@@ -139,7 +265,7 @@ export async function battleOfLegnicaScene(
     clearColor: new Color(0.14117647, 0.14117647, 0.14117647),
     fov: 90
   });
-  camera.setPosition(10, 10, 10);
+  camera.setPosition(0, 8, 8);
   camera.lookAt(Vec3.ZERO);
 
   // Add Camera Controls
@@ -184,6 +310,68 @@ export async function battleOfLegnicaScene(
 
     if (!groundRb && !groundCol && childColliders.length === 0) {
       console.error('[Ground] NO collision/rigidbody detected — raycasting will fail!');
+    }
+
+    let spawnResolved = false;
+    const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;
+    const bounds = getRenderableBounds(ground.modelEntity);
+    if (bounds) {
+      const spawnX = (bounds.minX + bounds.maxX) * 0.5;
+      const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
+      const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
+      const surfaceY = seededGroundY ?? bounds.maxY;
+      const spawnY = surfaceY + spawnSurfaceOffset;
+      camera.setPosition(spawnX, spawnY, spawnZ);
+
+      if (cameraController) {
+        cameraController.groundHeight = surfaceY;
+      }
+      spawnResolved = true;
+      console.log(
+        `[Spawn] camera placed on terrain surface at (${spawnX.toFixed(2)}, ${spawnY.toFixed(2)}, ${spawnZ.toFixed(2)}), surfaceY ${surfaceY.toFixed(2)}, seededRayY ${seededGroundY?.toFixed(2) ?? "n/a"}`
+      );
+    }
+
+    if (!spawnResolved) {
+      const spawnCandidates: Vec3[] = [];
+      const spawnSearchRadius = 24;
+      const spawnSearchStep = 8;
+      for (let x = -spawnSearchRadius; x <= spawnSearchRadius; x += spawnSearchStep) {
+        for (let z = -spawnSearchRadius; z <= spawnSearchRadius; z += spawnSearchStep) {
+          spawnCandidates.push(new Vec3(x, 0, z));
+        }
+      }
+
+      let bestSpawnCandidate: Vec3 | undefined;
+      let bestSpawnGroundY: number | undefined;
+
+      for (const candidate of spawnCandidates) {
+        const hitY = getHighestGroundHitY(app, candidate.x, candidate.z, 'ground');
+        if (hitY === undefined) {
+          continue;
+        }
+
+        if (bestSpawnGroundY === undefined || hitY > bestSpawnGroundY) {
+          bestSpawnGroundY = hitY;
+          bestSpawnCandidate = candidate;
+        }
+      }
+
+      if (bestSpawnCandidate && bestSpawnGroundY !== undefined) {
+        const spawnY = bestSpawnGroundY + spawnSurfaceOffset;
+        camera.setPosition(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z);
+        if (cameraController) {
+          cameraController.groundHeight = bestSpawnGroundY;
+        }
+        spawnResolved = true;
+        console.log(
+          `[Spawn] camera placed at (${bestSpawnCandidate.x.toFixed(2)}, ${spawnY.toFixed(2)}, ${bestSpawnCandidate.z.toFixed(2)}) from ground Y ${bestSpawnGroundY.toFixed(2)}`
+        );
+      }
+    }
+
+    if (!spawnResolved) {
+      console.warn('[Spawn] No valid ground-tagged spawn hit found; keeping default camera position');
     }
 
   } catch (error) {

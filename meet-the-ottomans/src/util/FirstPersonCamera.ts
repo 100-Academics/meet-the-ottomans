@@ -12,16 +12,22 @@ export class FirstPersonCamera extends ScriptType {
     public groundHeight = 0;
     public groundTag = 'ground';
     public groundedEpsilon = 0.05;
-    public groundRayHeight = 200;
-    public groundRayDepth = 400;
+    public groundRayHeight = 400;
+    public groundRayDepth = 800;
+    public groundSampleRadius = 0.25;
     public collisionProbePadding = 0.3;
     public collisionTag = 'model-obstacle';
     
     private keys: Record<string, boolean> = {};
 
+    private isFiniteNumber(value: unknown): value is number {
+        return typeof value === 'number' && Number.isFinite(value);
+    }
+
     initialize() {
         this.eulers.x = this.entity.getLocalEulerAngles().x;
         this.eulers.y = this.entity.getLocalEulerAngles().y;
+        this.groundHeight = this.entity.getPosition().y - this.playerHeight;
 
         const app = this.app;
         
@@ -143,35 +149,142 @@ export class FirstPersonCamera extends ScriptType {
         return false;
     }
 
-    private getGroundHeightAt(position: Vec3): number {
-        const rigidbodySystem = (this.app.systems as any).rigidbody;
-        if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
-            return this.groundHeight;
+    private isGroundRaycastHit(entity: Entity | null): boolean {
+        if (!this.groundTag) {
+            return true;
         }
 
-        const start = new Vec3(position.x, position.y + this.groundRayHeight, position.z);
-        const end = new Vec3(position.x, position.y - this.groundRayDepth, position.z);
+        if (!entity) {
+            return false;
+        }
 
+        return this.hasTagInHierarchy(entity, this.groundTag);
+    }
+
+    private getGroundRayHitY(
+        rigidbodySystem: {
+            raycastAll?: (start: Vec3, end: Vec3) => Array<{ entity?: Entity | null; point?: Vec3; hitFraction?: number }> | undefined;
+            raycastFirst: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
+        },
+        start: Vec3,
+        end: Vec3
+    ): number | undefined {
         const hits = typeof rigidbodySystem.raycastAll === 'function'
-            ? (rigidbodySystem.raycastAll(start, end) as Array<{ entity?: Entity | null; point?: Vec3; hitFraction?: number }> | undefined)
+            ? rigidbodySystem.raycastAll(start, end)
             : undefined;
 
         if (hits && hits.length > 0) {
-            const sortedHits = hits
-                .filter((hit) => hit?.point)
-                .sort((a, b) => (a.hitFraction ?? 1) - (b.hitFraction ?? 1));
+            let bestFraction = Number.POSITIVE_INFINITY;
+            let bestFractionHitY: number | undefined;
+            let highestGroundHitY: number | undefined;
+            for (const hit of hits) {
+                if (!hit?.point) {
+                    continue;
+                }
+                const hitY = hit.point.y;
+                if (!this.isFiniteNumber(hitY)) {
+                    continue;
+                }
 
-            for (const hit of sortedHits) {
                 const hitEntity = hit.entity ?? null;
-                if (!this.groundTag || this.hasTagInHierarchy(hitEntity, this.groundTag)) {
-                    return hit.point!.y;
+                if (!this.isGroundRaycastHit(hitEntity)) {
+                    continue;
+                }
+
+                const hitFraction = hit.hitFraction;
+                if (this.isFiniteNumber(hitFraction) && hitFraction < bestFraction) {
+                    bestFraction = hitFraction;
+                    bestFractionHitY = hitY;
+                }
+
+                if (highestGroundHitY === undefined || hitY > highestGroundHitY) {
+                    highestGroundHitY = hitY;
+                }
+            }
+
+            if (bestFractionHitY !== undefined) {
+                return bestFractionHitY;
+            }
+
+            if (highestGroundHitY !== undefined) {
+                return highestGroundHitY;
+            }
+        }
+
+        const firstHit = rigidbodySystem.raycastFirst(start, end);
+        if (!firstHit?.point) {
+            return undefined;
+        }
+
+        const firstHitEntity = firstHit.entity ?? null;
+        if (!this.isGroundRaycastHit(firstHitEntity)) {
+            return undefined;
+        }
+
+        const firstHitY = firstHit.point.y;
+        if (!this.isFiniteNumber(firstHitY)) {
+            return undefined;
+        }
+
+        return firstHitY;
+    }
+
+    private getGroundHeightAt(position: Vec3): number {
+        const rigidbodySystem = (this.app.systems as any).rigidbody;
+        if (!this.isFiniteNumber(this.groundHeight)) {
+            this.groundHeight = position.y - this.playerHeight;
+        }
+
+        const sampleRadius = this.groundSampleRadius;
+        const sampleOffsets = [
+            new Vec3(0, 0, 0),
+            new Vec3(sampleRadius, 0, 0),
+            new Vec3(-sampleRadius, 0, 0),
+            new Vec3(0, 0, sampleRadius),
+            new Vec3(0, 0, -sampleRadius),
+        ];
+
+        let highestGroundHeight: number | undefined;
+        if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function') {
+            const rayStartY = Math.max(position.y + this.groundRayHeight, this.groundHeight + this.groundRayHeight, 500);
+            const rayEndY = Math.min(position.y - this.groundRayDepth, this.groundHeight - this.groundRayDepth, -500);
+            if (this.isFiniteNumber(rayStartY) && this.isFiniteNumber(rayEndY)) {
+                const centerStart = new Vec3(position.x, rayStartY, position.z);
+                const centerEnd = new Vec3(position.x, rayEndY, position.z);
+                const centerHitY = this.getGroundRayHitY(rigidbodySystem, centerStart, centerEnd);
+                if (this.isFiniteNumber(centerHitY)) {
+                    highestGroundHeight = centerHitY;
+                } else {
+                    let bestFallbackY: number | undefined;
+                    let bestFallbackDelta = Number.POSITIVE_INFINITY;
+                    for (const offset of sampleOffsets) {
+                        if (offset.x === 0 && offset.z === 0) {
+                            continue;
+                        }
+
+                        const sampleX = position.x + offset.x;
+                        const sampleZ = position.z + offset.z;
+                        const start = new Vec3(sampleX, rayStartY, sampleZ);
+                        const end = new Vec3(sampleX, rayEndY, sampleZ);
+                        const hitY = this.getGroundRayHitY(rigidbodySystem, start, end);
+                        if (!this.isFiniteNumber(hitY)) {
+                            continue;
+                        }
+
+                        const delta = Math.abs(hitY - this.groundHeight);
+                        if (delta < bestFallbackDelta) {
+                            bestFallbackDelta = delta;
+                            bestFallbackY = hitY;
+                        }
+                    }
+
+                    highestGroundHeight = bestFallbackY;
                 }
             }
         }
 
-        const firstHit = rigidbodySystem.raycastFirst(start, end) as { point?: Vec3 } | null;
-        if (firstHit?.point) {
-            return firstHit.point.y;
+        if (this.isFiniteNumber(highestGroundHeight)) {
+            this.groundHeight = highestGroundHeight;
         }
 
         return this.groundHeight;
@@ -213,7 +326,11 @@ export class FirstPersonCamera extends ScriptType {
         }
 
         const currentGroundHeight = this.getGroundHeightAt(pos);
-        const onGround = pos.y <= currentGroundHeight + this.playerHeight + this.groundedEpsilon;
+        if (!this.isFiniteNumber(currentGroundHeight)) {
+            this.groundHeight = pos.y - this.playerHeight;
+        }
+        const safeGroundHeight = this.isFiniteNumber(this.groundHeight) ? this.groundHeight : (pos.y - this.playerHeight);
+        const onGround = pos.y <= safeGroundHeight + this.playerHeight + this.groundedEpsilon;
 
         // Space to jump
         if (onGround && isSpace) {
@@ -225,8 +342,8 @@ export class FirstPersonCamera extends ScriptType {
         pos.y += this.velocity.y * dt;
 
         // Ground collision
-        if (pos.y < currentGroundHeight + this.playerHeight) {
-            pos.y = currentGroundHeight + this.playerHeight;
+        if (pos.y < safeGroundHeight + this.playerHeight) {
+            pos.y = safeGroundHeight + this.playerHeight;
             this.velocity.y = 0;
         }
 
