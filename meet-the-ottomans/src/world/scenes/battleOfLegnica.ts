@@ -285,7 +285,7 @@ export async function battleOfLegnicaScene(
       includeDescendants: true,
       position: new Vec3(0, 0, 0),
       rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(0.1, 0.1, 0.1)
+      scale: new Vec3(1, 1, 1)
     });
     ground.modelEntity.name = 'ground';
     ground.modelEntity.tags.add('ground');
