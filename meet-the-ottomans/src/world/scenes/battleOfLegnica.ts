@@ -16,14 +16,12 @@ import {
   RigidBodyComponentSystem,
   TextureHandler,
   ContainerHandler,
-  StandardMaterial,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
-import { applyMeshCollision } from '../../util/applyCollision';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -117,26 +115,23 @@ export async function battleOfLegnicaScene(
   app.root.addChild(camera);
 
   // Create Ground
-  const material = new StandardMaterial();
-  material.diffuse = new Color(0.1, 0.4, 0.1);
-  material.update();
-
-  const ground = new Entity('ground');
-  ground.addComponent('render', {
-      type: 'box',
-      material: material
-  });
-  ground.setLocalScale(100, 1, 100);
-  ground.setLocalPosition(0, -0.6, 0);
-  app.root.addChild(ground);
   try {
-    applyMeshCollision(ground, {
+    const ground = await loadModel('/world/battlefields/example.gltf', app, {
       rigidbodyType: 'static',
-      includeDescendants: false
+      includeDescendants: true,
+      position: new Vec3(0, 0, 0),
+      rotation: new Vec3(0, 0, 0),
+      scale: new Vec3(0.001, 0.001, 0.001)
     });
+    ground.modelEntity.name = 'ground';
+    ground.modelEntity.tags.add('ground');
+    console.log('Ground model loaded and added to scene', ground.modelName);
+
   } catch (error) {
     console.warn('Ground collision setup failed', error);
   }
+
+
 
   // Create Grid
   const grid = new Entity('grid');
@@ -168,7 +163,6 @@ try {
   model2.modelEntity.tags.add('model-obstacle');
   console.log('Model loaded and added to scene', model.modelName);
   console.log('Model loaded and added to scene', model2.modelName);
-  
   model2.modelEntity.setLocalPosition(5, 0, 0);  
   } catch (e) {
     console.error('Failed to load model:', e);

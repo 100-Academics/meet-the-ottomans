@@ -12,6 +12,24 @@ export class Model {
     this.modelEntity = modelEntity;
     this.modelName = modelEntity?.name;
   }
+
+  get position(): Vec3 | undefined {
+    if (this.modelEntity && typeof this.modelEntity.getLocalPosition === "function") {
+      return this.modelEntity.getLocalPosition();
+    }
+  }
+
+  get rotation(): Vec3 | undefined {
+    if (this.modelEntity && typeof this.modelEntity.getLocalEulerAngles === "function") {
+      return this.modelEntity.getLocalEulerAngles();
+    }
+  }
+
+  get scale(): Vec3 | undefined {
+    if (this.modelEntity && typeof this.modelEntity.getLocalScale === "function") {
+      return this.modelEntity.getLocalScale();
+    }
+  }
 }
 
 export interface LoadModelOptions {
@@ -20,6 +38,21 @@ export interface LoadModelOptions {
   autoCollision?: boolean;
   convexHull?: boolean;
   includeDescendants?: boolean;
+  position?: Vec3 | [number, number, number];
+  rotation?: Vec3 | [number, number, number];
+  scale?: Vec3 | [number, number, number];
+}
+
+function toVec3(value?: Vec3 | [number, number, number]): Vec3 | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  if (value instanceof Vec3) {
+    return value;
+  }
+
+  return new Vec3(value[0], value[1], value[2]);
 }
 
 export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptions = {}): Promise<Model> {
@@ -30,7 +63,7 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
 
   return new Promise((resolve, reject) => {
     try {
-      app.assets.loadFromUrl(url, "container", (err: any, asset: Asset) => {
+      app.assets.loadFromUrl(url, "container", (err: any, asset?: Asset) => {
         if (err) {
           console.error("Failed to load model:", err);
           return reject(err);
@@ -70,14 +103,18 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
 
         modelEntity.name = modelEntity.name || "ImportedModel";
 
+        const position = toVec3(options.position) ?? new Vec3(0, 0, -5);
+        const rotation = toVec3(options.rotation) ?? new Vec3(0, 90, 90);
+        const scale = toVec3(options.scale) ?? new Vec3(0.05, 0.05, 0.05);
+
         if (typeof modelEntity.setLocalPosition === "function") {
-          modelEntity.setLocalPosition(0, 0, -5);
+          modelEntity.setLocalPosition(position);
         }
         if (typeof modelEntity.setLocalEulerAngles === "function") {
-          modelEntity.setLocalEulerAngles(0, 90, 90);
+          modelEntity.setLocalEulerAngles(rotation);
         }
         if (typeof modelEntity.setLocalScale === "function") {
-          modelEntity.setLocalScale(0.05, 0.05, 0.05);
+          modelEntity.setLocalScale(scale);
         }
 
         try {
