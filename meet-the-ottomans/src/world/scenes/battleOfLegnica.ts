@@ -371,7 +371,7 @@ export async function battleOfLegnicaScene(
       includeDescendants: true, // Load child entities too
       position: new Vec3(0, 0, 0),
       rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(1, 1, 1)
+      scale: new Vec3(0.25, 0.25, 0.25)
     });
     
     // Name the ground and tag it so we can find it later with raycasts
