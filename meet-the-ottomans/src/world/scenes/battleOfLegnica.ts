@@ -57,6 +57,12 @@ export async function battleOfLegnicaScene(
     }
   }
 
+  // Remove the hover label from the default scene globe
+  const hoverLabel = document.getElementById('battle-hover-label');
+  if (hoverLabel) {
+    hoverLabel.style.display = 'none';
+  }
+
   if (!app.graphicsDevice) {
     const device = await createGraphicsDevice(canvas);
     const createOptions = new AppOptions();
@@ -147,26 +153,58 @@ export async function battleOfLegnicaScene(
 
   // Create Ground
   try {
-    const groundModelPath = '/world/battlefields/legnica.glb';
+    const groundModelPath = '/world/battlefields/Untitled.glb';
     const ground = await loadModel(groundModelPath, app, {
       rigidbodyType: 'static',
       includeDescendants: true,
       position: new Vec3(0, 0, 0),
       rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(0.001, 0.001, 0.001)
+      scale: new Vec3(0.1, 0.1, 0.1)
     });
     ground.modelEntity.name = 'ground';
     ground.modelEntity.tags.add('ground');
-    console.log('Ground model loaded and added to scene', {
+
+    // Verify collision was applied
+    const groundRb = ground.modelEntity.rigidbody;
+    const groundCol = ground.modelEntity.collision;
+    const childColliders = (ground.modelEntity.children as Entity[]).filter(
+      (c) => c.collision
+    );
+    console.log('[Ground] loaded', {
       path: groundModelPath,
-      name: ground.modelName
+      name: ground.modelName,
+      hasRigidbody: !!groundRb,
+      rigidbodyType: groundRb?.type,
+      hasCollision: !!groundCol,
+      collisionType: groundCol?.type,
+      childColliderCount: childColliders.length,
+      childColliderTypes: childColliders.map((c) => c.collision?.type),
+      ammoRuntime: (globalThis as any).__ammoRuntime
     });
 
+    if (!groundRb && !groundCol && childColliders.length === 0) {
+      console.error('[Ground] NO collision/rigidbody detected — raycasting will fail!');
+    }
+
   } catch (error) {
-    console.warn('Ground collision setup failed', error);
+    console.error('[Ground] model load failed', error);
   }
 
 
+  // Log all physics collision contacts to the console
+  const rigidbodySystem = (app.systems as any).rigidbody;
+  if (rigidbodySystem && typeof rigidbodySystem.on === 'function') {
+    rigidbodySystem.on('contact', (contactResult: any) => {
+      const posA = contactResult?.entityA?.getPosition?.();
+      const posB = contactResult?.entityB?.getPosition?.();
+      const nameA = contactResult?.entityA?.name ?? '?';
+      const nameB = contactResult?.entityB?.name ?? '?';
+      const contactPos = posA ?? posB;
+      console.log(`[Collision Contact] "${nameA}" <-> "${nameB}" at (${contactPos?.x?.toFixed(2) ?? '?'}, ${contactPos?.y?.toFixed(2) ?? '?'}, ${contactPos?.z?.toFixed(2) ?? '?'})`);
+    });
+  } else {
+    console.warn('[Collision] rigidbody system not available — contact logging disabled');
+  }
 
 
   // Lighting

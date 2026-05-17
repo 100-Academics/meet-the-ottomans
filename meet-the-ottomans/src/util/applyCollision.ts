@@ -210,6 +210,9 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
   clearGeneratedMeshColliders(entity);
   ensureRigidbody(entity, options);
 
+  const rigidbodyType = options.rigidbodyType ?? "static";
+  console.log(`[Collision] Setting up "${entity.name}" — type: ${rigidbodyType}, includeDescendants: ${includeDescendants}, ammoRuntime: ${getAmmoRuntimeName() || "unknown"}`);
+
   if (!isAmmojs3Runtime()) {
     console.warn(
       `ammojs3 runtime is not active (runtime="${getAmmoRuntimeName() || "unknown"}"), attempting mesh collision for "${entity.name}" with best-effort fallback`
@@ -218,7 +221,6 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
 
   ensureCompoundParentCollision(entity);
 
-  const rigidbodyType = options.rigidbodyType ?? "static";
   const useConvexHull = options.convexHull ?? rigidbodyType !== "static";
 
   let created = 0;
@@ -230,6 +232,8 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
 
     if (addSingleMeshCollider(renderEntity, meshes, useConvexHull)) {
       created++;
+      const pos = renderEntity.getPosition();
+      console.log(`[Collision] Created ${useConvexHull ? "convex-hull" : "trimesh"} collider on "${renderEntity.name}" at (${pos.x.toFixed(2)}, ${pos.y.toFixed(2)}, ${pos.z.toFixed(2)})`);
     }
   }
 
@@ -238,5 +242,6 @@ export function applyMeshCollision(entity: Entity, options: ApplyCollisionOption
     return applyPrimitiveFallbackCollision(entity, includeDescendants);
   }
 
+  console.log(`[Collision] "${entity.name}" complete — ${created} collider(s), rigidbody: ${entity.rigidbody?.type}, collision: ${entity.collision?.type}`);
   return created;
 }
