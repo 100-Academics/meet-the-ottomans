@@ -153,7 +153,7 @@ export async function battleOfLegnicaScene(
 
   // Create Ground
   try {
-    const groundModelPath = '/world/battlefields/Untitled.glb';
+    const groundModelPath = '/world/battlefields/Huashan.glb';
     const ground = await loadModel(groundModelPath, app, {
       rigidbodyType: 'static',
       includeDescendants: true,
