@@ -42,7 +42,7 @@ import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js'
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
-import { battleOfLegnicaScene } from "./battleOfLegnica.js";
+import { battleOfLegnicaScene } from "./battleOfLegnica";
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);

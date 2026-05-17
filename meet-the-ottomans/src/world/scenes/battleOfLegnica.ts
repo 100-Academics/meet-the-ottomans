@@ -116,7 +116,7 @@ export async function battleOfLegnicaScene(
 
   // Create Ground
   try {
-    const ground = await loadModel('/world/battlefields/huashan.glb', app, {
+    const ground = await loadModel('/world/battlefields/hushan.glb', app, {
       rigidbodyType: 'static',
       includeDescendants: true,
       position: new Vec3(0, 0, 0),
@@ -149,17 +149,4 @@ export async function battleOfLegnicaScene(
     app.root.addChild(light);
   }
 
-    // Example battle entity - replace with actual battle data and models
-try {
-  const model = await loadModel('/stanford_dragon_pbr.glb', app, { rigidbodyType: 'static' });
-  const model2 = await loadModel('/stanford_dragon_pbr.glb', app, { rigidbodyType: 'static' });
-  model.modelEntity.tags.add('model-obstacle');
-  model2.modelEntity.tags.add('model-obstacle');
-  console.log('Model loaded and added to scene', model.modelName);
-  console.log('Model loaded and added to scene', model2.modelName);
-  model2.modelEntity.setLocalPosition(5, 0, 0);  
-  } catch (e) {
-    console.error('Failed to load model:', e);
-  }
-  
 }

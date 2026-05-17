@@ -61,17 +61,22 @@ function toVec3(value?: Vec3 | [number, number, number]): Vec3 | undefined {
   return new Vec3(value[0], value[1], value[2]);
 }
 
-function resolveModelUrl(url: string): string {
+function resolveModelUrl(url: string): string | undefined {
   const normalizedPath = url.replace(/\\/g, "/").split("?")[0].replace(/^\/+/, "");
   const pathWithoutAssetsPrefix = normalizedPath.startsWith("assets/")
     ? normalizedPath.slice("assets/".length)
     : normalizedPath;
+  const pathWithoutModelsPrefix = pathWithoutAssetsPrefix.startsWith("models/")
+    ? pathWithoutAssetsPrefix.slice("models/".length)
+    : pathWithoutAssetsPrefix;
+  const pathWithoutWorldPrefix = pathWithoutAssetsPrefix.startsWith("world/")
+    ? pathWithoutAssetsPrefix.slice("world/".length)
+    : pathWithoutAssetsPrefix;
 
   const candidates = [
-    `../assets/${normalizedPath}`,
-    `../assets/models/${pathWithoutAssetsPrefix}`,
-    `../assets/world/${normalizedPath}`,
-    `../${normalizedPath}`,
+    `../assets/${pathWithoutAssetsPrefix}`,
+    `../assets/models/${pathWithoutModelsPrefix}`,
+    `../assets/world/${pathWithoutWorldPrefix}`,
   ];
 
   for (const candidate of candidates) {
@@ -81,7 +86,7 @@ function resolveModelUrl(url: string): string {
     }
   }
 
-  return url;
+  return undefined;
 }
 
 export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptions = {}): Promise<Model> {
@@ -91,6 +96,11 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
   }
 
   const resolvedUrl = resolveModelUrl(url);
+  if (!resolvedUrl) {
+    return Promise.reject(
+      new Error(`Model "${url}" was not found in src/assets and cannot be loaded`)
+    );
+  }
 
   return new Promise((resolve, reject) => {
     try {
