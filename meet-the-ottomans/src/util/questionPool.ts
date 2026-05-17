@@ -1,6 +1,14 @@
 export class questionPool{
 
     // map: timePeriod -> (questionId -> questionText)
+    // time periods are:
+        // 0: N/A
+        // 1: 1200-1300
+        // 2: 1400-1500
+        // 3: 1500-1650
+        // 4: 1750-1900
+        // 5: 1900-1945
+        // 6: 1945-2026
     private questions: Record<number, Record<number, string>> = {
         0: {
             // N/A

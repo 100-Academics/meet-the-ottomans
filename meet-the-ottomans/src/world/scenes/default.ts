@@ -43,6 +43,7 @@ import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js'
 import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
 import { battleOfLegnicaScene } from "./battleOfLegnica";
+import { battleOfAinJalutScene } from "./battleOfAinJalut";
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
@@ -105,7 +106,6 @@ unloadAll(app);
                    new Battle(6, [40.4833, 127.2000], "Battle of Chosin Reservoir", new Entity()),
                    new Battle(6, [10.82310, 106.62966], "Fall of Saigon", new Entity()),
                    new Battle(6, [30.56, 32.32], " Operation Abirey-Halev", new Entity())
-                   
                   ];
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -393,6 +393,9 @@ unloadAll(app);
       if (battle.getName() === 'Battle of Legnica') {
         battleOfLegnicaScene(canvas, app, onClickWithCounter, sceneNum);
         // ^^^ scene functions should always be defined as HTMLCanvasElement, AppBase, onClick callback, sceneNum
+      }
+      else if (battle.getName() === 'Battle of Ain Jalut') {
+        battleOfAinJalutScene(canvas, app, onClickWithCounter, sceneNum);  
       }
 
       onClickWithCounter(battle);
