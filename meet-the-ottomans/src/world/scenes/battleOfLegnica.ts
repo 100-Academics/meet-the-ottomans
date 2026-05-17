@@ -23,8 +23,6 @@ import {
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
 
-// @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
-import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { FirstPersonCamera } from '../../util/FirstPersonCamera';
 import type { Battle } from "../Battle";
 
@@ -132,13 +130,6 @@ export async function battleOfLegnicaScene(
   }
 
 
-
-  // Create Grid
-  const grid = new Entity('grid');
-  grid.addComponent('script');
-  grid.script?.create(Grid);
-  grid.setLocalScale(100, 100, 100);
-  app.root.addChild(grid);
 
   // Lighting
   app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
