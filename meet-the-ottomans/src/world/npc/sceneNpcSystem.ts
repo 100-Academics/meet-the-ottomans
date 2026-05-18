@@ -4,6 +4,17 @@ import { npc } from "./npc";
 
 export type NpcSceneTeam = "friend" | "foe";
 
+interface RigidbodyRaycastHit {
+    entity?: Entity | null;
+    point?: Vec3;
+    hitFraction?: number;
+}
+
+interface RigidbodyRaycastSystem {
+    raycastAll?: (start: Vec3, end: Vec3) => RigidbodyRaycastHit[] | undefined;
+    raycastFirst?: (start: Vec3, end: Vec3) => RigidbodyRaycastHit | null;
+}
+
 export interface NpcSpawnPoint {
     id: number;
     team: NpcSceneTeam;
@@ -25,29 +36,100 @@ export interface NpcCombatLoopOptions {
     updateKey?: string;
     onNpcAttack?: (attacker: npc, target: npc, damage: number) => void;
     onPlayerAttack?: (attacker: npc, damage: number) => void;
+    rigidbodySystem?: RigidbodyRaycastSystem;
+    groundCollisionEnabled?: boolean;
+    groundTag?: string;
+    groundProbeHeight?: number;
+    groundProbeDepth?: number;
+    defaultGroundClearance?: number;
+}
+
+function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
+    let current: Entity | null = entity;
+    while (current) {
+        if (current.tags?.has(tag)) {
+            return true;
+        }
+        current = (current.parent as Entity | null) ?? null;
+    }
+    return false;
+}
+
+function getGroundYAt(
+    rigidbodySystem: RigidbodyRaycastSystem | undefined,
+    x: number,
+    z: number,
+    groundTag: string,
+    probeHeight: number,
+    probeDepth: number
+): number | undefined {
+    if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function") {
+        return undefined;
+    }
+
+    const rayStart = new Vec3(x, probeHeight, z);
+    const rayEnd = new Vec3(x, -probeDepth, z);
+
+    if (typeof rigidbodySystem.raycastAll === "function") {
+        const hits = rigidbodySystem.raycastAll(rayStart, rayEnd);
+        if (hits && hits.length > 0) {
+            let bestFraction = Number.POSITIVE_INFINITY;
+            let bestY: number | undefined;
+
+            for (const hit of hits) {
+                if (!hit?.point || !Number.isFinite(hit.point.y)) {
+                    continue;
+                }
+
+                if (!hasTagInHierarchy(hit.entity ?? null, groundTag)) {
+                    continue;
+                }
+
+                const hitFraction = hit.hitFraction;
+                if (typeof hitFraction === "number" && Number.isFinite(hitFraction) && hitFraction < bestFraction) {
+                    bestFraction = hitFraction;
+                    bestY = hit.point.y;
+                }
+            }
+
+            if (bestY !== undefined) {
+                return bestY;
+            }
+        }
+    }
+
+    const firstHit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
+    if (!firstHit?.point || !Number.isFinite(firstHit.point.y)) {
+        return undefined;
+    }
+
+    if (!hasTagInHierarchy(firstHit.entity ?? null, groundTag)) {
+        return undefined;
+    }
+
+    return firstHit.point.y;
 }
 
 function getSpawnY(
-    rigidbodySystem: { raycastFirst?: (start: Vec3, end: Vec3) => { point?: Vec3 } | null } | undefined,
+    rigidbodySystem: RigidbodyRaycastSystem | undefined,
     x: number,
-    z: number
+    z: number,
+    groundTag: string,
+    probeHeight: number,
+    probeDepth: number,
+    defaultGroundClearance: number
 ): number {
-    if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function") {
+    const groundY = getGroundYAt(rigidbodySystem, x, z, groundTag, probeHeight, probeDepth);
+    if (groundY === undefined) {
         return 0;
     }
 
-    const rayStart = new Vec3(x, 300, z);
-    const rayEnd = new Vec3(x, -300, z);
-    const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
-    if (hit?.point) {
-        return hit.point.y + 0.1;
-    }
-    return 0;
+    return groundY + defaultGroundClearance;
 }
 
 export async function spawnSceneNpcs(
     app: AppBase,
-    rigidbodySystem: { raycastFirst?: (start: Vec3, end: Vec3) => { point?: Vec3 } | null } | undefined,
+    rigidbodySystem: RigidbodyRaycastSystem | undefined,
     spawnPoints: NpcSpawnPoint[],
     options: NpcSceneSpawnOptions = {}
 ): Promise<npc[]> {
@@ -57,11 +139,23 @@ export async function spawnSceneNpcs(
     const modelHeightOffset = options.modelHeightOffset ?? 2;
     const facingYawOffsetDegrees = options.facingYawOffsetDegrees ?? 180;
     const hitboxRadius = options.hitboxRadius ?? 1.2;
+    const groundTag = "ground";
+    const groundProbeHeight = 300;
+    const groundProbeDepth = 300;
+    const defaultGroundClearance = 0.1;
 
     const npcs: npc[] = [];
 
     for (const spawn of spawnPoints) {
-        const npcSpawnY = getSpawnY(rigidbodySystem, spawn.x, spawn.z);
+        const npcSpawnY = getSpawnY(
+            rigidbodySystem,
+            spawn.x,
+            spawn.z,
+            groundTag,
+            groundProbeHeight,
+            groundProbeDepth,
+            defaultGroundClearance
+        );
 
         const npcModel = await loadModel(modelPath, app, {
             rigidbodyType: "kinematic",
@@ -94,6 +188,27 @@ export function bindNpcCombatLoop(
         app.off("update", existingHandler as (deltaTime: number) => void);
     }
 
+    const rigidbodySystem = options.rigidbodySystem ?? (app.systems as { rigidbody?: RigidbodyRaycastSystem }).rigidbody;
+    const groundCollisionEnabled = options.groundCollisionEnabled ?? true;
+    const groundTag = options.groundTag ?? "ground";
+    const groundProbeHeight = options.groundProbeHeight ?? 300;
+    const groundProbeDepth = options.groundProbeDepth ?? 300;
+    const defaultGroundClearance = options.defaultGroundClearance ?? 0.1;
+    const npcGroundOffsets = new Map<npc, number>();
+
+    if (groundCollisionEnabled && rigidbodySystem) {
+        for (const currentNpc of npcs) {
+            const position = currentNpc.getEntity().getPosition();
+            const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
+            if (groundY === undefined) {
+                npcGroundOffsets.set(currentNpc, defaultGroundClearance);
+                continue;
+            }
+
+            npcGroundOffsets.set(currentNpc, Math.max(defaultGroundClearance, position.y - groundY));
+        }
+    }
+
     const updateHandler = (deltaTime: number) => {
         const nowSeconds = Date.now() / 1000;
         const playerEntity = getPlayerEntity();
@@ -110,6 +225,23 @@ export function bindNpcCombatLoop(
         }
 
         npc.resolveHitboxCollisions(npcs);
+
+        if (groundCollisionEnabled && rigidbodySystem) {
+            for (const currentNpc of npcs) {
+                if (!currentNpc.isAlive()) {
+                    continue;
+                }
+
+                const position = currentNpc.getEntity().getPosition();
+                const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
+                if (groundY === undefined) {
+                    continue;
+                }
+
+                const groundOffset = npcGroundOffsets.get(currentNpc) ?? defaultGroundClearance;
+                currentNpc.getEntity().setPosition(position.x, groundY + groundOffset, position.z);
+            }
+        }
     };
 
     keyedApp[updateKey] = updateHandler;
