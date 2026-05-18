@@ -7,7 +7,7 @@ async function titleScreen(
   app: AppBase,
   onClick: (battle: Battle) => void,
   getSelectedTimePeriod: () => number,
-  sceneNum: number
+  _sceneNum: number
 ) {
   // Create a simple DOM title overlay
   const overlay = document.querySelector('.overlay') as HTMLElement | null;

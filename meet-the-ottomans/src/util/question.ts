@@ -1,4 +1,5 @@
 import { questionPool } from "./questionPool";
+import type { MultipleChoiceQuestion } from "./questionPool";
 
 const pool = new questionPool();
 
@@ -37,7 +38,7 @@ export class Question {
     }
 
     static getRandomTimePeriod(): number {
-        const timePeriods = Object.keys(pool['questions']).map(Number);
+        const timePeriods = pool.getTimePeriods();
         if (timePeriods.length === 0) return -1;
         const randomIndex = Math.floor(Math.random() * timePeriods.length);
         return timePeriods[randomIndex];
@@ -64,5 +65,10 @@ export class Question {
 
         const randomQuestionId = questionIds[Math.floor(Math.random() * questionIds.length)];
         return pool.getQuestion(chosenTimePeriod, randomQuestionId);
+    }
+
+    static getRandomQuestionWithChoices(timePeriod: number = -1): MultipleChoiceQuestion | null {
+        // Thin facade so scene code does not access the pool directly.
+        return pool.getQuestionWithChoices(timePeriod);
     }
 }

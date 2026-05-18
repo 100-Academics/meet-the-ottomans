@@ -82,7 +82,7 @@ async function defaultScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
   onClick: (battle: Battle) => void,
-  getSelectedTimePeriod: () => number,
+  _getSelectedTimePeriod: () => number,
   sceneNum: number
 ) {
 
@@ -172,6 +172,15 @@ unloadAll(app);
           <div class="btn-row">
             <button id="yes-btn" class="btn">Load question (test)</button>
           </div>
+          <div class="btn-row" id="answers-row-1">
+            <button id="answer-btn-1" class="btn">Answer 1</button>
+            <button id="answer-btn-2" class="btn">Answer 2</button>
+          </div>
+          <div class="btn-row" id="answers-row-2">
+            <button id="answer-btn-3" class="btn">Answer 3</button>
+            <button id="answer-btn-4" class="btn">Answer 4</button>
+          </div>
+          <div id="answer-result">Pick a time period, then load a question.</div>
         </div>
         <div class="pill" id="time-periods">
           <div id="Selection">(Select thet time period you want!)</div>
@@ -201,6 +210,13 @@ unloadAll(app);
   const counterElement = document.getElementById('counter')!;
   const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
   const questionTextEl = document.getElementById('question-text') as HTMLElement | null;
+  const answerResultEl = document.getElementById('answer-result') as HTMLElement | null;
+  const answerButtons = [
+    document.getElementById('answer-btn-1') as HTMLButtonElement | null,
+    document.getElementById('answer-btn-2') as HTMLButtonElement | null,
+    document.getElementById('answer-btn-3') as HTMLButtonElement | null,
+    document.getElementById('answer-btn-4') as HTMLButtonElement | null,
+  ];
   const timePeriodButtons = [
     document.getElementById('period1-btn') as HTMLButtonElement | null,
     document.getElementById('period2-btn') as HTMLButtonElement | null,
@@ -210,11 +226,47 @@ unloadAll(app);
     document.getElementById('period6-btn') as HTMLButtonElement | null,
   ];
   const timePeriodText = document.getElementById('time-period') as HTMLElement | null;
+  let activeCorrectAnswer = '';
 
-  if (yesBtn && questionTextEl) {
+  if (answerButtons.every(btn => btn !== null)) {
+    // Option buttons stay disabled until a question is loaded.
+    answerButtons.forEach((btn) => {
+      btn!.disabled = true;
+      btn!.addEventListener('click', () => {
+        if (!activeCorrectAnswer || !answerResultEl) return;
+        const selectedAnswer = btn!.textContent ?? '';
+        if (selectedAnswer === activeCorrectAnswer) {
+          answerResultEl.textContent = 'Correct answer!';
+        } else {
+          answerResultEl.textContent = `Incorrect. Correct answer: ${activeCorrectAnswer}`;
+        }
+      });
+    });
+  }
+
+  if (yesBtn && questionTextEl && answerResultEl && answerButtons.every(btn => btn !== null)) {
     yesBtn.addEventListener('click', () => {
-      const content = Question.getRandomQuestion(selectedTimePeriod) || '(no question loaded)';
-      questionTextEl.textContent = content;
+      const loadedQuestion = Question.getRandomQuestionWithChoices(selectedTimePeriod);
+      if (!loadedQuestion) {
+        questionTextEl.textContent = '(no question loaded)';
+        answerResultEl.textContent = 'No question data available for this period.';
+        answerButtons.forEach((btn) => {
+          btn!.disabled = true;
+          btn!.textContent = 'N/A';
+        });
+        activeCorrectAnswer = '';
+        return;
+      }
+
+      questionTextEl.textContent = loadedQuestion.question;
+      activeCorrectAnswer = loadedQuestion.correctAnswer;
+      answerResultEl.textContent = 'Choose one answer.';
+
+      // Each load randomizes option order, then maps them onto the 4 answer buttons.
+      answerButtons.forEach((btn, index) => {
+        btn!.textContent = loadedQuestion.choices[index] ?? 'N/A';
+        btn!.disabled = false;
+      });
     });
   }
 

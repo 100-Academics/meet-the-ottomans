@@ -17,4 +17,4 @@ const onClickStuff = () => {
 
 
 
-const renderBattlesForPeriod = await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, onClickStuff, () => -1);
+void await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, onClickStuff, () => -1);
