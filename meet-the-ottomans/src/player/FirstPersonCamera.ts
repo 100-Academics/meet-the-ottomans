@@ -46,6 +46,9 @@ export class FirstPersonCamera extends ScriptType {
     private wasJumpHeld = false;
     private wasDashHeld = false;
     private ignoreNextMouseMove = false;
+    
+    private coyoteTimer = 0;
+    public readonly coyoteTimeDuration = 0.15;
 
     private isFiniteNumber(value: unknown): value is number {
         return typeof value === 'number' && Number.isFinite(value);
@@ -458,15 +461,32 @@ export class FirstPersonCamera extends ScriptType {
             this.groundHeight = pos.y - this.playerHeight;
         }
         const safeGroundHeight = this.isFiniteNumber(this.groundHeight) ? this.groundHeight : (pos.y - this.playerHeight);
-        const onGround = pos.y <= safeGroundHeight + this.playerHeight + this.groundedEpsilon;
+        
+        // Use a more generous grounded check to handle going down slopes
+        // If we're moving down and hit gravity, this.velocity.y will be negative.
+        const isFalling = this.velocity.y < 0;
+        const slopeGrace = isFalling ? 1.0 : this.groundedEpsilon; 
+        const onGround = pos.y <= safeGroundHeight + this.playerHeight + slopeGrace;
 
         if (onGround) {
             this.airJumpsRemaining = this.maxAirJumps;
+            this.coyoteTimer = this.coyoteTimeDuration;
+            // Only zero horizontal/downward velocity when truly hitting the ground plane, 
+            // not when just within the slope grace distance, to let gravity work properly downhill
+        } else {
+            this.coyoteTimer -= dt;
         }
 
         if (jumpPressed) {
-            if (onGround) {
+            // First check for ground or coyote time jump
+            if (onGround || this.coyoteTimer > 0) {
+                // If we are getting pulled down by gravity, snap our base Y to the ground before jumping 
+                // so we don't jump "from slightly above ground" feeling weak
+                if (pos.y < safeGroundHeight + this.playerHeight + slopeGrace && isFalling) {
+                   pos.y = safeGroundHeight + this.playerHeight;
+                }
                 this.velocity.y = this.jumpPower;
+                this.coyoteTimer = 0; // consume coyote time
             } else if (this.airJumpsRemaining > 0) {
                 this.velocity.y = this.jumpPower;
                 this.airJumpsRemaining -= 1;
