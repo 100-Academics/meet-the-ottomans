@@ -13,6 +13,13 @@ interface NpcAiConfig {
     wanderInterval: number;
 }
 
+interface NpcCombatProfile {
+    attackDamage: number;
+    attackRange: number;
+    attackCooldown: number;
+    detectionRange: number;
+}
+
 export class npc {
     private id: number;
     private team: NpcTeam;
@@ -24,6 +31,10 @@ export class npc {
     private lastAttackTime = -Infinity;
     private wanderDirection = new Vec3(1, 0, 0);
     private wanderTimeRemaining = 0;
+    private facingYawOffsetDegrees = 0;
+    private readonly basePitchDegrees: number;
+    private readonly baseRollDegrees: number;
+    private spawnCenter = new Vec3(0, 0, 0);
 
     private readonly aiConfig: NpcAiConfig = {
         idleMoveSpeed: 0.8,
@@ -42,6 +53,12 @@ export class npc {
         this.team = team;
         this.maxHealth = maxHealth;
         this.health = maxHealth;
+
+        const initialRotation = this.entity.getLocalEulerAngles();
+        this.basePitchDegrees = initialRotation.x;
+        this.baseRollDegrees = initialRotation.z;
+
+        this.spawnCenter.copy(this.entity.getPosition());
     }
 
     public getId(): number {
@@ -72,6 +89,68 @@ export class npc {
         return this.aiState;
     }
 
+    public setFacingYawOffsetDegrees(offsetDegrees: number): void {
+        this.facingYawOffsetDegrees = offsetDegrees;
+    }
+
+    public getAttackDamage(): number {
+        return this.getCombatProfile().attackDamage;
+    }
+
+    public updateCombatAI(
+        deltaTime: number,
+        currentTimeSeconds: number,
+        allNpcs: npc[],
+        onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
+        playerEntity?: Entity | null,
+        onPlayerAttack?: (attacker: npc, damage: number) => void
+    ): void {
+        if (!this.isAlive()) {
+            return;
+        }
+
+        const profile = this.getCombatProfile();
+        const hostileNpcTarget = this.findNearestHostileNpc(allNpcs, profile.detectionRange);
+        const hostileNpcDistance = hostileNpcTarget ? this.getDistanceToEntity(hostileNpcTarget.getEntity()) : Number.POSITIVE_INFINITY;
+
+        if (this.team === "foe" && playerEntity) {
+            const playerDistance = this.getDistanceToEntity(playerEntity);
+            const playerInRange = playerDistance <= profile.detectionRange;
+
+            // Enemy AI prioritizes the player when they are at least as close as other targets.
+            if (playerInRange && playerDistance <= hostileNpcDistance) {
+                this.updateAI(deltaTime, playerEntity, currentTimeSeconds, () => {
+                    if (onPlayerAttack) {
+                        onPlayerAttack(this, profile.attackDamage);
+                    }
+                }, profile);
+                return;
+            }
+        }
+
+        if (hostileNpcTarget) {
+            this.updateAI(deltaTime, hostileNpcTarget.getEntity(), currentTimeSeconds, () => {
+                if (onNpcAttack) {
+                    onNpcAttack(this, hostileNpcTarget, profile.attackDamage);
+                }
+            }, profile);
+            return;
+        }
+
+        // Foe NPCs can still pressure the player when no hostile NPC target is nearby.
+        if (this.team === "foe" && playerEntity) {
+            this.updateAI(deltaTime, playerEntity, currentTimeSeconds, () => {
+                if (onPlayerAttack) {
+                    onPlayerAttack(this, profile.attackDamage);
+                }
+            }, profile);
+            return;
+        }
+
+        // No valid combat target; wander around own spawn area.
+        this.updateAI(deltaTime, null, currentTimeSeconds, undefined, profile);
+    }
+
     public takeDamage(damage: number): boolean {
         this.health = Math.max(0, this.health - damage);
         console.log(`NPC ${this.id} took ${damage} damage, health now ${this.health}`);
@@ -90,10 +169,18 @@ export class npc {
         return false;
     }
 
-    public updateAI(deltaTime: number, targetEntity: Entity | null, currentTimeSeconds: number, onAttack?: (attacker: npc) => void): void {
+    public updateAI(
+        deltaTime: number,
+        targetEntity: Entity | null,
+        currentTimeSeconds: number,
+        onAttack?: (attacker: npc) => void,
+        profileOverride?: NpcCombatProfile
+    ): void {
         if (!this.isAlive()) {
             return;
         }
+
+        const profile = profileOverride ?? this.getCombatProfile();
 
         // Clamp frame time so occasional frame spikes do not cause giant movement jumps.
         const clampedDeltaTime = Math.max(0, Math.min(deltaTime, 0.05));
@@ -112,20 +199,20 @@ export class npc {
         const distance = Math.sqrt((dx * dx) + (dz * dz));
 
         // AI state machine: idle (too far), chase (close enough to detect), attack (within attack range).
-        if (distance > this.aiConfig.detectionRange) {
+        if (distance > profile.detectionRange) {
             this.aiState = "idle";
             this.updateWander(clampedDeltaTime);
             return;
         }
 
-        if (distance > this.aiConfig.attackRange) {
+        if (distance > profile.attackRange) {
             this.aiState = "chase";
             this.moveToward(dx, dz, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
             return;
         }
 
         this.aiState = "attack";
-        if ((currentTimeSeconds - this.lastAttackTime) >= this.aiConfig.attackCooldown) {
+        if ((currentTimeSeconds - this.lastAttackTime) >= profile.attackCooldown) {
             this.lastAttackTime = currentTimeSeconds;
             if (onAttack) {
                 onAttack(this);
@@ -150,11 +237,13 @@ export class npc {
         }
 
         const myPos = this.entity.getPosition();
-        const distanceFromOrigin = Math.sqrt((myPos.x * myPos.x) + (myPos.z * myPos.z));
+        const dx = myPos.x - this.spawnCenter.x;
+        const dz = myPos.z - this.spawnCenter.z;
+        const distanceFromOrigin = Math.sqrt((dx * dx) + (dz * dz));
 
         // Keep wandering around spawn area instead of drifting forever.
         if (distanceFromOrigin > this.aiConfig.wanderRadius) {
-            this.wanderDirection.set(-myPos.x, 0, -myPos.z).normalize();
+            this.wanderDirection.set(this.spawnCenter.x - myPos.x, 0, this.spawnCenter.z - myPos.z).normalize();
         }
 
         this.moveToward(this.wanderDirection.x, this.wanderDirection.z, this.aiConfig.idleMoveSpeed, deltaTime);
@@ -176,5 +265,67 @@ export class npc {
             currentPos.z + (nz * speed * deltaTime)
         );
         this.entity.setPosition(nextPos);
+
+        // Keep imported model pitch/roll while steering yaw toward travel direction.
+        const yawDegrees = (Math.atan2(nx, nz) * 180 / Math.PI) + this.facingYawOffsetDegrees;
+        this.entity.setLocalEulerAngles(this.basePitchDegrees, yawDegrees, this.baseRollDegrees);
+    }
+
+    private getCombatProfile(): NpcCombatProfile {
+        if (this.team === "friend") {
+            return {
+                attackDamage: 8,
+                attackRange: 2.2,
+                attackCooldown: 0.8,
+                detectionRange: 16
+            };
+        }
+
+        return {
+            attackDamage: 12,
+            attackRange: 2,
+            attackCooldown: 1.1,
+            detectionRange: 14
+        };
+    }
+
+    private findNearestHostileNpc(allNpcs: npc[], maxRange: number): npc | null {
+        const myPos = this.entity.getPosition();
+        let bestTarget: npc | null = null;
+        let bestDistance = Number.POSITIVE_INFINITY;
+
+        for (const candidate of allNpcs) {
+            if (candidate === this || !candidate.isAlive()) {
+                continue;
+            }
+
+            if (candidate.getTeam() === this.team) {
+                continue;
+            }
+
+            const candidatePos = candidate.getEntity().getPosition();
+            const dx = candidatePos.x - myPos.x;
+            const dz = candidatePos.z - myPos.z;
+            const distance = Math.sqrt((dx * dx) + (dz * dz));
+
+            if (distance > maxRange) {
+                continue;
+            }
+
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestTarget = candidate;
+            }
+        }
+
+        return bestTarget;
+    }
+
+    private getDistanceToEntity(otherEntity: Entity): number {
+        const myPos = this.entity.getPosition();
+        const otherPos = otherEntity.getPosition();
+        const dx = otherPos.x - myPos.x;
+        const dz = otherPos.z - myPos.z;
+        return Math.sqrt((dx * dx) + (dz * dz));
     }
 }
