@@ -33,7 +33,7 @@ import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { npc } from "../npc/npc";
 
-const groundModelPath = '/world/battlefields/Legnica.glb';
+const groundModelPath = '/world/battlefields/legnica.glb';
 
 /**
  * Checks if an entity or any of its parents in the hierarchy has the specified tag.
