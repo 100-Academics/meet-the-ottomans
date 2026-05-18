@@ -44,6 +44,7 @@ import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
 import { battleOfLegnicaScene } from "./battleOfLegnica";
 import { battleOfAinJalutScene } from "./battleOfAinJalut";
+import { siegeOfConstantinopleScene } from "./siegeOfConstantinople";
 
 const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
@@ -152,52 +153,42 @@ unloadAll(app);
 
   // Create overlay UI
   const overlay = document.querySelector('.absolute.overlay') as HTMLElement;
-  let count = 0;
   let selectedTimePeriod = -1;
   const overlayHTML = `
     <div class="absolute overlay">
-      <div class="grow">
+      <div class="grow" style="min-height: 0;">
         <header>
         </header>
       </div>
-      <div>
-        <span id="counter" class="pill">
-          Click Count: ${count}
-        </span>
-        <p>
-          Edit <code>src/App.ts</code> and save to test HMR
-        </p>
-        <div class="pill" id="question-wrap">
-          <div id="question-text">(no question loaded)</div>
-          <div class="btn-row">
-            <button id="yes-btn" class="btn">Load question (test)</button>
+      <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; position: relative;">
+        <div class="pill" id="question-wrap" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2; padding: 10px 12px; gap: 8px; font-size: 0.82rem; line-height: 1.25; max-width: 320px; text-align: center;">
+          <div id="question-text" style="font-size: 0.9rem;">(no question loaded)</div>
+          <div class="btn-row" style="gap: 6px; justify-content: center;">
+            <button id="yes-btn" class="btn" style="padding: 6px 10px; font-size: 0.78rem;">Load question (test)</button>
           </div>
-          <div class="btn-row" id="answers-row-1">
-            <button id="answer-btn-1" class="btn">Answer 1</button>
-            <button id="answer-btn-2" class="btn">Answer 2</button>
+          <div class="btn-row" id="answers-row-1" style="display: none; gap: 6px; justify-content: center;">
+            <button id="answer-btn-1" class="btn" style="padding: 6px 10px; font-size: 0.78rem;">Answer 1</button>
+            <button id="answer-btn-2" class="btn" style="padding: 6px 10px; font-size: 0.78rem;">Answer 2</button>
           </div>
-          <div class="btn-row" id="answers-row-2">
-            <button id="answer-btn-3" class="btn">Answer 3</button>
-            <button id="answer-btn-4" class="btn">Answer 4</button>
+          <div class="btn-row" id="answers-row-2" style="display: none; gap: 6px; justify-content: center;">
+            <button id="answer-btn-3" class="btn" style="padding: 6px 10px; font-size: 0.78rem;">Answer 3</button>
+            <button id="answer-btn-4" class="btn" style="padding: 6px 10px; font-size: 0.78rem;">Answer 4</button>
           </div>
-          <div id="answer-result">Pick a time period, then load a question.</div>
+          <div id="answer-result" style="font-size: 0.78rem;">Pick a time period, then load a question.</div>
         </div>
-        <div class="pill" id="time-periods">
-          <div id="Selection">(Select thet time period you want!)</div>
-          <div id="time-period">(no time period selected)</div>
-          <div class="btn-row">
-            <button id="period1-btn" class="btn">1200-1300</button>
-            <button id="period2-btn" class="btn">1400-1500</button>
-            <button id="period3-btn" class="btn">1500-1650</button>
-            <button id="period4-btn" class="btn">1750-1900</button>
-            <button id="period5-btn" class="btn">1900-1945</button>
-            <button id="period6-btn" class="btn">1945-2026</button>
+        <div class="pill" id="time-periods" style="position: absolute; bottom: 12px; left: 12px; z-index: 2; padding: 10px 12px; gap: 6px; font-size: 0.82rem; line-height: 1.25; max-width: 420px;">
+          <div id="Selection" style="font-size: 0.78rem;">(Select the time period you want!)</div>
+          <div id="time-period" style="font-size: 0.78rem;"></div>
+          <div class="btn-row" style="gap: 6px; flex-wrap: wrap;">
+            <button id="period1-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1200-1300</button>
+            <button id="period2-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1400-1500</button>
+            <button id="period3-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1500-1650</button>
+            <button id="period4-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1750-1900</button>
+            <button id="period5-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1900-1945</button>
+            <button id="period6-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1945-2026</button>
           </div>
         </div>
       </div>
-      <p class="read-the-docs">
-        Click on the PlayCanvas and TypeScript logos to learn more
-      </p>
     </div>
   `;
 
@@ -207,10 +198,11 @@ unloadAll(app);
   overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
 
   // Set up overlay event listeners
-  const counterElement = document.getElementById('counter')!;
   const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
   const questionTextEl = document.getElementById('question-text') as HTMLElement | null;
   const answerResultEl = document.getElementById('answer-result') as HTMLElement | null;
+  const answerRow1 = document.getElementById('answers-row-1') as HTMLElement | null;
+  const answerRow2 = document.getElementById('answers-row-2') as HTMLElement | null;
   const answerButtons = [
     document.getElementById('answer-btn-1') as HTMLButtonElement | null,
     document.getElementById('answer-btn-2') as HTMLButtonElement | null,
@@ -227,6 +219,17 @@ unloadAll(app);
   ];
   const timePeriodText = document.getElementById('time-period') as HTMLElement | null;
   let activeCorrectAnswer = '';
+
+  const setAnswerControlsVisible = (visible: boolean) => {
+    if (answerRow1) {
+      answerRow1.style.display = visible ? 'flex' : 'none';
+    }
+    if (answerRow2) {
+      answerRow2.style.display = visible ? 'flex' : 'none';
+    }
+  };
+
+  setAnswerControlsVisible(false);
 
   if (answerButtons.every(btn => btn !== null)) {
     // Option buttons stay disabled until a question is loaded.
@@ -254,6 +257,7 @@ unloadAll(app);
           btn!.disabled = true;
           btn!.textContent = 'N/A';
         });
+        setAnswerControlsVisible(false);
         activeCorrectAnswer = '';
         return;
       }
@@ -261,6 +265,7 @@ unloadAll(app);
       questionTextEl.textContent = loadedQuestion.question;
       activeCorrectAnswer = loadedQuestion.correctAnswer;
       answerResultEl.textContent = 'Choose one answer.';
+      setAnswerControlsVisible(true);
 
       // Each load randomizes option order, then maps them onto the 4 answer buttons.
       answerButtons.forEach((btn, index) => {
@@ -275,18 +280,12 @@ unloadAll(app);
       btn!.addEventListener('click', () => {
         const period = index + 1;
         selectedTimePeriod = period;
-        timePeriodText.textContent = `Selected Time Period: ${period}`;
         renderBattlesForPeriod(period);
       });
     });
   }
 
-  // Set up event listener to increment counter
-  const onClickWithCounter = (battle: Battle) => {
-    count++;
-    counterElement.textContent = `Click Count: ${count}`;
-    onClick(battle);
-  };
+  const onClickWithCounter = (battle: Battle) => onClick(battle);
 
   // Set up environment lighting (no skybox, just IBL)
   app.scene.envAtlas = assets.envAtlas.resource as Texture;
@@ -448,6 +447,9 @@ unloadAll(app);
       }
       else if (battle.getName() === 'Battle of Ain Jalut') {
         battleOfAinJalutScene(canvas, app, onClickWithCounter, sceneNum);  
+      }
+      else if (battle.getName() === 'Siege of Constantinople') {
+        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum);
       }
 
       onClickWithCounter(battle);
