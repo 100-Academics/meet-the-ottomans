@@ -9,6 +9,7 @@ import {
     PLAYER_MAX_DASHES,
     PLAYER_MOVE_SPEED,
 } from './playerMovementConfig';
+import { npc } from '../world/npc/npc';
 
 export class FirstPersonCamera extends ScriptType {
     public eulers = new Vec3();
@@ -33,6 +34,8 @@ export class FirstPersonCamera extends ScriptType {
     public groundSampleRadius = 0.25;
     public collisionProbePadding = 0.3;
     public collisionTag = 'model-obstacle';
+    public maxLookDelta = 40;
+    public mouseSpikeThreshold = 250;
     
     private keys: Record<string, boolean> = {};
     private airJumpsRemaining = PLAYER_MAX_AIR_JUMPS;
@@ -42,6 +45,7 @@ export class FirstPersonCamera extends ScriptType {
     private dashDirection = new Vec3();
     private wasJumpHeld = false;
     private wasDashHeld = false;
+    private ignoreNextMouseMove = false;
 
     private isFiniteNumber(value: unknown): value is number {
         return typeof value === 'number' && Number.isFinite(value);
@@ -74,6 +78,7 @@ export class FirstPersonCamera extends ScriptType {
             
             app.mouse.on('mousedown', () => {
                 app.mouse?.enablePointerLock();
+                this.ignoreNextMouseMove = true;
                 window.focus(); // Ensure window gets keyboard focus when clicking
             });
             
@@ -85,12 +90,32 @@ export class FirstPersonCamera extends ScriptType {
         window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
     }
 
-    private onMouseMove = (e: any) => {
+    private onMouseMove = (e: { dx: number; dy: number }) => {
         if (!Mouse.isPointerLocked()) {
             return;
-            }
-        this.eulers.x -= e.dy * this.lookSpeed;
-        this.eulers.y -= e.dx * this.lookSpeed;
+        }
+
+        if (this.ignoreNextMouseMove) {
+            this.ignoreNextMouseMove = false;
+            return;
+        }
+
+        const rawDx = e.dx;
+        const rawDy = e.dy;
+        if (!Number.isFinite(rawDx) || !Number.isFinite(rawDy)) {
+            return;
+        }
+
+        // Ignore rare pointer-lock spikes that would instantly snap the camera.
+        if (Math.abs(rawDx) > this.mouseSpikeThreshold || Math.abs(rawDy) > this.mouseSpikeThreshold) {
+            return;
+        }
+
+        const safeDx = math.clamp(rawDx, -this.maxLookDelta, this.maxLookDelta);
+        const safeDy = math.clamp(rawDy, -this.maxLookDelta, this.maxLookDelta);
+
+        this.eulers.x -= safeDy * this.lookSpeed;
+        this.eulers.y -= safeDx * this.lookSpeed;
         this.eulers.x = math.clamp(this.eulers.x, -90, 90);
     }
 
@@ -174,6 +199,61 @@ export class FirstPersonCamera extends ScriptType {
         }
 
         return false;
+    }
+
+    // Walk up the hierarchy so clicks on child meshes still count as clicking the NPC root entity.
+    private isEntityOrDescendantOf(entity: Entity | null, root: Entity): boolean {
+        let current: Entity | null = entity;
+        while (current) {
+            if (current === root) {
+                return true;
+            }
+            current = (current.parent as Entity | null) ?? null;
+        }
+        return false;
+    }
+
+    // Raycast from click position and return the hit NPC if it is within maxRange.
+    public getClickedNpcInRange(screenX: number, screenY: number, npcs: npc[], maxRange: number): npc | null {
+        if (!Number.isFinite(maxRange) || maxRange <= 0) {
+            return null;
+        }
+
+        const camera = this.entity.camera;
+        if (!camera) {
+            return null;
+        }
+
+        const rigidbodySystem = (this.app.systems as {
+            rigidbody?: {
+                raycastFirst?: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
+            };
+        }).rigidbody;
+
+        if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
+            return null;
+        }
+
+        // Convert 2D screen coordinates into a 3D world-space ray.
+        const rayStart = camera.screenToWorld(screenX, screenY, camera.nearClip);
+        const rayEnd = camera.screenToWorld(screenX, screenY, camera.farClip);
+        const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
+
+        if (!hit?.entity) {
+            return null;
+        }
+
+        const clickedNpc = npcs.find((currentNpc) => this.isEntityOrDescendantOf(hit.entity ?? null, currentNpc.getEntity()));
+        if (!clickedNpc) {
+            return null;
+        }
+
+        // Prefer hit point distance for accuracy; fall back to entity position if needed.
+        const distance = hit.point
+            ? this.entity.getPosition().distance(hit.point)
+            : this.entity.getPosition().distance(hit.entity.getPosition());
+
+        return distance <= maxRange ? clickedNpc : null;
     }
 
     private hasTagInHierarchy(entity: Entity | null, tag: string): boolean {

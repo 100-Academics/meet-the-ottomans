@@ -1,10 +1,17 @@
 import { AppBase, Entity, Color, Vec3 } from 'playcanvas';
 import { FirstPersonCamera } from './FirstPersonCamera';
+import { unloadAll } from '../util/unloadall';
+import { changeScene } from '../App';
+import { npc } from '../world/npc/npc';
+
 
 export class Player {
     private cameraEntity: Entity;
     private cameraController: FirstPersonCamera | undefined;
     private app: AppBase;
+    private maxHealth = 100;
+    private health = this.maxHealth;
+    private team = 'friend'; // Player is always on the 'friend' team
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
         this.app = app;
@@ -43,5 +50,44 @@ export class Player {
 
     public getPosition(): Vec3 {
         return this.cameraEntity.getPosition();
+    }
+
+    public getHealth(): number {
+        return this.health;
+    }
+
+    public getTeam(): string {
+        return this.team;
+    }
+
+    public takeDamage(damage: number): void {
+        this.health -= damage;
+        this.die(this.isAlive()); // checks for death
+    }
+
+    private die(isAlive: boolean): void {
+        if (!isAlive) {
+            console.log("You have failed to bring glory to the Ottoman Empire. Game Over.");
+            unloadAll(this.app);
+            changeScene(this.app.graphicsDevice.canvas, this.app, 666); 
+            // Show death screen ^^
+        }
+    }
+
+    public isAlive(): boolean {
+        return this.health > 0;
+    }
+
+    private getDamageAmount(): number {
+        return 25; // TODO UPDATE THIS
+    }
+
+    public dealDamage(npc: npc): void {
+        if (npc.getTeam() === 'foe') {
+            npc.takeDamage(this.getDamageAmount());
+        }
+        else {
+            console.log("Attempted to deal damage to a friendly NPC. No damage applied.");
+        }
     }
 }

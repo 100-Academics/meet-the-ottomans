@@ -111,7 +111,7 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
         
         // If this is a closer hit than what we've seen, remember it
         const hitFraction = hit.hitFraction;
-        if (Number.isFinite(hitFraction) && hitFraction < bestFraction) {
+        if (typeof hitFraction === 'number' && Number.isFinite(hitFraction) && hitFraction < bestFraction) {
           bestFraction = hitFraction;
           bestFractionY = hit.point.y;
         }
@@ -527,4 +527,17 @@ export async function battleOfLegnicaScene(
 
   enemy.getEntity().addChild(model.modelEntity);
   app.root.addChild(enemy.getEntity());
+
+  const npcs: npc[] = [enemy];
+  app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, 5);
+    if (hitNpc) {
+      player.dealDamage(hitNpc);
+      console.log(`Hit NPC`);
+    }
+  });
 }

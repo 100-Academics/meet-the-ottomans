@@ -3,6 +3,7 @@ import { AppBase, Entity } from "playcanvas";
 export class npc {
     private id: number;
     private team: string;
+    private maxHealth: number;
     private health: number;
     private entity: Entity;
 
@@ -14,6 +15,7 @@ export class npc {
         this.entity = entity;
         this.id = id;
         this.team = team;
+        this.maxHealth = maxHealth;
         this.health = maxHealth;
     }
 
@@ -35,6 +37,7 @@ export class npc {
 
     public takeDamage(damage: number): boolean {
         this.health -= damage;
+        console.log(`NPC ${this.id} took ${damage} damage, health now ${this.health}`);
         if (this.kill()){
             return true; // NPC is killed
         }

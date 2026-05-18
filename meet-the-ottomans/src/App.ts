@@ -3,6 +3,7 @@ import { Battle } from './world/Battle';
 import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
+import { showDeathScreen } from "./world/scenes/deathScreen.ts";
 
 
 /**
@@ -47,3 +48,22 @@ async function setupApp(
 }
 
 export { setupApp };
+
+export async function changeScene(
+  canvas: HTMLCanvasElement,
+  app: AppBase,
+  sceneNum: number,){
+  if (sceneNum === -2) {
+    return await titleScreen(canvas, app, () => {}, () => 0, sceneNum);
+  } else if (sceneNum === -0) {
+
+    return await defaultScene(canvas, app, () => {}, () => 0, sceneNum);
+  } else if (sceneNum === 666) {
+    return await showDeathScreen({
+      app,
+      onRestart: () => changeScene(canvas, app, 0),
+      onMainMenu: () => changeScene(canvas, app, -2),
+      message: "You have died. Try again?"
+    });
+  }
+}
