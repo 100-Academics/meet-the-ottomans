@@ -5,7 +5,7 @@ import { changeScene } from '../App';
 import { npc } from '../world/npc/npc';
 
 
-export class Player {
+export class Player{
     private cameraEntity: Entity;
     private cameraController: FirstPersonCamera | undefined;
     private app: AppBase;

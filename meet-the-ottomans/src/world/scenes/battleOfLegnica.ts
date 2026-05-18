@@ -500,9 +500,6 @@ export async function battleOfLegnicaScene(
   }
 
   // TODO enemy placement
-  const enemy = new npc(1, 'foe', 100);
-
-  
   const npcSpawnX = 5; // Offset from center so it's visible
   const npcSpawnZ = 0;
 
@@ -518,15 +515,14 @@ export async function battleOfLegnicaScene(
   }
 
   const model = await loadModel("test/armored_king.glb", app, {
-      rigidbodyType: 'static',  
+      rigidbodyType: 'kinematic',
       includeDescendants: true, 
-      position: new Vec3(npcSpawnX, npcSpawnY+2, npcSpawnZ),
+      position: new Vec3(npcSpawnX, npcSpawnY + 2, npcSpawnZ),
       rotation: new Vec3(-90, 0, 0),
       scale: new Vec3(2, 2, 2)
     });
 
-  enemy.getEntity().addChild(model.modelEntity);
-  app.root.addChild(enemy.getEntity());
+  const enemy = new npc(1, 'foe', 100, model.modelEntity);
 
   const npcs: npc[] = [enemy];
   app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
@@ -540,4 +536,24 @@ export async function battleOfLegnicaScene(
       console.log(`Hit NPC`);
     }
   });
+
+  const legnicaApp = app as AppBase & { __legnicaNpcUpdate?: (deltaTime: number) => void };
+  if (legnicaApp.__legnicaNpcUpdate) {
+    app.off('update', legnicaApp.__legnicaNpcUpdate);
+  }
+
+  // Run NPC AI every frame so wandering/chasing/attacking updates over time.
+  legnicaApp.__legnicaNpcUpdate = (deltaTime: number) => {
+    const nowSeconds = Date.now() / 1000;
+    const playerEntity = player.getCameraEntity();
+
+    for (const currentNpc of npcs) {
+      currentNpc.updateAI(deltaTime, playerEntity, nowSeconds, () => {
+        player.takeDamage(10);
+        console.log(`Player hit by NPC ${currentNpc.getId()}, health now ${player.getHealth()}`);
+      });
+    }
+  };
+
+  app.on('update', legnicaApp.__legnicaNpcUpdate);
 }

@@ -499,5 +499,5 @@ export async function battleOfAinJalutScene(
   }
 
   // TODO enemy placement
-
+  
 }
