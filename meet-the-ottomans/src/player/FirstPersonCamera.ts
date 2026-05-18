@@ -68,12 +68,16 @@ export class FirstPersonCamera extends ScriptType {
         
         // Mouse lock
         if (app.mouse) {
+            // Remove old listeners first to prevent duplicates
+            app.mouse.off('mousedown');
+            app.mouse.off('mousemove');
+            
             app.mouse.on('mousedown', () => {
                 app.mouse?.enablePointerLock();
                 window.focus(); // Ensure window gets keyboard focus when clicking
-            }, this);
+            });
             
-            app.mouse.on('mousemove', this.onMouseMove, this);
+            app.mouse.on('mousemove', this.onMouseMove);
         }
 
         // Foolproof Keyboard Tracking for iframe / dev environments
@@ -81,11 +85,10 @@ export class FirstPersonCamera extends ScriptType {
         window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
     }
 
-    onMouseMove(e: any) {
+    private onMouseMove = (e: any) => {
         if (!Mouse.isPointerLocked()) {
             return;
-        }
-
+            }
         this.eulers.x -= e.dy * this.lookSpeed;
         this.eulers.y -= e.dx * this.lookSpeed;
         this.eulers.x = math.clamp(this.eulers.x, -90, 90);

@@ -29,7 +29,7 @@ import { loadModel } from '../../util/loadModel';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
-import { FirstPersonCamera } from '../../util/FirstPersonCamera';
+import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
@@ -345,23 +345,9 @@ export async function battleOfAinJalutScene(
   // Apply the loaded environment map to the scene for reflections
   app.scene.envAtlas = envAtlasAsset.resource as Texture;
 
-  // Create the camera entity
-  const camera = new Entity('camera');
-  camera.addComponent('camera', {
-    clearColor: new Color(0.14117647, 0.14117647, 0.14117647),  // Dark gray background
-    fov: 90  // 90-degree field of view
-  });
-  camera.setPosition(0, 8, 8);
-  camera.lookAt(Vec3.ZERO);
-
-  // Add first-person camera controls (WASD movement, mouse look, gravity)
-  camera.addComponent('script');
-  const cameraController = camera.script?.create(FirstPersonCamera) as FirstPersonCamera | undefined;
-  if (cameraController) {
-    cameraController.groundTag = 'ground';  // The camera will use raycasts to detect ground collision
-  }
-
-  app.root.addChild(camera);
+  // Create the player with camera and first-person controls
+  const player = new Player(app, new Vec3(0, 8, 8));
+  const cameraController = player.getCameraController();
 
   // Load and set up the battlefield ground model
   try {
@@ -413,7 +399,7 @@ export async function battleOfAinJalutScene(
       const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
       const surfaceY = seededGroundY ?? bounds.maxY;  // Fall back to bounds if raycast fails
       const spawnY = surfaceY + spawnSurfaceOffset;
-      camera.setPosition(spawnX, spawnY, spawnZ);
+      player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
 
       // Tell the camera controller where the ground is for gravity calculations
       if (cameraController) {
@@ -457,7 +443,7 @@ export async function battleOfAinJalutScene(
       // If we found a valid spawn position, use it
       if (bestSpawnCandidate && bestSpawnGroundY !== undefined) {
         const spawnY = bestSpawnGroundY + spawnSurfaceOffset;
-        camera.setPosition(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z);
+        player.setPosition(new Vec3(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z));
         if (cameraController) {
           cameraController.groundHeight = bestSpawnGroundY;
         }
