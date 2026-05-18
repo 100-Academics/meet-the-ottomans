@@ -79,7 +79,8 @@ export class Player {
     }
 
     private getDamageAmount(): number {
-        return 25; // TODO UPDATE THIS
+        return 25; // TODO GET WEAPON DAMAGE DYNAMICALLY 
+                   // ALSO TODO set up equipped weapon etc but its midnight rn will do later
     }
 
     public dealDamage(npc: npc): void {
