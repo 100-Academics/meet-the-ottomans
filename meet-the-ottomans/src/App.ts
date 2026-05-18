@@ -52,7 +52,7 @@ export { setupApp };
 export async function changeScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
-  sceneNum: number,){
+  sceneNum: number,): Promise<unknown> {
   if (sceneNum === -2) {
     return await titleScreen(canvas, app, () => {}, () => 0, sceneNum);
   } else if (sceneNum === -0) {
@@ -66,4 +66,6 @@ export async function changeScene(
       message: "You have died. Try again?"
     });
   }
+
+  return undefined;
 }
