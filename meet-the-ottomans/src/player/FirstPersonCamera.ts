@@ -8,6 +8,21 @@ import {
     PLAYER_MAX_AIR_JUMPS,
     PLAYER_MAX_DASHES,
     PLAYER_MOVE_SPEED,
+    PLAYER_WALLRUN_COOLDOWN,
+    PLAYER_WALLRUN_CAMERA_OFFSET,
+    PLAYER_WALLRUN_CAMERA_ROLL_DEG,
+    PLAYER_WALLRUN_CAMERA_ROLL_SPEED,
+    PLAYER_WALLRUN_DETECT_DISTANCE,
+    PLAYER_WALLRUN_GRAVITY_SCALE,
+    PLAYER_WALLRUN_JUMP_PUSH,
+    PLAYER_WALLRUN_JUMP_UP,
+    PLAYER_WALLRUN_MAX_WALL_ANGLE_DEG,
+    PLAYER_WALLRUN_MAX_TIME,
+    PLAYER_WALLRUN_MIN_HEIGHT,
+    PLAYER_WALLRUN_MIN_WALL_ANGLE_DEG,
+    PLAYER_WALLRUN_NO_GRAVITY_TIME,
+    PLAYER_WALLRUN_SPEED,
+    PLAYER_WALLRUN_STICK_FORCE,
 } from './playerMovementConfig';
 import { npc } from '../world/npc/npc';
 
@@ -24,6 +39,21 @@ export class FirstPersonCamera extends ScriptType {
     public readonly dashSpeed = PLAYER_DASH_SPEED;
     public readonly dashDuration = PLAYER_DASH_DURATION;
     public readonly dashRechargeTime = PLAYER_DASH_RECHARGE_TIME;
+    public readonly wallRunSpeed = PLAYER_WALLRUN_SPEED;
+    public readonly wallRunGravityScale = PLAYER_WALLRUN_GRAVITY_SCALE;
+    public readonly wallRunMaxTime = PLAYER_WALLRUN_MAX_TIME;
+    public readonly wallRunCooldown = PLAYER_WALLRUN_COOLDOWN;
+    public readonly wallRunMinHeight = PLAYER_WALLRUN_MIN_HEIGHT;
+    public readonly wallRunDetectDistance = PLAYER_WALLRUN_DETECT_DISTANCE;
+    public readonly wallRunStickForce = PLAYER_WALLRUN_STICK_FORCE;
+    public readonly wallRunJumpUp = PLAYER_WALLRUN_JUMP_UP;
+    public readonly wallRunJumpPush = PLAYER_WALLRUN_JUMP_PUSH;
+    public readonly wallRunMinWallAngleDeg = PLAYER_WALLRUN_MIN_WALL_ANGLE_DEG;
+    public readonly wallRunMaxWallAngleDeg = PLAYER_WALLRUN_MAX_WALL_ANGLE_DEG;
+    public readonly wallRunNoGravityTime = PLAYER_WALLRUN_NO_GRAVITY_TIME;
+    public readonly wallRunCameraRollDeg = PLAYER_WALLRUN_CAMERA_ROLL_DEG;
+    public readonly wallRunCameraRollSpeed = PLAYER_WALLRUN_CAMERA_ROLL_SPEED;
+    public readonly wallRunCameraOffset = PLAYER_WALLRUN_CAMERA_OFFSET;
     public velocity = new Vec3();
     public playerHeight = 2;
     public groundHeight = 0;
@@ -46,6 +76,12 @@ export class FirstPersonCamera extends ScriptType {
     private wasJumpHeld = false;
     private wasDashHeld = false;
     private ignoreNextMouseMove = false;
+
+    private wallRunActive = false;
+    private wallRunTimeRemaining = 0;
+    private wallRunCooldownTimer = 0;
+    private wallRunNormal = new Vec3();
+    private wallRunElapsed = 0;
     
     private coyoteTimer = 0;
     public readonly coyoteTimeDuration = 0.15;
@@ -57,7 +93,7 @@ export class FirstPersonCamera extends ScriptType {
     private tryMoveHorizontally(position: Vec3, direction: Vec3, speed: number, dt: number): void {
         const movement = direction.clone().mulScalar(speed * dt);
         const proposedPos = position.clone().add(movement);
-        if (!this.isBlocked(proposedPos)) {
+        if (!this.isBlocked(position, proposedPos)) {
             position.copy(proposedPos);
         }
     }
@@ -68,7 +104,7 @@ export class FirstPersonCamera extends ScriptType {
         
         // Check collision only for horizontal components to allow upward dashing
         const horizontalCheck = new Vec3(proposedPos.x, position.y, proposedPos.z);
-        if (!this.isBlocked(horizontalCheck)) {
+        if (!this.isBlocked(position, horizontalCheck)) {
             position.copy(proposedPos);
         }
     }
@@ -81,6 +117,12 @@ export class FirstPersonCamera extends ScriptType {
         this.dashCharges = this.maxDashes;
         this.dashRechargeTimer = 0;
         this.dashTimeRemaining = 0;
+        this.wallRunActive = false;
+        this.wallRunTimeRemaining = 0;
+        this.wallRunCooldownTimer = 0;
+        this.wallRunNormal.set(0, 0, 0);
+        this.wallRunElapsed = 0;
+        this.eulers.z = 0;
 
         const app = this.app;
         
@@ -183,7 +225,34 @@ export class FirstPersonCamera extends ScriptType {
         return { minX, minY, minZ, maxX, maxY, maxZ };
     }
 
-    private isBlocked(nextPos: Vec3): boolean {
+    private isBlocked(currentPos: Vec3, nextPos: Vec3): boolean {
+        const rigidbodySystem = (this.app.systems as any).rigidbody;
+        const moveDelta = nextPos.clone().sub(currentPos);
+        const moveDistance = moveDelta.length();
+        if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function' && moveDistance > 0.0001) {
+            const rayStart = currentPos.clone();
+            rayStart.y -= this.playerHeight * 0.5;
+            const rayEnd = nextPos.clone();
+            rayEnd.y = rayStart.y;
+            const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd) as
+                | { entity?: Entity | null; point?: Vec3; normal?: Vec3 }
+                | null;
+
+            if (hit?.point && hit?.entity) {
+                const toHit = hit.point.clone().sub(rayStart);
+                if (toHit.length() <= moveDistance + this.collisionProbePadding) {
+                    if (hit.normal && this.isFiniteNumber(hit.normal.x) && this.isFiniteNumber(hit.normal.y) && this.isFiniteNumber(hit.normal.z)) {
+                        const normal = new Vec3(hit.normal.x, hit.normal.y, hit.normal.z).normalize();
+                        if (normal.y < 0.6) {
+                            return true;
+                        }
+                    } else {
+                        return true;
+                    }
+                }
+            }
+        }
+
         const obstacles = this.app.root.findByTag(this.collisionTag) as Entity[];
         if (!obstacles || obstacles.length === 0) {
             return false;
@@ -299,8 +368,10 @@ export class FirstPersonCamera extends ScriptType {
             raycastFirst: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
         },
         start: Vec3,
-        end: Vec3
+        end: Vec3,
+        maxAllowedY: number
     ): number | undefined {
+        const maxY = this.isFiniteNumber(maxAllowedY) ? maxAllowedY : Number.POSITIVE_INFINITY;
         const hits = typeof rigidbodySystem.raycastAll === 'function'
             ? rigidbodySystem.raycastAll(start, end)
             : undefined;
@@ -315,6 +386,10 @@ export class FirstPersonCamera extends ScriptType {
                 }
                 const hitY = hit.point.y;
                 if (!this.isFiniteNumber(hitY)) {
+                    continue;
+                }
+
+                if (hitY > maxY + this.groundedEpsilon) {
                     continue;
                 }
 
@@ -358,6 +433,10 @@ export class FirstPersonCamera extends ScriptType {
             return undefined;
         }
 
+        if (firstHitY > maxY + this.groundedEpsilon) {
+            return undefined;
+        }
+
         return firstHitY;
     }
 
@@ -381,9 +460,10 @@ export class FirstPersonCamera extends ScriptType {
             const rayStartY = Math.max(position.y + this.groundRayHeight, this.groundHeight + this.groundRayHeight, 500);
             const rayEndY = Math.min(position.y - this.groundRayDepth, this.groundHeight - this.groundRayDepth, -500);
             if (this.isFiniteNumber(rayStartY) && this.isFiniteNumber(rayEndY)) {
+                const maxGroundY = position.y - this.playerHeight + Math.max(this.groundedEpsilon, 0.05);
                 const centerStart = new Vec3(position.x, rayStartY, position.z);
                 const centerEnd = new Vec3(position.x, rayEndY, position.z);
-                const centerHitY = this.getGroundRayHitY(rigidbodySystem, centerStart, centerEnd);
+                const centerHitY = this.getGroundRayHitY(rigidbodySystem, centerStart, centerEnd, maxGroundY);
                 if (this.isFiniteNumber(centerHitY)) {
                     highestGroundHeight = centerHitY;
                 } else {
@@ -398,7 +478,7 @@ export class FirstPersonCamera extends ScriptType {
                         const sampleZ = position.z + offset.z;
                         const start = new Vec3(sampleX, rayStartY, sampleZ);
                         const end = new Vec3(sampleX, rayEndY, sampleZ);
-                        const hitY = this.getGroundRayHitY(rigidbodySystem, start, end);
+                        const hitY = this.getGroundRayHitY(rigidbodySystem, start, end, maxGroundY);
                         if (!this.isFiniteNumber(hitY)) {
                             continue;
                         }
@@ -422,9 +502,73 @@ export class FirstPersonCamera extends ScriptType {
         return this.groundHeight;
     }
 
-    update(dt: number) {
-        this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, 0);
+    private estimateWallNormal(entity: Entity, position: Vec3, fallbackDirection: Vec3): Vec3 {
+        const aabb = this.getEntityWorldAabb(entity);
+        if (aabb) {
+            const closestX = math.clamp(position.x, aabb.minX, aabb.maxX);
+            const closestZ = math.clamp(position.z, aabb.minZ, aabb.maxZ);
+            const closest = new Vec3(closestX, position.y, closestZ);
+            const normal = position.clone().sub(closest);
+            normal.y = 0;
+            if (normal.lengthSq() > 0.0001) {
+                return normal.normalize();
+            }
+        }
 
+        const fallback = fallbackDirection.clone().mulScalar(-1);
+        fallback.y = 0;
+        if (fallback.lengthSq() > 0.0001) {
+            return fallback.normalize();
+        }
+
+        return new Vec3(0, 0, 0);
+    }
+
+    private getWallHit(position: Vec3, direction: Vec3): { normal: Vec3; point?: Vec3 } | null {
+        const rigidbodySystem = (this.app.systems as any).rigidbody;
+        if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
+            return null;
+        }
+
+        const start = position.clone();
+        const end = position.clone().add(direction.clone().mulScalar(this.wallRunDetectDistance));
+        const hit = rigidbodySystem.raycastFirst(start, end) as { entity?: Entity | null; point?: Vec3; normal?: Vec3 } | null;
+        if (!hit?.entity) {
+            return null;
+        }
+
+        let normal: Vec3 | null = null;
+        if (hit.normal && this.isFiniteNumber(hit.normal.x) && this.isFiniteNumber(hit.normal.y) && this.isFiniteNumber(hit.normal.z)) {
+            normal = new Vec3(hit.normal.x, hit.normal.y, hit.normal.z);
+        } else {
+            normal = this.estimateWallNormal(hit.entity, position, direction);
+        }
+
+        if (!normal || normal.lengthSq() === 0) {
+            return null;
+        }
+
+        normal.normalize();
+        const up = new Vec3(0, 1, 0);
+        const angleDeg = Math.acos(math.clamp(normal.dot(up), -1, 1)) * (180 / Math.PI);
+        if (angleDeg < this.wallRunMinWallAngleDeg || angleDeg > this.wallRunMaxWallAngleDeg) {
+            return null;
+        }
+
+        return { normal, point: hit.point };
+    }
+
+    private stopWallRun(): void {
+        if (!this.wallRunActive) {
+            return;
+        }
+        this.wallRunActive = false;
+        this.wallRunTimeRemaining = 0;
+        this.wallRunCooldownTimer = this.wallRunCooldown;
+        this.wallRunElapsed = 0;
+    }
+
+    update(dt: number) {
         const app = this.app;
         const forward = this.entity.forward;
         const right = this.entity.right;
@@ -466,7 +610,7 @@ export class FirstPersonCamera extends ScriptType {
         // If we're moving down and hit gravity, this.velocity.y will be negative.
         const isFalling = this.velocity.y < 0;
         const slopeGrace = isFalling ? 1.0 : this.groundedEpsilon; 
-        const onGround = pos.y <= safeGroundHeight + this.playerHeight + slopeGrace;
+        let onGround = pos.y <= safeGroundHeight + this.playerHeight + slopeGrace;
 
         if (onGround) {
             this.airJumpsRemaining = this.maxAirJumps;
@@ -477,24 +621,77 @@ export class FirstPersonCamera extends ScriptType {
             this.coyoteTimer -= dt;
         }
 
+        if (this.wallRunCooldownTimer > 0) {
+            this.wallRunCooldownTimer = Math.max(0, this.wallRunCooldownTimer - dt);
+        }
+
+        const wallProbeOrigin = pos.clone();
+        wallProbeOrigin.y = pos.y - this.playerHeight * 0.5;
+        const rightWallHit = this.getWallHit(wallProbeOrigin, walkRight);
+        const leftWallHit = this.getWallHit(wallProbeOrigin, walkRight.clone().mulScalar(-1));
+        const wallHit = rightWallHit ?? leftWallHit;
+
+        const wallRunHeight = pos.y - (safeGroundHeight + this.playerHeight);
+        const hasForwardIntent = hasMoveInput && moveDir.dot(walkForward) > 0.2;
+        const canStartWallRun = !onGround
+            && hasForwardIntent
+            && wallRunHeight > this.wallRunMinHeight
+            && this.wallRunCooldownTimer <= 0
+            && wallHit !== null;
+
+        if (!this.wallRunActive && canStartWallRun) {
+            this.wallRunActive = true;
+            this.wallRunTimeRemaining = this.wallRunMaxTime;
+            this.wallRunNormal.copy(wallHit!.normal);
+            this.velocity.y = Math.max(this.velocity.y, 0);
+            this.wallRunElapsed = 0;
+        }
+
+        if (this.wallRunActive) {
+            if (wallHit) {
+                this.wallRunNormal.copy(wallHit.normal);
+            }
+            this.wallRunElapsed += dt;
+            this.wallRunTimeRemaining = Math.max(0, this.wallRunTimeRemaining - dt);
+            if (!wallHit || !hasForwardIntent || onGround || this.wallRunTimeRemaining === 0) {
+                this.stopWallRun();
+            }
+        }
+
+        if (this.wallRunActive) {
+            onGround = false;
+        }
+
         if (jumpPressed) {
-            // First check for ground or coyote time jump
-            if (onGround || this.coyoteTimer > 0) {
-                // If we are getting pulled down by gravity, snap our base Y to the ground before jumping 
-                // so we don't jump "from slightly above ground" feeling weak
-                if (pos.y < safeGroundHeight + this.playerHeight + slopeGrace && isFalling) {
-                   pos.y = safeGroundHeight + this.playerHeight;
+            if (this.wallRunActive) {
+                this.stopWallRun();
+                this.velocity.y = this.wallRunJumpUp;
+                this.velocity.add(this.wallRunNormal.clone().mulScalar(this.wallRunJumpPush));
+            } else {
+                // First check for ground or coyote time jump
+                if (onGround || this.coyoteTimer > 0) {
+                    // If we are getting pulled down by gravity, snap our base Y to the ground before jumping 
+                    // so we don't jump "from slightly above ground" feeling weak
+                    if (pos.y < safeGroundHeight + this.playerHeight + slopeGrace && isFalling) {
+                       pos.y = safeGroundHeight + this.playerHeight;
+                    }
+                    this.velocity.y = this.jumpPower;
+                    this.coyoteTimer = 0; // consume coyote time
+                } else if (this.airJumpsRemaining > 0) {
+                    this.velocity.y = this.jumpPower;
+                    this.airJumpsRemaining -= 1;
                 }
-                this.velocity.y = this.jumpPower;
-                this.coyoteTimer = 0; // consume coyote time
-            } else if (this.airJumpsRemaining > 0) {
-                this.velocity.y = this.jumpPower;
-                this.airJumpsRemaining -= 1;
             }
         }
 
         if (dashPressed && this.dashCharges > 0) {
-            if (hasMoveInput) {
+            if (this.wallRunActive) {
+                const wallForward = walkForward.clone().sub(this.wallRunNormal.clone().mulScalar(walkForward.dot(this.wallRunNormal)));
+                if (wallForward.lengthSq() > 0.0001) {
+                    wallForward.normalize();
+                }
+                this.dashDirection.copy(wallForward);
+            } else if (hasMoveInput) {
                 this.dashDirection.copy(moveDir);
             } else {
                 this.dashDirection.set(forward.x, 0, forward.z);
@@ -503,8 +700,8 @@ export class FirstPersonCamera extends ScriptType {
                 }
             }
 
-            // Add upward component if Space is held
-            if (isSpace) {
+            // Add upward component if Space is held (not while wallrunning)
+            if (!this.wallRunActive && isSpace) {
                 this.dashDirection.y = 1;
                 this.dashDirection.normalize();
             }
@@ -527,25 +724,82 @@ export class FirstPersonCamera extends ScriptType {
             }
         }
 
-        if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-            this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
-            this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
-        } else if (hasMoveInput) {
-            this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt);
-        }
+        if (this.wallRunActive) {
+            if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
+                this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
+            } else {
+                const baseDir = walkForward;
+                const wallForward = baseDir.clone().sub(this.wallRunNormal.clone().mulScalar(baseDir.dot(this.wallRunNormal)));
+                if (wallForward.lengthSq() > 0.0001) {
+                    wallForward.normalize();
+                    this.tryMoveHorizontally(pos, wallForward, this.wallRunSpeed, dt);
+                }
+            }
 
-        // Apply Gravity
-        this.velocity.y -= this.gravity * dt;
-        pos.y += this.velocity.y * dt;
+            if (wallHit?.point) {
+                const desiredWallDistance = this.collisionProbePadding + 0.15;
+                const toWall = pos.clone().sub(wallHit.point);
+                const currentDistance = toWall.dot(this.wallRunNormal);
+                if (this.isFiniteNumber(currentDistance)) {
+                    const correction = currentDistance - desiredWallDistance;
+                    pos.add(this.wallRunNormal.clone().mulScalar(-correction));
+                }
+            } else if (this.wallRunStickForce > 0) {
+                pos.add(this.wallRunNormal.clone().mulScalar(-this.wallRunStickForce * dt));
+            }
 
-        // Ground collision
-        if (pos.y < safeGroundHeight + this.playerHeight) {
-            pos.y = safeGroundHeight + this.playerHeight;
-            this.velocity.y = 0;
+            if (this.wallRunElapsed < this.wallRunNoGravityTime) {
+                this.velocity.y = 0;
+            } else if (this.velocity.y > 0) {
+                this.velocity.y = 0;
+            }
+
+            const wallRunGravityScale = this.wallRunElapsed < this.wallRunNoGravityTime
+                ? 0
+                : this.wallRunGravityScale;
+            this.velocity.y -= this.gravity * wallRunGravityScale * dt;
+            pos.y += this.velocity.y * dt;
+
+            if (pos.y < safeGroundHeight + this.playerHeight) {
+                pos.y = safeGroundHeight + this.playerHeight;
+                this.velocity.y = 0;
+                this.stopWallRun();
+            }
+        } else {
+            if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
+                this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
+            } else if (hasMoveInput) {
+                this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt);
+            }
+
+            // Apply Gravity
+            this.velocity.y -= this.gravity * dt;
+            pos.y += this.velocity.y * dt;
+
+            // Ground collision
+            if (pos.y < safeGroundHeight + this.playerHeight) {
+                pos.y = safeGroundHeight + this.playerHeight;
+                this.velocity.y = 0;
+            }
         }
 
         this.wasJumpHeld = !!isSpace;
         this.wasDashHeld = !!isShift;
+
+        const wallSide = this.wallRunNormal.dot(walkRight);
+        const wallRollTarget = this.wallRunActive
+            ? math.clamp(-Math.sign(wallSide) || 0, -1, 1) * this.wallRunCameraRollDeg
+            : 0;
+        const rollBlend = math.clamp(dt * this.wallRunCameraRollSpeed, 0, 1);
+        this.eulers.z = math.lerp(this.eulers.z, wallRollTarget, rollBlend);
+
+        if (this.wallRunActive) {
+            pos.add(this.wallRunNormal.clone().mulScalar(this.wallRunCameraOffset));
+        }
+
+        this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
         this.entity.setPosition(pos);
     }
 }
