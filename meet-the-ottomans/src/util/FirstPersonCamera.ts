@@ -1,12 +1,28 @@
-import { ScriptType, Vec3, math, Mouse, KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, type Entity } from 'playcanvas';
+import { ScriptType, Vec3, math, Mouse, KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT, type Entity } from 'playcanvas';
+import {
+    PLAYER_DASH_DURATION,
+    PLAYER_DASH_RECHARGE_TIME,
+    PLAYER_DASH_SPEED,
+    PLAYER_GRAVITY,
+    PLAYER_JUMP_POWER,
+    PLAYER_MAX_AIR_JUMPS,
+    PLAYER_MAX_DASHES,
+    PLAYER_MOVE_SPEED,
+} from './playerMovementConfig';
 
 export class FirstPersonCamera extends ScriptType {
     public eulers = new Vec3();
     public touchSensitivity = 1 / 2;
     public lookSpeed = 1 / 5;
     
-    public moveSpeed = 5;
-    public gravity = 9.8;
+    public readonly moveSpeed = PLAYER_MOVE_SPEED;
+    public readonly gravity = PLAYER_GRAVITY;
+    public readonly jumpPower = PLAYER_JUMP_POWER;
+    public readonly maxAirJumps = PLAYER_MAX_AIR_JUMPS;
+    public readonly maxDashes = PLAYER_MAX_DASHES;
+    public readonly dashSpeed = PLAYER_DASH_SPEED;
+    public readonly dashDuration = PLAYER_DASH_DURATION;
+    public readonly dashRechargeTime = PLAYER_DASH_RECHARGE_TIME;
     public velocity = new Vec3();
     public playerHeight = 2;
     public groundHeight = 0;
@@ -19,15 +35,34 @@ export class FirstPersonCamera extends ScriptType {
     public collisionTag = 'model-obstacle';
     
     private keys: Record<string, boolean> = {};
+    private airJumpsRemaining = PLAYER_MAX_AIR_JUMPS;
+    private dashCharges = PLAYER_MAX_DASHES;
+    private dashRechargeTimer = 0;
+    private dashTimeRemaining = 0;
+    private dashDirection = new Vec3();
+    private wasJumpHeld = false;
+    private wasDashHeld = false;
 
     private isFiniteNumber(value: unknown): value is number {
         return typeof value === 'number' && Number.isFinite(value);
+    }
+
+    private tryMoveHorizontally(position: Vec3, direction: Vec3, speed: number, dt: number): void {
+        const movement = direction.clone().mulScalar(speed * dt);
+        const proposedPos = position.clone().add(movement);
+        if (!this.isBlocked(proposedPos)) {
+            position.copy(proposedPos);
+        }
     }
 
     initialize() {
         this.eulers.x = this.entity.getLocalEulerAngles().x;
         this.eulers.y = this.entity.getLocalEulerAngles().y;
         this.groundHeight = this.entity.getPosition().y - this.playerHeight;
+        this.airJumpsRemaining = this.maxAirJumps;
+        this.dashCharges = this.maxDashes;
+        this.dashRechargeTimer = 0;
+        this.dashTimeRemaining = 0;
 
         const app = this.app;
         
@@ -309,21 +344,20 @@ export class FirstPersonCamera extends ScriptType {
         const isA = this.keys['KeyA'] || app.keyboard?.isPressed(KEY_A);
         const isD = this.keys['KeyD'] || app.keyboard?.isPressed(KEY_D);
         const isSpace = this.keys['Space'] || app.keyboard?.isPressed(KEY_SPACE);
+        const isShift = this.keys['ShiftLeft'] || this.keys['ShiftRight'] || app.keyboard?.isPressed(KEY_SHIFT);
+        const jumpPressed = !!isSpace && !this.wasJumpHeld;
+        const dashPressed = !!isShift && !this.wasDashHeld;
 
         if (isW) moveDir.add(walkForward);
         if (isS) moveDir.sub(walkForward);
         if (isA) moveDir.sub(walkRight);
         if (isD) moveDir.add(walkRight);
+        const hasMoveInput = moveDir.lengthSq() > 0;
+        if (hasMoveInput) {
+            moveDir.normalize();
+        }
         
         const pos = this.entity.getPosition().clone();
-        
-        if (moveDir.lengthSq() > 0) {
-            moveDir.normalize().mulScalar(this.moveSpeed * dt);
-            const proposedPos = pos.clone().add(moveDir);
-            if (!this.isBlocked(proposedPos)) {
-                pos.copy(proposedPos);
-            }
-        }
 
         const currentGroundHeight = this.getGroundHeightAt(pos);
         if (!this.isFiniteNumber(currentGroundHeight)) {
@@ -332,9 +366,52 @@ export class FirstPersonCamera extends ScriptType {
         const safeGroundHeight = this.isFiniteNumber(this.groundHeight) ? this.groundHeight : (pos.y - this.playerHeight);
         const onGround = pos.y <= safeGroundHeight + this.playerHeight + this.groundedEpsilon;
 
-        // Space to jump
-        if (onGround && isSpace) {
-            this.velocity.y = 5; 
+        if (onGround) {
+            this.airJumpsRemaining = this.maxAirJumps;
+        }
+
+        if (jumpPressed) {
+            if (onGround) {
+                this.velocity.y = this.jumpPower;
+            } else if (this.airJumpsRemaining > 0) {
+                this.velocity.y = this.jumpPower;
+                this.airJumpsRemaining -= 1;
+            }
+        }
+
+        if (dashPressed && this.dashCharges > 0) {
+            if (hasMoveInput) {
+                this.dashDirection.copy(moveDir);
+            } else {
+                this.dashDirection.set(forward.x, 0, forward.z);
+                if (this.dashDirection.lengthSq() > 0) {
+                    this.dashDirection.normalize();
+                }
+            }
+
+            if (this.dashDirection.lengthSq() > 0) {
+                this.dashCharges -= 1;
+                this.dashTimeRemaining = this.dashDuration;
+                this.dashRechargeTimer = 0;
+            }
+        }
+
+        if (this.dashCharges < this.maxDashes) {
+            this.dashRechargeTimer += dt;
+            while (this.dashCharges < this.maxDashes && this.dashRechargeTimer >= this.dashRechargeTime) {
+                this.dashCharges += 1;
+                this.dashRechargeTimer -= this.dashRechargeTime;
+            }
+            if (this.dashCharges === this.maxDashes) {
+                this.dashRechargeTimer = 0;
+            }
+        }
+
+        if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
+            this.tryMoveHorizontally(pos, this.dashDirection, this.dashSpeed, dt);
+            this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
+        } else if (hasMoveInput) {
+            this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt);
         }
 
         // Apply Gravity
@@ -347,6 +424,8 @@ export class FirstPersonCamera extends ScriptType {
             this.velocity.y = 0;
         }
 
+        this.wasJumpHeld = !!isSpace;
+        this.wasDashHeld = !!isShift;
         this.entity.setPosition(pos);
     }
 }
