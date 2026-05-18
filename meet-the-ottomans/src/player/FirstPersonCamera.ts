@@ -59,6 +59,17 @@ export class FirstPersonCamera extends ScriptType {
         }
     }
 
+    private tryMoveDash(position: Vec3, direction: Vec3, speed: number, dt: number): void {
+        const movement = direction.clone().mulScalar(speed * dt);
+        const proposedPos = position.clone().add(movement);
+        
+        // Check collision only for horizontal components to allow upward dashing
+        const horizontalCheck = new Vec3(proposedPos.x, position.y, proposedPos.z);
+        if (!this.isBlocked(horizontalCheck)) {
+            position.copy(proposedPos);
+        }
+    }
+
     initialize() {
         this.eulers.x = this.entity.getLocalEulerAngles().x;
         this.eulers.y = this.entity.getLocalEulerAngles().y;
@@ -472,6 +483,12 @@ export class FirstPersonCamera extends ScriptType {
                 }
             }
 
+            // Add upward component if Space is held
+            if (isSpace) {
+                this.dashDirection.y = 1;
+                this.dashDirection.normalize();
+            }
+
             if (this.dashDirection.lengthSq() > 0) {
                 this.dashCharges -= 1;
                 this.dashTimeRemaining = this.dashDuration;
@@ -491,7 +508,7 @@ export class FirstPersonCamera extends ScriptType {
         }
 
         if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-            this.tryMoveHorizontally(pos, this.dashDirection, this.dashSpeed, dt);
+            this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
             this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
         } else if (hasMoveInput) {
             this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt);
