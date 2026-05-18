@@ -4,6 +4,7 @@ import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
 import { showDeathScreen } from "./world/scenes/deathScreen.ts";
+import { unloadAll } from "./util/unloadall.ts";
 
 
 /**
@@ -53,6 +54,7 @@ export async function changeScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
   sceneNum: number,): Promise<unknown> {
+  unloadAll(app);
   if (sceneNum === -2) {
     return await titleScreen(canvas, app, () => {}, () => 0, sceneNum);
   } else if (sceneNum === -0) {

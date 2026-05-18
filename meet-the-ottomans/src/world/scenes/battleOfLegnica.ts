@@ -31,7 +31,8 @@ import { loadModel } from '../../util/loadModel';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
-import { npc } from "../npc/npc";
+import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, LEGNICA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
 
@@ -499,36 +500,7 @@ export async function battleOfLegnicaScene(
     app.root.addChild(light);
   }
 
-  // Spawn one foe and one friendly NPC so team-based AI combat is visible in-scene.
-  const npcSpawnPoints = [
-    { id: 1, team: 'foe' as const, x: 6, z: 0 },
-    { id: 2, team: 'friend' as const, x: -6, z: 0 }
-  ];
-
-  const npcs: npc[] = [];
-  for (const spawn of npcSpawnPoints) {
-    let npcSpawnY = 0;
-    if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function') {
-      const rayStart = new Vec3(spawn.x, 300, spawn.z);
-      const rayEnd = new Vec3(spawn.x, -300, spawn.z);
-      const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
-      if (hit?.point) {
-        npcSpawnY = hit.point.y + 0.1;
-      }
-    }
-
-    const npcModel = await loadModel("test/armored_king.glb", app, {
-      rigidbodyType: 'kinematic',
-      includeDescendants: true,
-      position: new Vec3(spawn.x, npcSpawnY + 2, spawn.z),
-      rotation: new Vec3(-90, 0, 0),
-      scale: new Vec3(2, 2, 2)
-    });
-
-    const spawnedNpc = new npc(spawn.id, spawn.team, 100, npcModel.modelEntity);
-    spawnedNpc.setFacingYawOffsetDegrees(180);
-    npcs.push(spawnedNpc);
-  }
+  const npcs = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
   app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
     if (event.button !== 0) {
       return;
@@ -541,33 +513,15 @@ export async function battleOfLegnicaScene(
     }
   });
 
-  const legnicaApp = app as AppBase & { __legnicaNpcUpdate?: (deltaTime: number) => void };
-  if (legnicaApp.__legnicaNpcUpdate) {
-    app.off('update', legnicaApp.__legnicaNpcUpdate);
-  }
-
-  // Run NPC AI every frame so wandering/chasing/attacking updates over time.
-  legnicaApp.__legnicaNpcUpdate = (deltaTime: number) => {
-    const nowSeconds = Date.now() / 1000;
-    const playerEntity = player.getCameraEntity();
-
-    for (const currentNpc of npcs) {
-      currentNpc.updateCombatAI(
-        deltaTime,
-        nowSeconds,
-        npcs,
-        (attacker, target, damage) => {
-          target.takeDamage(damage);
-          console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
-        },
-        playerEntity,
-        (attacker, damage) => {
-          player.takeDamage(damage);
-          console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
-        }
-      );
+  bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
+    updateKey: '__legnicaNpcUpdate',
+    onNpcAttack: (attacker, target, damage) => {
+      target.takeDamage(damage);
+      console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
+    },
+    onPlayerAttack: (attacker, damage) => {
+      player.takeDamage(damage);
+      console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
     }
-  };
-
-  app.on('update', legnicaApp.__legnicaNpcUpdate);
+  });
 }

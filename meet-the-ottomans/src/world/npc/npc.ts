@@ -35,6 +35,7 @@ export class npc {
     private readonly basePitchDegrees: number;
     private readonly baseRollDegrees: number;
     private spawnCenter = new Vec3(0, 0, 0);
+    private hitboxRadius = 1.1;
 
     private readonly aiConfig: NpcAiConfig = {
         idleMoveSpeed: 0.8,
@@ -93,6 +94,16 @@ export class npc {
         this.facingYawOffsetDegrees = offsetDegrees;
     }
 
+    public setHitboxRadius(radius: number): void {
+        if (Number.isFinite(radius) && radius > 0) {
+            this.hitboxRadius = radius;
+        }
+    }
+
+    public getHitboxRadius(): number {
+        return this.hitboxRadius;
+    }
+
     public getAttackDamage(): number {
         return this.getCombatProfile().attackDamage;
     }
@@ -111,14 +122,13 @@ export class npc {
 
         const profile = this.getCombatProfile();
         const hostileNpcTarget = this.findNearestHostileNpc(allNpcs, profile.detectionRange);
-        const hostileNpcDistance = hostileNpcTarget ? this.getDistanceToEntity(hostileNpcTarget.getEntity()) : Number.POSITIVE_INFINITY;
 
         if (this.team === "foe" && playerEntity) {
             const playerDistance = this.getDistanceToEntity(playerEntity);
             const playerInRange = playerDistance <= profile.detectionRange;
 
-            // Enemy AI prioritizes the player when they are at least as close as other targets.
-            if (playerInRange && playerDistance <= hostileNpcDistance) {
+            // Enemy AI always prioritizes player when player is within detection range.
+            if (playerInRange) {
                 this.updateAI(deltaTime, playerEntity, currentTimeSeconds, () => {
                     if (onPlayerAttack) {
                         onPlayerAttack(this, profile.attackDamage);
@@ -327,5 +337,42 @@ export class npc {
         const dx = otherPos.x - myPos.x;
         const dz = otherPos.z - myPos.z;
         return Math.sqrt((dx * dx) + (dz * dz));
+    }
+
+    public static resolveHitboxCollisions(allNpcs: npc[]): void {
+        for (let i = 0; i < allNpcs.length; i++) {
+            const a = allNpcs[i];
+            if (!a.isAlive()) {
+                continue;
+            }
+
+            for (let j = i + 1; j < allNpcs.length; j++) {
+                const b = allNpcs[j];
+                if (!b.isAlive()) {
+                    continue;
+                }
+
+                const aPos = a.getEntity().getPosition();
+                const bPos = b.getEntity().getPosition();
+                const dx = bPos.x - aPos.x;
+                const dz = bPos.z - aPos.z;
+                const distance = Math.sqrt((dx * dx) + (dz * dz));
+                const minDistance = a.hitboxRadius + b.hitboxRadius;
+
+                if (distance >= minDistance) {
+                    continue;
+                }
+
+                const overlap = minDistance - distance;
+                const nx = distance > 0.0001 ? dx / distance : 1;
+                const nz = distance > 0.0001 ? dz / distance : 0;
+                const push = overlap * 0.5;
+
+                const correctedA = new Vec3(aPos.x - (nx * push), aPos.y, aPos.z - (nz * push));
+                const correctedB = new Vec3(bPos.x + (nx * push), bPos.y, bPos.z + (nz * push));
+                a.getEntity().setPosition(correctedA);
+                b.getEntity().setPosition(correctedB);
+            }
+        }
     }
 }

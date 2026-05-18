@@ -31,6 +31,8 @@ import { loadModel } from '../../util/loadModel';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
+import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
 
@@ -110,7 +112,7 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
         
         // If this is a closer hit than what we've seen, remember it
         const hitFraction = hit.hitFraction;
-        if (Number.isFinite(hitFraction) && hitFraction < bestFraction) {
+        if (typeof hitFraction === 'number' && Number.isFinite(hitFraction) && hitFraction < bestFraction) {
           bestFraction = hitFraction;
           bestFractionY = hit.point.y;
         }
@@ -498,6 +500,29 @@ export async function battleOfAinJalutScene(
     app.root.addChild(light);
   }
 
-  // TODO enemy placement
-  
+  const npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+
+  app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, 5);
+    if (hitNpc) {
+      player.dealDamage(hitNpc);
+      console.log(`Hit NPC`);
+    }
+  });
+
+  bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
+    updateKey: '__ainJalutNpcUpdate',
+    onNpcAttack: (attacker, target, damage) => {
+      target.takeDamage(damage);
+      console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
+    },
+    onPlayerAttack: (attacker, damage) => {
+      player.takeDamage(damage);
+      console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
+    }
+  });
 }
