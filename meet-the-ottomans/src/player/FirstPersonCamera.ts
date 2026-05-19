@@ -101,6 +101,8 @@ export class FirstPersonCamera extends ScriptType {
     private slideSpeedCurrent = 0;
     private slideTimeRemaining = 0;
     private slideCameraBlend = 0;
+    private basePosition = new Vec3();
+    private basePositionReady = false;
     
     private coyoteTimer = 0;
     public readonly coyoteTimeDuration = 0.15;
@@ -147,6 +149,9 @@ export class FirstPersonCamera extends ScriptType {
         this.slideTimeRemaining = 0;
         this.slideCameraBlend = 0;
         this.eulers.z = 0;
+        const startPos = this.entity.getPosition();
+        this.basePosition.copy(startPos);
+        this.basePositionReady = true;
 
         const app = this.app;
         
@@ -591,7 +596,15 @@ export class FirstPersonCamera extends ScriptType {
             moveDir.normalize();
         }
         
-        const pos = this.entity.getPosition().clone();
+        const entityPos = this.entity.getPosition();
+        if (!this.basePositionReady) {
+            this.basePosition.copy(entityPos);
+            this.basePositionReady = true;
+        }
+        if (!this.slideActive && !this.wallRunActive && this.slideCameraBlend < 0.001) {
+            this.basePosition.copy(entityPos);
+        }
+        const pos = this.basePosition.clone();
 
         const currentGroundHeight = this.getGroundHeightAt(pos);
         if (!this.isFiniteNumber(currentGroundHeight)) {
@@ -799,6 +812,7 @@ export class FirstPersonCamera extends ScriptType {
 
         this.wasJumpHeld = !!isSpace;
         this.wasDashHeld = !!isShift;
+        this.basePosition.copy(pos);
 
         const wallSide = this.wallRunNormal.dot(walkRight);
         const wallRollTarget = this.wallRunActive
@@ -807,8 +821,9 @@ export class FirstPersonCamera extends ScriptType {
         const rollBlend = math.clamp(dt * this.wallRunCameraRollSpeed, 0, 1);
         this.eulers.z = math.lerp(this.eulers.z, wallRollTarget, rollBlend);
 
+        const finalPos = pos.clone();
         if (this.wallRunActive) {
-            pos.add(this.wallRunNormal.clone().mulScalar(this.wallRunCameraOffset));
+            finalPos.add(this.wallRunNormal.clone().mulScalar(this.wallRunCameraOffset));
         }
 
         // Scale camera effect by current slide speed so it is strongest at slide start.
@@ -825,13 +840,13 @@ export class FirstPersonCamera extends ScriptType {
             if (cameraForward.lengthSq() > 0.0001) {
                 cameraForward.normalize();
                 // Pull camera back along facing direction to emphasize momentum.
-                pos.add(cameraForward.mulScalar(-this.slideCameraPullback * this.slideCameraBlend));
+                finalPos.add(cameraForward.mulScalar(-this.slideCameraPullback * this.slideCameraBlend));
             }
             // Lower camera to make the crouched slide stance visually obvious.
-            pos.y -= this.slideCameraDrop * this.slideCameraBlend;
+            finalPos.y -= this.slideCameraDrop * this.slideCameraBlend;
         }
 
         this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
-        this.entity.setPosition(pos);
+        this.entity.setPosition(finalPos);
     }
 }
