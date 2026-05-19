@@ -62,6 +62,9 @@ export class Player{
 
     public takeDamage(damage: number): void {
         this.health -= damage;
+        if(!this.isAlive()) {
+            this.health = 0; // prevent negative health
+        }
         this.die(this.isAlive()); // checks for death
     }
 
