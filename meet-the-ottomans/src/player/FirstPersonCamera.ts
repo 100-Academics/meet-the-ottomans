@@ -25,6 +25,7 @@ import {
     PLAYER_WALLRUN_STICK_FORCE,
 } from './playerMovementConfig';
 import { npc } from '../world/npc/npc';
+import { Weapon } from './weapon/weapon';
 
 export class FirstPersonCamera extends ScriptType {
     public eulers = new Vec3();
@@ -298,45 +299,7 @@ export class FirstPersonCamera extends ScriptType {
 
     // Raycast from click position and return the hit NPC if it is within maxRange.
     public getClickedNpcInRange(screenX: number, screenY: number, npcs: npc[], maxRange: number): npc | null {
-        if (!Number.isFinite(maxRange) || maxRange <= 0) {
-            return null;
-        }
-
-        const camera = this.entity.camera;
-        if (!camera) {
-            return null;
-        }
-
-        const rigidbodySystem = (this.app.systems as {
-            rigidbody?: {
-                raycastFirst?: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
-            };
-        }).rigidbody;
-
-        if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
-            return null;
-        }
-
-        // Convert 2D screen coordinates into a 3D world-space ray.
-        const rayStart = camera.screenToWorld(screenX, screenY, camera.nearClip);
-        const rayEnd = camera.screenToWorld(screenX, screenY, camera.farClip);
-        const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
-
-        if (!hit?.entity) {
-            return null;
-        }
-
-        const clickedNpc = npcs.find((currentNpc) => this.isEntityOrDescendantOf(hit.entity ?? null, currentNpc.getEntity()));
-        if (!clickedNpc) {
-            return null;
-        }
-
-        // Prefer hit point distance for accuracy; fall back to entity position if needed.
-        const distance = hit.point
-            ? this.entity.getPosition().distance(hit.point)
-            : this.entity.getPosition().distance(hit.entity.getPosition());
-
-        return distance <= maxRange ? clickedNpc : null;
+        return Weapon.getClickedNpcInRange(this.app, this.entity, screenX, screenY, npcs, maxRange);
     }
 
     private hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
