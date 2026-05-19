@@ -1,4 +1,5 @@
 export const PLAYER_MOVE_SPEED = 45;
+export const PLAYER_MAX_STEP_HEIGHT = 0.9;
 export const PLAYER_GRAVITY = 170;
 export const PLAYER_JUMP_POWER = 65;
 export const PLAYER_MAX_AIR_JUMPS = 1;

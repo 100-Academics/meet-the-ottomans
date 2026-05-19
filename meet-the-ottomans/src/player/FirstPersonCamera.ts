@@ -5,6 +5,7 @@ import {
     PLAYER_DASH_SPEED,
     PLAYER_GRAVITY,
     PLAYER_JUMP_POWER,
+    PLAYER_MAX_STEP_HEIGHT,
     PLAYER_MAX_AIR_JUMPS,
     PLAYER_MAX_DASHES,
     PLAYER_MOVE_SPEED,
@@ -39,6 +40,7 @@ export class FirstPersonCamera extends ScriptType {
     public lookSpeed = 1 / 5;
     
     public readonly moveSpeed = PLAYER_MOVE_SPEED;
+    public readonly maxStepHeight = PLAYER_MAX_STEP_HEIGHT;
     public readonly gravity = PLAYER_GRAVITY;
     public readonly jumpPower = PLAYER_JUMP_POWER;
     public readonly maxAirJumps = PLAYER_MAX_AIR_JUMPS;
@@ -111,21 +113,37 @@ export class FirstPersonCamera extends ScriptType {
         return typeof value === 'number' && Number.isFinite(value);
     }
 
-    private tryMoveHorizontally(position: Vec3, direction: Vec3, speed: number, dt: number): void {
+    private tryMoveHorizontally(position: Vec3, direction: Vec3, speed: number, dt: number, currentGroundHeight?: number): void {
         const movement = direction.clone().mulScalar(speed * dt);
         const proposedPos = position.clone().add(movement);
+        if (this.isFiniteNumber(currentGroundHeight) && !this.canStepTo(currentGroundHeight, proposedPos)) {
+            return;
+        }
         if (!this.isBlocked(position, proposedPos)) {
             position.copy(proposedPos);
         }
     }
 
-    private tryMoveDash(position: Vec3, direction: Vec3, speed: number, dt: number): void {
+    private tryMoveDash(position: Vec3, direction: Vec3, speed: number, dt: number, currentGroundHeight?: number): void {
         const movement = direction.clone().mulScalar(speed * dt);
         const proposedPos = position.clone().add(movement);
-        
+
+        if (this.isFiniteNumber(currentGroundHeight) && !this.canStepTo(currentGroundHeight, proposedPos)) {
+            return;
+        }
+
         // Check collision only for horizontal components to allow upward dashing
         const horizontalCheck = new Vec3(proposedPos.x, position.y, proposedPos.z);
-        if (!this.isBlocked(position, horizontalCheck)) {
+        let blocked = this.isBlocked(position, horizontalCheck);
+        if (!blocked && Math.abs(proposedPos.y - position.y) > 0.001) {
+            const elevatedCurrent = position.clone();
+            elevatedCurrent.y = proposedPos.y;
+            const elevatedNext = proposedPos.clone();
+            elevatedNext.y = proposedPos.y;
+            blocked = this.isBlocked(elevatedCurrent, elevatedNext);
+        }
+
+        if (!blocked) {
             position.copy(proposedPos);
         }
     }
@@ -419,63 +437,91 @@ export class FirstPersonCamera extends ScriptType {
         return firstHitY;
     }
 
-    private getGroundHeightAt(position: Vec3): number {
+    private sampleGroundHeight(position: Vec3, maxAllowedY: number, referenceY?: number): number | undefined {
         const rigidbodySystem = (this.app.systems as any).rigidbody;
-        if (!this.isFiniteNumber(this.groundHeight)) {
-            this.groundHeight = position.y - this.playerHeight;
+        if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
+            return undefined;
+        }
+
+        const safeGroundHeight = this.isFiniteNumber(this.groundHeight)
+            ? this.groundHeight
+            : (position.y - this.playerHeight);
+        const rayStartY = Math.max(position.y + this.groundRayHeight, safeGroundHeight + this.groundRayHeight, 500);
+        const rayEndY = Math.min(position.y - this.groundRayDepth, safeGroundHeight - this.groundRayDepth, -500);
+        if (!this.isFiniteNumber(rayStartY) || !this.isFiniteNumber(rayEndY)) {
+            return undefined;
+        }
+
+        const maxGroundY = this.isFiniteNumber(maxAllowedY) ? maxAllowedY : Number.POSITIVE_INFINITY;
+        const centerStart = new Vec3(position.x, rayStartY, position.z);
+        const centerEnd = new Vec3(position.x, rayEndY, position.z);
+        const centerHitY = this.getGroundRayHitY(rigidbodySystem, centerStart, centerEnd, maxGroundY);
+        if (this.isFiniteNumber(centerHitY)) {
+            return centerHitY;
         }
 
         const sampleRadius = this.groundSampleRadius;
         const sampleOffsets = [
-            new Vec3(0, 0, 0),
             new Vec3(sampleRadius, 0, 0),
             new Vec3(-sampleRadius, 0, 0),
             new Vec3(0, 0, sampleRadius),
             new Vec3(0, 0, -sampleRadius),
         ];
 
-        let highestGroundHeight: number | undefined;
-        if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function') {
-            const rayStartY = Math.max(position.y + this.groundRayHeight, this.groundHeight + this.groundRayHeight, 500);
-            const rayEndY = Math.min(position.y - this.groundRayDepth, this.groundHeight - this.groundRayDepth, -500);
-            if (this.isFiniteNumber(rayStartY) && this.isFiniteNumber(rayEndY)) {
-                const maxGroundY = position.y - this.playerHeight + Math.max(this.groundedEpsilon, 0.05);
-                const centerStart = new Vec3(position.x, rayStartY, position.z);
-                const centerEnd = new Vec3(position.x, rayEndY, position.z);
-                const centerHitY = this.getGroundRayHitY(rigidbodySystem, centerStart, centerEnd, maxGroundY);
-                if (this.isFiniteNumber(centerHitY)) {
-                    highestGroundHeight = centerHitY;
-                } else {
-                    let bestFallbackY: number | undefined;
-                    let bestFallbackDelta = Number.POSITIVE_INFINITY;
-                    for (const offset of sampleOffsets) {
-                        if (offset.x === 0 && offset.z === 0) {
-                            continue;
-                        }
+        let bestHitY: number | undefined;
+        let bestDelta = Number.POSITIVE_INFINITY;
 
-                        const sampleX = position.x + offset.x;
-                        const sampleZ = position.z + offset.z;
-                        const start = new Vec3(sampleX, rayStartY, sampleZ);
-                        const end = new Vec3(sampleX, rayEndY, sampleZ);
-                        const hitY = this.getGroundRayHitY(rigidbodySystem, start, end, maxGroundY);
-                        if (!this.isFiniteNumber(hitY)) {
-                            continue;
-                        }
+        for (const offset of sampleOffsets) {
+            const sampleX = position.x + offset.x;
+            const sampleZ = position.z + offset.z;
+            const start = new Vec3(sampleX, rayStartY, sampleZ);
+            const end = new Vec3(sampleX, rayEndY, sampleZ);
+            const hitY = this.getGroundRayHitY(rigidbodySystem, start, end, maxGroundY);
+            if (!this.isFiniteNumber(hitY)) {
+                continue;
+            }
 
-                        const delta = Math.abs(hitY - this.groundHeight);
-                        if (delta < bestFallbackDelta) {
-                            bestFallbackDelta = delta;
-                            bestFallbackY = hitY;
-                        }
-                    }
-
-                    highestGroundHeight = bestFallbackY;
+            if (referenceY === undefined) {
+                if (bestHitY === undefined || hitY > bestHitY) {
+                    bestHitY = hitY;
                 }
+                continue;
+            }
+
+            const delta = Math.abs(hitY - referenceY);
+            if (delta < bestDelta) {
+                bestDelta = delta;
+                bestHitY = hitY;
             }
         }
 
-        if (this.isFiniteNumber(highestGroundHeight)) {
-            this.groundHeight = highestGroundHeight;
+        return bestHitY;
+    }
+
+    private canStepTo(currentGroundHeight: number, nextPos: Vec3): boolean {
+        if (this.maxStepHeight <= 0) {
+            return true;
+        }
+
+        const highestNextGround = this.sampleGroundHeight(nextPos, Number.POSITIVE_INFINITY);
+        if (!this.isFiniteNumber(highestNextGround)) {
+            return true;
+        }
+
+        const maxStepY = currentGroundHeight + this.maxStepHeight + this.groundedEpsilon;
+        return highestNextGround <= maxStepY;
+    }
+
+    private getGroundHeightAt(position: Vec3): number {
+        if (!this.isFiniteNumber(this.groundHeight)) {
+            this.groundHeight = position.y - this.playerHeight;
+        }
+        const maxGroundY = position.y - this.playerHeight
+            + Math.max(this.groundedEpsilon, 0.05)
+            + Math.max(this.maxStepHeight, 0);
+        const sampledGroundHeight = this.sampleGroundHeight(position, maxGroundY, this.groundHeight);
+        if (this.isFiniteNumber(sampledGroundHeight)) {
+            this.groundHeight = sampledGroundHeight;
         }
 
         return this.groundHeight;
@@ -786,17 +832,23 @@ export class FirstPersonCamera extends ScriptType {
             }
         } else {
             if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, onGround ? safeGroundHeight : undefined);
                 this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
             } else if (this.slideActive && this.slideDirection.lengthSq() > 0) {
-                this.tryMoveHorizontally(pos, this.slideDirection, this.slideSpeedCurrent, dt);
+                this.tryMoveHorizontally(
+                    pos,
+                    this.slideDirection,
+                    this.slideSpeedCurrent,
+                    dt,
+                    onGround ? safeGroundHeight : undefined
+                );
                 this.slideTimeRemaining = Math.max(0, this.slideTimeRemaining - dt);
                 this.slideSpeedCurrent = Math.max(this.moveSpeed, this.slideSpeedCurrent - (this.slideFriction * this.slideSpeed * dt));
                 if (this.slideTimeRemaining === 0 || !isSlideHeld) {
                     this.stopSlide();
                 }
             } else if (hasMoveInput) {
-                this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt);
+                this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt, onGround ? safeGroundHeight : undefined);
             }
 
             // Apply Gravity
