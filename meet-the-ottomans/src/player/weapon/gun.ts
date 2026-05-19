@@ -25,7 +25,7 @@ export class Gun extends Weapon {
 
         const sceneApp = app ?? (globalThis as { app?: AppBase }).app;
         if (!sceneApp?.root) {
-            return;
+            return false; // Can't create shot effect without a valid app and root entity
         }
 
         const shotOrigin = origin?.clone() ?? new Vec3(0, 0, 0);
