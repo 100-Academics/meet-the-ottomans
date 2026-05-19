@@ -33,6 +33,7 @@ import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
 
@@ -524,4 +525,19 @@ export async function siegeOfConstantinopleScene(
 			console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
 		}
 	});
+
+	let victoryHandled = false;
+	const victoryCheck = () => {
+		if (victoryHandled) {
+			return;
+		}
+
+		const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
+		if (remainingFoes.length === 0) {
+			victoryHandled = true;
+			changeScene(canvas, app, 777);
+		}
+	};
+
+	app.on('update', victoryCheck);
 }

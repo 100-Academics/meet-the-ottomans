@@ -112,25 +112,28 @@ unloadAll(app);
     throw new Error('Canvas not found');
   }
 
-  // Create graphics device
-  const device = await createGraphicsDevice(canvas);
+  let device = app.graphicsDevice;
+  if (!device) {
+    // Create graphics device
+    device = await createGraphicsDevice(canvas);
 
-  // Create app options
-  const createOptions = new AppOptions();
-  createOptions.graphicsDevice = device;
-  createOptions.mouse = new Mouse(document.body);
-  createOptions.touch = new TouchDevice(document.body);
-  createOptions.componentSystems = [
-    RenderComponentSystem,
-    CameraComponentSystem,
-    ScriptComponentSystem,
-    LightComponentSystem,
-    CollisionComponentSystem,
-    RigidBodyComponentSystem
-  ];
-  createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
+    // Create app options
+    const createOptions = new AppOptions();
+    createOptions.graphicsDevice = device;
+    createOptions.mouse = new Mouse(document.body);
+    createOptions.touch = new TouchDevice(document.body);
+    createOptions.componentSystems = [
+      RenderComponentSystem,
+      CameraComponentSystem,
+      ScriptComponentSystem,
+      LightComponentSystem,
+      CollisionComponentSystem,
+      RigidBodyComponentSystem
+    ];
+    createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
 
-  app.init(createOptions);
+    app.init(createOptions);
+  }
 
   // Set the canvas to fill the window
   app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
@@ -149,11 +152,17 @@ unloadAll(app);
     new AssetListLoader(Object.values(assets), app.assets).load(() => resolve());
   });
 
-  app.start();
+  const startKey = '__appStarted';
+  const keyedApp = app as AppBase & Record<string, unknown>;
+  if (!keyedApp[startKey]) {
+    app.start();
+    keyedApp[startKey] = true;
+  }
 
   // Create overlay UI
   const overlay = document.querySelector('.absolute.overlay') as HTMLElement;
   let selectedTimePeriod = -1;
+  // the empty div id="time-period" is required or shit breaks idk
   const overlayHTML = `
     <div class="absolute overlay">
       <div class="grow" style="min-height: 0;">

@@ -4,6 +4,7 @@ import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
 import { showDeathScreen } from "./world/scenes/deathScreen.ts";
+import { showVictoryScreen } from "./world/scenes/victoryScreen.ts";
 import { unloadAll } from "./util/unloadall.ts";
 
 
@@ -66,6 +67,13 @@ export async function changeScene(
       onRestart: () => changeScene(canvas, app, 0),
       onMainMenu: () => changeScene(canvas, app, -2),
       message: "You have failed to bring glory to the Ottoman Empire. Game Over."
+    });
+  } else if (sceneNum === 777) {
+    return await showVictoryScreen({
+      app,
+      onContinue: () => changeScene(canvas, app, 0),
+      onMainMenu: () => changeScene(canvas, app, -2),
+      message: "Victory! All enemies defeated."
     });
   }
 

@@ -1,19 +1,12 @@
 import { AppBase } from 'playcanvas';
 import { unloadAll } from '../../util/unloadall';
 
-/**
- * Simple "You Died" overlay utilities.
- * - `showDeathScreen` adds a full-screen overlay with Restart/Main Menu buttons.
- * - `hideDeathScreen` removes the overlay.
- */
-
-export function showDeathScreen(options?: {
+export function showVictoryScreen(options?: {
   app?: AppBase;
-  onRestart?: () => void;
+  onContinue?: () => void;
   onMainMenu?: () => void;
   message?: string;
 }) {
-
   if (options?.app) {
     unloadAll(options.app);
     options.app.mouse?.off();
@@ -24,9 +17,10 @@ export function showDeathScreen(options?: {
       canvas.style.display = 'none';
     }
   }
+
   if (typeof document === 'undefined') return;
   document.querySelectorAll('.overlay').forEach((el) => {
-    if ((el as HTMLElement).id !== 'death-screen') {
+    if ((el as HTMLElement).id !== 'victory-screen') {
       el.remove();
     }
   });
@@ -34,12 +28,12 @@ export function showDeathScreen(options?: {
   if (hoverLabel) {
     hoverLabel.remove();
   }
-  if (document.getElementById('death-screen')) return; // already shown
+  if (document.getElementById('victory-screen')) return;
 
-  const { onRestart, onMainMenu, message = 'You have died' } = options ?? {};
+  const { onContinue, onMainMenu, message = 'Victory! All enemies defeated.' } = options ?? {};
 
   const overlay = document.createElement('div');
-  overlay.id = 'death-screen';
+  overlay.id = 'victory-screen';
   overlay.className = 'overlay absolute';
   overlay.style.pointerEvents = 'auto';
   overlay.style.position = 'fixed';
@@ -58,7 +52,7 @@ export function showDeathScreen(options?: {
   card.style.borderRadius = '12px';
 
   const title = document.createElement('h1');
-  title.textContent = 'You Died!';
+  title.textContent = 'Victory!';
   title.style.fontSize = '3rem';
   title.style.margin = '0.2rem 0 0.4rem 0';
 
@@ -71,16 +65,11 @@ export function showDeathScreen(options?: {
   btnRow.className = 'btn-row';
   btnRow.style.justifyContent = 'center';
 
-  const restart = document.createElement('button');
-  restart.className = 'btn';
-  restart.textContent = 'Restart';
-  restart.addEventListener('click', () => {
-    try {
-      if (onRestart) return onRestart();
-      window.location.reload();
-    } catch (e) {
-      window.location.reload();
-    }
+  const continueBtn = document.createElement('button');
+  continueBtn.className = 'btn';
+  continueBtn.textContent = 'Continue';
+  continueBtn.addEventListener('click', () => {
+    if (onContinue) return onContinue();
   });
 
   const menu = document.createElement('button');
@@ -88,18 +77,16 @@ export function showDeathScreen(options?: {
   menu.textContent = 'Main Menu';
   menu.addEventListener('click', () => {
     if (onMainMenu) return onMainMenu();
-    // fallback: navigate to root
     window.location.href = '/';
   });
 
-  btnRow.appendChild(restart);
+  btnRow.appendChild(continueBtn);
   btnRow.appendChild(menu);
 
   card.appendChild(title);
   card.appendChild(desc);
   card.appendChild(btnRow);
 
-  // center vertically
   const topGap = document.createElement('div');
   topGap.className = 'grow';
   const botGap = document.createElement('div');
@@ -112,9 +99,9 @@ export function showDeathScreen(options?: {
   document.body.appendChild(overlay);
 }
 
-export function hideDeathScreen() {
+export function hideVictoryScreen() {
   if (typeof document === 'undefined') return;
-  const el = document.getElementById('death-screen');
+  const el = document.getElementById('victory-screen');
   if (el) el.remove();
   const canvas = document.querySelector('canvas');
   if (canvas instanceof HTMLCanvasElement) {
@@ -122,4 +109,4 @@ export function hideDeathScreen() {
   }
 }
 
-export default { showDeathScreen, hideDeathScreen };
+export default { showVictoryScreen, hideVictoryScreen };

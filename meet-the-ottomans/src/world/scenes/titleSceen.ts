@@ -11,7 +11,6 @@ async function titleScreen(
 ) {
   // Create a simple DOM title overlay
   const overlay = document.querySelector('.overlay') as HTMLElement | null;
-
   const titleWrap = document.createElement('div');
   titleWrap.id = 'title-screen';
   titleWrap.className = 'pill';
