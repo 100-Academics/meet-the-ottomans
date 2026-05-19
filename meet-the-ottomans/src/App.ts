@@ -3,7 +3,7 @@ import { Battle } from './world/Battle';
 import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
-import { showDeathScreen } from "./world/scenes/deathScreen.ts";
+import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts";
 import { showVictoryScreen } from "./world/scenes/victoryScreen.ts";
 import { unloadAll } from "./util/unloadall.ts";
 
@@ -16,6 +16,19 @@ import { unloadAll } from "./util/unloadall.ts";
 
 // App.ts
 var sceneNum = -2;
+function ensureOverlayRoot(): HTMLElement {
+  let overlay = document.querySelector('.absolute.overlay') as HTMLElement | null;
+  if (!overlay) {
+    const host = document.querySelector('#root > div') as HTMLElement | null ?? document.body;
+    overlay = document.createElement('div');
+    overlay.className = 'absolute overlay';
+    host.appendChild(overlay);
+  }
+
+  overlay.style.display = '';
+  return overlay;
+}
+
 async function setupApp(
   canvas: HTMLCanvasElement,
   onClick: (battle: Battle) => void,
@@ -55,6 +68,14 @@ export async function changeScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
   sceneNum: number,): Promise<unknown> {
+  // Clear transient UI and runtime listeners so a scene switch starts clean.
+  hideDeathScreen();
+  const overlay = ensureOverlayRoot();
+  overlay.replaceChildren();
+  app.mouse?.off();
+  app.keyboard?.off();
+  app.touch?.off();
+  app.off('update');
   unloadAll(app);
   if (sceneNum === -2) {
     return await titleScreen(canvas, app, () => {}, () => 0, sceneNum);
@@ -64,8 +85,7 @@ export async function changeScene(
   } else if (sceneNum === 666) {
     return await showDeathScreen({
       app,
-      onRestart: () => changeScene(canvas, app, 0),
-      onMainMenu: () => changeScene(canvas, app, -2),
+      onMainMenu: () => changeScene(canvas, app, 0),
       message: "You have failed to bring glory to the Ottoman Empire. Game Over."
     });
   } else if (sceneNum === 777) {

@@ -9,7 +9,6 @@ import { unloadAll } from '../../util/unloadall';
 
 export function showDeathScreen(options?: {
   app?: AppBase;
-  onRestart?: () => void;
   onMainMenu?: () => void;
   message?: string;
 }) {
@@ -36,7 +35,7 @@ export function showDeathScreen(options?: {
   }
   if (document.getElementById('death-screen')) return; // already shown
 
-  const { onRestart, onMainMenu, message = 'You have died' } = options ?? {};
+  const { onMainMenu, message = 'You have died' } = options ?? {};
 
   const overlay = document.createElement('div');
   overlay.id = 'death-screen';
@@ -67,23 +66,6 @@ export function showDeathScreen(options?: {
   desc.style.color = '#ccc';
   desc.style.margin = '0 0 1rem 0';
 
-  const btnRow = document.createElement('div');
-  btnRow.className = 'btn-row';
-  btnRow.style.justifyContent = 'center';
-
-  const restart = document.createElement('button');
-  restart.className = 'btn';
-  restart.textContent = 'Restart';
-  restart.addEventListener('click', () => {
-    try {
-      hideDeathScreen();
-      if (onRestart) return onRestart();
-      window.location.reload();
-    } catch (e) {
-      window.location.reload();
-    }
-  });
-
   const menu = document.createElement('button');
   menu.className = 'btn';
   menu.textContent = 'Main Menu';
@@ -93,7 +75,9 @@ export function showDeathScreen(options?: {
     window.location.href = '/';
   });
 
-  btnRow.appendChild(restart);
+  const btnRow = document.createElement('div');
+  btnRow.className = 'btn-row';
+  btnRow.style.justifyContent = 'center';
   btnRow.appendChild(menu);
 
   card.appendChild(title);
