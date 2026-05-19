@@ -27,6 +27,17 @@ export class Weapon {
         return this.range;
     }
 
+    private static isEntityOrDescendantOf(entity: Entity | null, root: Entity): boolean {
+        let current: Entity | null = entity;
+        while (current) {
+            if (current === root) {
+                return true;
+            }
+            current = (current.parent as Entity | null) ?? null;
+        }
+        return false;
+    }
+
     // Raycast helper moved into Weapon so hit-checking is owned by weapons.
     public static getClickedNpcInRange(app: AppBase, cameraEntity: Entity | undefined | null, screenX: number, screenY: number, npcs: npc[], maxRange: number): npc | null {
         if (!Number.isFinite(maxRange) || maxRange <= 0) {
@@ -50,33 +61,58 @@ export class Weapon {
 
         const rayStart = camera.screenToWorld(screenX, screenY, camera.nearClip);
         const rayEnd = camera.screenToWorld(screenX, screenY, camera.farClip);
+        const rayDirection = rayEnd.clone().sub(rayStart);
+        const rayLength = rayDirection.length();
+        if (rayLength <= 0.0001) {
+            return null;
+        }
+        rayDirection.mulScalar(1 / rayLength);
+
         const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
 
-        if (!hit?.entity) {
-            return null;
-        }
+        if (hit?.entity) {
+            const clickedNpc = npcs.find((currentNpc) => Weapon.isEntityOrDescendantOf(hit.entity ?? null, currentNpc.getEntity()));
+            if (clickedNpc) {
+                const distance = hit.point
+                    ? cameraEntity.getPosition().distance(hit.point)
+                    : cameraEntity.getPosition().distance(hit.entity.getPosition());
 
-        const isEntityOrDescendantOf = (entity: Entity | null, root: Entity): boolean => {
-            let current: Entity | null = entity;
-            while (current) {
-                if (current === root) {
-                    return true;
+                if (distance <= maxRange) {
+                    return clickedNpc;
                 }
-                current = (current.parent as Entity | null) ?? null;
             }
-            return false;
-        };
-
-        const clickedNpc = npcs.find((currentNpc) => isEntityOrDescendantOf(hit.entity ?? null, currentNpc.getEntity()));
-        if (!clickedNpc) {
-            return null;
         }
 
-        const distance = hit.point
-            ? cameraEntity!.getPosition().distance(hit.point)
-            : cameraEntity!.getPosition().distance(hit.entity.getPosition());
+        // Fallback selection for NPC models that are visible but not picked by rigidbody raycasts.
+        let bestNpc: npc | null = null;
+        let bestRayDistance = Number.POSITIVE_INFINITY;
 
-        return distance <= maxRange ? clickedNpc : null;
+        for (const currentNpc of npcs) {
+            if (!currentNpc.isAlive()) {
+                continue;
+            }
+
+            const npcPosition = currentNpc.getEntity().getPosition();
+            const toNpc = npcPosition.clone().sub(rayStart);
+            const projectedDistance = toNpc.dot(rayDirection);
+            if (!Number.isFinite(projectedDistance) || projectedDistance < 0 || projectedDistance > maxRange) {
+                continue;
+            }
+
+            const closestPoint = rayStart.clone().add(rayDirection.clone().mulScalar(projectedDistance));
+            const distanceFromRay = npcPosition.distance(closestPoint);
+            const hitTolerance = Math.max(1.0, currentNpc.getHitboxRadius() * 1.6);
+            if (distanceFromRay > hitTolerance) {
+                continue;
+            }
+
+            if (projectedDistance < bestRayDistance) {
+                bestRayDistance = projectedDistance;
+                bestNpc = currentNpc;
+            }
+        }
+
+        return bestNpc;
     }
 
 }

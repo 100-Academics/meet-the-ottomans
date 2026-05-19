@@ -23,3 +23,12 @@ export const PLAYER_WALLRUN_CAMERA_ROLL_DEG = 12;
 export const PLAYER_WALLRUN_CAMERA_ROLL_SPEED = 12;
 export const PLAYER_WALLRUN_CAMERA_OFFSET = 0.35;
 
+export const PLAYER_SLIDE_SPEED = PLAYER_MOVE_SPEED * 1.6;
+export const PLAYER_SLIDE_DURATION = 0.65;
+export const PLAYER_SLIDE_FRICTION = 3.5;
+// Camera feel while sliding: larger drop = stronger crouch sensation.
+export const PLAYER_SLIDE_CAMERA_DROP = 1.5;
+export const PLAYER_SLIDE_CAMERA_PULLBACK = 0.42;
+// Slightly faster blending so slide camera settles sooner.
+export const PLAYER_SLIDE_CAMERA_LERP_SPEED = 12;
+

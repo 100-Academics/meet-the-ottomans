@@ -3,6 +3,7 @@ import { FirstPersonCamera } from './FirstPersonCamera';
 import { unloadAll } from '../util/unloadall';
 import { changeScene } from '../App';
 import { npc } from '../world/npc/npc';
+import { Weapon } from './weapon/weapon';
 
 
 export class Player{
@@ -12,6 +13,7 @@ export class Player{
     private maxHealth = 100;
     private health = this.maxHealth;
     private team = 'friend'; // Player is always on the 'friend' team
+    private equippedWeapon = new Weapon('Starter Sword', 25, 8);
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
         this.app = app;
@@ -82,8 +84,11 @@ export class Player{
     }
 
     private getDamageAmount(): number {
-        return 25; // TODO GET WEAPON DAMAGE DYNAMICALLY 
-                   // ALSO TODO set up equipped weapon etc but its midnight rn will do later
+        return this.equippedWeapon.getDamage();
+    }
+
+    public getAttackRange(): number {
+        return this.equippedWeapon.getRange();
     }
 
     public dealDamage(npc: npc): void {

@@ -31,3 +31,5 @@ export class Gun extends Weapon {
         this.ammo += amount;
         console.log(`${this.getName()} reloaded! Current ammo: ${this.ammo}`);
     }
+
+}

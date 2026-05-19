@@ -23,6 +23,12 @@ import {
     PLAYER_WALLRUN_NO_GRAVITY_TIME,
     PLAYER_WALLRUN_SPEED,
     PLAYER_WALLRUN_STICK_FORCE,
+    PLAYER_SLIDE_DURATION,
+    PLAYER_SLIDE_CAMERA_DROP,
+    PLAYER_SLIDE_CAMERA_LERP_SPEED,
+    PLAYER_SLIDE_CAMERA_PULLBACK,
+    PLAYER_SLIDE_FRICTION,
+    PLAYER_SLIDE_SPEED,
 } from './playerMovementConfig';
 import { npc } from '../world/npc/npc';
 import { Weapon } from './weapon/weapon';
@@ -55,6 +61,12 @@ export class FirstPersonCamera extends ScriptType {
     public readonly wallRunCameraRollDeg = PLAYER_WALLRUN_CAMERA_ROLL_DEG;
     public readonly wallRunCameraRollSpeed = PLAYER_WALLRUN_CAMERA_ROLL_SPEED;
     public readonly wallRunCameraOffset = PLAYER_WALLRUN_CAMERA_OFFSET;
+    public readonly slideSpeed = PLAYER_SLIDE_SPEED;
+    public readonly slideDuration = PLAYER_SLIDE_DURATION;
+    public readonly slideFriction = PLAYER_SLIDE_FRICTION;
+    public readonly slideCameraDrop = PLAYER_SLIDE_CAMERA_DROP;
+    public readonly slideCameraPullback = PLAYER_SLIDE_CAMERA_PULLBACK;
+    public readonly slideCameraLerpSpeed = PLAYER_SLIDE_CAMERA_LERP_SPEED;
     public velocity = new Vec3();
     public playerHeight = 2;
     public groundHeight = 0;
@@ -83,6 +95,12 @@ export class FirstPersonCamera extends ScriptType {
     private wallRunCooldownTimer = 0;
     private wallRunNormal = new Vec3();
     private wallRunElapsed = 0;
+
+    private slideActive = false;
+    private slideDirection = new Vec3();
+    private slideSpeedCurrent = 0;
+    private slideTimeRemaining = 0;
+    private slideCameraBlend = 0;
     
     private coyoteTimer = 0;
     public readonly coyoteTimeDuration = 0.15;
@@ -123,6 +141,11 @@ export class FirstPersonCamera extends ScriptType {
         this.wallRunCooldownTimer = 0;
         this.wallRunNormal.set(0, 0, 0);
         this.wallRunElapsed = 0;
+        this.slideActive = false;
+        this.slideDirection.set(0, 0, 0);
+        this.slideSpeedCurrent = 0;
+        this.slideTimeRemaining = 0;
+        this.slideCameraBlend = 0;
         this.eulers.z = 0;
 
         const app = this.app;
@@ -282,18 +305,6 @@ export class FirstPersonCamera extends ScriptType {
             }
         }
 
-        return false;
-    }
-
-    // Walk up the hierarchy so clicks on child meshes still count as clicking the NPC root entity.
-    private isEntityOrDescendantOf(entity: Entity | null, root: Entity): boolean {
-        let current: Entity | null = entity;
-        while (current) {
-            if (current === root) {
-                return true;
-            }
-            current = (current.parent as Entity | null) ?? null;
-        }
         return false;
     }
 
@@ -531,6 +542,24 @@ export class FirstPersonCamera extends ScriptType {
         this.wallRunElapsed = 0;
     }
 
+    private startSlide(direction: Vec3): void {
+        if (direction.lengthSq() <= 0.0001) {
+            return;
+        }
+
+        this.slideDirection.copy(direction).normalize();
+        this.slideActive = true;
+        this.slideSpeedCurrent = this.slideSpeed;
+        this.slideTimeRemaining = this.slideDuration;
+    }
+
+    private stopSlide(): void {
+        this.slideActive = false;
+        this.slideSpeedCurrent = 0;
+        this.slideTimeRemaining = 0;
+        this.slideDirection.set(0, 0, 0);
+    }
+
     update(dt: number) {
         const app = this.app;
         const forward = this.entity.forward;
@@ -549,6 +578,7 @@ export class FirstPersonCamera extends ScriptType {
         const isD = this.keys['KeyD'] || app.keyboard?.isPressed(KEY_D);
         const isSpace = this.keys['Space'] || app.keyboard?.isPressed(KEY_SPACE);
         const isShift = this.keys['ShiftLeft'] || this.keys['ShiftRight'] || app.keyboard?.isPressed(KEY_SHIFT);
+        const isSlideHeld = this.keys['KeyC'];
         const jumpPressed = !!isSpace && !this.wasJumpHeld;
         const dashPressed = !!isShift && !this.wasDashHeld;
 
@@ -625,9 +655,21 @@ export class FirstPersonCamera extends ScriptType {
             onGround = false;
         }
 
+        if (!onGround || this.wallRunActive) {
+            this.stopSlide();
+        } else if (isSlideHeld) {
+            if (!this.slideActive && hasMoveInput) {
+                this.startSlide(moveDir);
+            }
+        } else if (this.slideActive) {
+            this.stopSlide();
+        }
+
         if (jumpPressed) {
             if (this.wallRunActive) {
                 this.stopWallRun();
+                // Wall-jump should still allow a follow-up air jump.
+                this.airJumpsRemaining = this.maxAirJumps;
                 this.velocity.y = this.wallRunJumpUp;
                 this.velocity.add(this.wallRunNormal.clone().mulScalar(this.wallRunJumpPush));
             } else {
@@ -733,6 +775,13 @@ export class FirstPersonCamera extends ScriptType {
             if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
                 this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
                 this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
+            } else if (this.slideActive && this.slideDirection.lengthSq() > 0) {
+                this.tryMoveHorizontally(pos, this.slideDirection, this.slideSpeedCurrent, dt);
+                this.slideTimeRemaining = Math.max(0, this.slideTimeRemaining - dt);
+                this.slideSpeedCurrent = Math.max(this.moveSpeed, this.slideSpeedCurrent - (this.slideFriction * this.slideSpeed * dt));
+                if (this.slideTimeRemaining === 0 || !isSlideHeld) {
+                    this.stopSlide();
+                }
             } else if (hasMoveInput) {
                 this.tryMoveHorizontally(pos, moveDir, this.moveSpeed, dt);
             }
@@ -760,6 +809,26 @@ export class FirstPersonCamera extends ScriptType {
 
         if (this.wallRunActive) {
             pos.add(this.wallRunNormal.clone().mulScalar(this.wallRunCameraOffset));
+        }
+
+        // Scale camera effect by current slide speed so it is strongest at slide start.
+        const slideSpeedFactor = this.slideActive && this.slideSpeed > 0
+            ? math.clamp(this.slideSpeedCurrent / this.slideSpeed, 0, 1)
+            : 0;
+        const slideCameraTarget = this.slideActive ? slideSpeedFactor : 0;
+        // Smooth camera transitions in/out of slide posture.
+        const slideLerpAlpha = math.clamp(dt * this.slideCameraLerpSpeed, 0, 1);
+        this.slideCameraBlend = math.lerp(this.slideCameraBlend, slideCameraTarget, slideLerpAlpha);
+
+        if (this.slideCameraBlend > 0.001) {
+            const cameraForward = new Vec3(forward.x, 0, forward.z);
+            if (cameraForward.lengthSq() > 0.0001) {
+                cameraForward.normalize();
+                // Pull camera back along facing direction to emphasize momentum.
+                pos.add(cameraForward.mulScalar(-this.slideCameraPullback * this.slideCameraBlend));
+            }
+            // Lower camera to make the crouched slide stance visually obvious.
+            pos.y -= this.slideCameraDrop * this.slideCameraBlend;
         }
 
         this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);

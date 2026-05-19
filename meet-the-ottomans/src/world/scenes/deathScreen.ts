@@ -76,6 +76,7 @@ export function showDeathScreen(options?: {
   restart.textContent = 'Restart';
   restart.addEventListener('click', () => {
     try {
+      hideDeathScreen();
       if (onRestart) return onRestart();
       window.location.reload();
     } catch (e) {

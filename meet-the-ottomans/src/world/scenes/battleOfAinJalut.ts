@@ -508,7 +508,7 @@ export async function battleOfAinJalutScene(
       return;
     }
 
-    const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, 5);
+    const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, player.getAttackRange());
     if (hitNpc) {
       player.dealDamage(hitNpc);
       console.log(`Hit NPC`);
