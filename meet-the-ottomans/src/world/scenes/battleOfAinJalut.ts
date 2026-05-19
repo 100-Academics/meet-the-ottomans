@@ -22,10 +22,14 @@ import {
   Texture,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
+  KEY_1,
+  KEY_2,
+  KEY_R,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
+import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -503,14 +507,32 @@ export async function battleOfAinJalutScene(
 
   const npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
 
+  // Create battle HUD to display weapon, health, and ammo
+  createBattleHUD();
+  updateBattleHUD(player);
+
+  app.keyboard?.on('keydown', (event: { key: number | null }) => {
+    if (event.key === KEY_1) {
+      player.equipWeapon(1);
+      updateBattleHUD(player);
+    } else if (event.key === KEY_2) {
+      player.equipWeapon(2);
+      updateBattleHUD(player);
+    } else if (event.key === KEY_R) {
+      player.reloadEquippedWeapon();
+      updateBattleHUD(player);
+    }
+  });
+
   app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
     if (event.button !== 0) {
       return;
     }
 
     const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, player.getAttackRange());
+    player.attack(hitNpc ?? null);
+    updateBattleHUD(player);
     if (hitNpc) {
-      player.dealDamage(hitNpc);
       console.log(`Hit NPC`);
     }
   });
@@ -523,6 +545,7 @@ export async function battleOfAinJalutScene(
     },
     onPlayerAttack: (attacker, damage) => {
       player.takeDamage(damage);
+      updateBattleHUD(player);
       console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
     }
   });
@@ -535,6 +558,7 @@ export async function battleOfAinJalutScene(
 
     const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
     if (remainingFoes.length === 0) {
+      removeBattleHUD();
       victoryHandled = true;
       changeScene(canvas, app, 777);
     }

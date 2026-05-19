@@ -4,6 +4,8 @@ import { unloadAll } from '../util/unloadall';
 import { changeScene } from '../App';
 import { npc } from '../world/npc/npc';
 import { Weapon } from './weapon/weapon';
+import { Gun } from './weapon/gun';
+import { Sword } from './weapon/sword';
 
 
 export class Player{
@@ -13,7 +15,9 @@ export class Player{
     private maxHealth = 100;
     private health = this.maxHealth;
     private team = 'friend'; // Player is always on the 'friend' team
-    private equippedWeapon = new Weapon('Starter Sword', 25, 8);
+    private readonly swordWeapon = new Sword(8, 25);
+    private readonly gunWeapon = new Gun(100, 100, 12);
+    private equippedWeapon: Weapon = this.swordWeapon;
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
         this.app = app;
@@ -89,6 +93,40 @@ export class Player{
 
     public getAttackRange(): number {
         return this.equippedWeapon.getRange();
+    }
+
+    public getEquippedWeaponName(): string {
+        return this.equippedWeapon.getName();
+    }
+
+    public equipWeapon(slot: 1 | 2): void {
+        this.equippedWeapon = slot === 1 ? this.swordWeapon : this.gunWeapon;
+        console.log(`Equipped ${this.equippedWeapon.getName()}`);
+    }
+
+    public reloadEquippedWeapon(amount: number = 12): void {
+        if (this.equippedWeapon instanceof Gun) {
+            this.equippedWeapon.reload(amount);
+        }
+    }
+
+    public attack(target?: npc | null): void {
+        let canDealDamage = true;
+
+        if (this.equippedWeapon instanceof Gun) {
+            canDealDamage = this.equippedWeapon.shoot(this.app, this.cameraEntity.getPosition(), this.cameraEntity.forward);
+        }
+
+        if (!target || !canDealDamage) {
+            return;
+        }
+
+        if (target.getTeam() !== 'foe') {
+            console.log('Attempted to deal damage to a friendly NPC. No damage applied.');
+            return;
+        }
+
+        target.takeDamage(this.getDamageAmount());
     }
 
     public dealDamage(npc: npc): void {
