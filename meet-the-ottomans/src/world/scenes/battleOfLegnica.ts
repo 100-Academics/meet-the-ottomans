@@ -529,7 +529,7 @@ export async function battleOfLegnicaScene(
       return;
     }
 
-    const isGunEquipped = player.getEquippedWeaponName() === 'Gun';
+    const isGunEquipped = (player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow');
     const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
     const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
     const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());

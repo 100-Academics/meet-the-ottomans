@@ -6,6 +6,7 @@ import { npc } from '../world/npc/npc';
 import { Weapon } from './weapon/weapon';
 import { Gun } from './weapon/gun';
 import { Sword } from './weapon/sword';
+import { Bow } from './weapon/bow';
 
 
 export class Player{
@@ -17,6 +18,7 @@ export class Player{
     private team = 'friend'; // Player is always on the 'friend' team
     private readonly swordWeapon = new Sword(8, 25);
     private readonly gunWeapon = new Gun(100, 100, 12);
+    private readonly bowWeapon = new Bow(50, 100, 20);
     private equippedWeapon: Weapon = this.swordWeapon;
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
@@ -99,8 +101,14 @@ export class Player{
         return this.equippedWeapon.getName();
     }
 
-    public equipWeapon(slot: 1 | 2): void {
-        this.equippedWeapon = slot === 1 ? this.swordWeapon : this.gunWeapon;
+    public equipWeapon(slot: 1 | 2 | 3): void {
+        if (slot === 1) {
+            this.equippedWeapon = this.swordWeapon;
+        } else if (slot === 2) {
+            this.equippedWeapon = this.gunWeapon;
+        } else {
+            this.equippedWeapon = this.bowWeapon;
+        }
         console.log(`Equipped ${this.equippedWeapon.getName()}`);
     }
 
@@ -113,7 +121,7 @@ export class Player{
     public attack(target?: npc | null): void {
         let canDealDamage = true;
 
-        if (this.equippedWeapon instanceof Gun) {
+        if (this.equippedWeapon instanceof Gun || this.equippedWeapon instanceof Bow) {
             canDealDamage = this.equippedWeapon.shoot(this.app, this.cameraEntity.getPosition(), this.cameraEntity.forward);
         }
 

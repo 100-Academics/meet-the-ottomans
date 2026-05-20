@@ -5,8 +5,8 @@ export class Gun extends Weapon {
     
     private ammo: number;
 
-    constructor(damage: number, range: number, ammo: number) {
-        super("Gun", damage, range);
+    constructor(damage: number, range: number, ammo: number, name: string = "Gun") {
+        super(name, damage, range);
         this.ammo = ammo;
     }
 
@@ -35,7 +35,7 @@ export class Gun extends Weapon {
         }
         shotDirection.normalize();
 
-        const shotLength = Math.max(this.getRange(), 1);
+        const shotLength = this.getRange();
         const shotMidpoint = shotOrigin.clone().add(shotDirection.clone().mulScalar(shotLength * 0.5));
         const shotEntity = new Entity(`${this.getName()} shot`);
         shotEntity.setPosition(shotMidpoint);

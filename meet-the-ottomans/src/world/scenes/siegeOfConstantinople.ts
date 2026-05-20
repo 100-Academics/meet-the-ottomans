@@ -25,6 +25,7 @@ import {
 	KEY_1,
 	KEY_2,
 	KEY_R,
+	KEY_3,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -515,9 +516,12 @@ export async function siegeOfConstantinopleScene(
 		if (event.key === KEY_1) {
 			player.equipWeapon(1);
 			updateBattleHUD(player);
-		} else if (event.key === KEY_2) {
-			player.equipWeapon(2);
+		} else if (event.key === KEY_2) { 
+			player.equipWeapon(3); // wrong time period for a gun
 			updateBattleHUD(player);
+		// } else if (event.key === KEY_3) { // unecessary weapon slot for this scene.
+		// 	player.equipWeapon(3);
+		// 	updateBattleHUD(player);
 		} else if (event.key === KEY_R) {
 			player.reloadEquippedWeapon();
 			updateBattleHUD(player);
