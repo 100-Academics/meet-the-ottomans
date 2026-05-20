@@ -26,7 +26,7 @@ export class Mongol extends npc {
 
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
-        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
+        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.9;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
     }
 
