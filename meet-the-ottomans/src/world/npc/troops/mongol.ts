@@ -47,19 +47,10 @@ export class Mongol extends npc {
             for (let i = 0; i < len; i++) {
                 totalHealth += mongolInstances[i].getHealth();
             }
+            const averageHealth = len > 0 ? totalHealth / len : 0;
 
-            if (!Mongol.hasRetreatedOnce && totalHealth / len < 50) {
-                Mongol.hasRetreatedOnce = true;
-                Mongol.retreatActive = true;
-                const dirX = myPos.x - playerPos.x;
-                const dirZ = myPos.z - playerPos.z;
-                const dist = Math.sqrt(dirX * dirX + dirZ * dirZ) || 1;
-                const retreatDist = 60; // Retreat away from player
-                Mongol.retreatPoint = new Vec3(
-                    playerPos.x + (dirX / dist) * retreatDist,
-                    myPos.y,
-                    playerPos.z + (dirZ / dist) * retreatDist
-                );
+            if (this.initFalseRetreat(playerPos, myPos, averageHealth)) {
+                return;
             }
 
             if (Mongol.retreatActive && Mongol.retreatPoint) {
@@ -69,6 +60,7 @@ export class Mongol extends npc {
                 let distToRetreat = Math.sqrt(toSlotX * toSlotX + toSlotZ * toSlotZ);
                 if (distToRetreat < 5) {
                     Mongol.retreatActive = false;
+                    return;
                 } else {
                     // Keep moving toward retreat point
                     this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed * 1.5, deltaTime);
@@ -303,7 +295,25 @@ export class Mongol extends npc {
         }, tickMs);
     }
 
-    protected initFalseRetreat(): boolean{
-        return true; // TODO
+    protected initFalseRetreat(playerPos: Vec3, myPos: Vec3, averageHealth: number): boolean {
+        if (Mongol.hasRetreatedOnce || averageHealth >= 50) {
+            return false;
+        }
+
+        Mongol.hasRetreatedOnce = true;
+        Mongol.retreatActive = true;
+
+        const dirX = myPos.x - playerPos.x;
+        const dirZ = myPos.z - playerPos.z;
+        const dist = Math.sqrt((dirX * dirX) + (dirZ * dirZ)) || 1;
+        const retreatDist = 60;
+
+        Mongol.retreatPoint = new Vec3(
+            playerPos.x + (dirX / dist) * retreatDist,
+            myPos.y,
+            playerPos.z + (dirZ / dist) * retreatDist
+        );
+
+        return true;
     }
 }
