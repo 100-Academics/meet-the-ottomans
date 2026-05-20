@@ -62,7 +62,6 @@ export class Mongol extends npc {
                 let distToRetreat = Math.sqrt(toSlotX * toSlotX + toSlotZ * toSlotZ);
                 if (distToRetreat < 5) {
                     Mongol.retreatActive = false;
-                    return;
                 } else {
                     // Keep moving toward retreat point
                     this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed * 1.5, deltaTime);
