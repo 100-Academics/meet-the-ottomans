@@ -37,7 +37,7 @@ export class npc {
     private spawnCenter = new Vec3(0, 0, 0);
     private hitboxRadius = 1.1;
 
-    private readonly aiConfig: NpcAiConfig = {
+    protected readonly aiConfig: NpcAiConfig = {
         idleMoveSpeed: 0.8,
         chaseMoveSpeed: 2.5,
         detectionRange: 14,
@@ -259,7 +259,7 @@ export class npc {
         this.moveToward(this.wanderDirection.x, this.wanderDirection.z, this.aiConfig.idleMoveSpeed, deltaTime);
     }
 
-    private moveToward(dirX: number, dirZ: number, speed: number, deltaTime: number): void {
+    protected moveToward(dirX: number, dirZ: number, speed: number, deltaTime: number): void {
         const magnitude = Math.sqrt((dirX * dirX) + (dirZ * dirZ));
         if (magnitude <= 0.0001) {
             return;
@@ -331,12 +331,18 @@ export class npc {
         return bestTarget;
     }
 
-    private getDistanceToEntity(otherEntity: Entity): number {
+    protected getDistanceToEntity(otherEntity: Entity): number {
         const myPos = this.entity.getPosition();
         const otherPos = otherEntity.getPosition();
         const dx = otherPos.x - myPos.x;
         const dz = otherPos.z - myPos.z;
         return Math.sqrt((dx * dx) + (dz * dz));
+    }
+
+    protected getEntityFacing(entity: Entity): Vec3 {
+        var facingDir = entity.forward;
+        console.log(`Entity ${entity.name} facing direction: (${facingDir.x.toFixed(2)}, ${facingDir.y.toFixed(2)}, ${facingDir.z.toFixed(2)})`);
+        return new Vec3(facingDir.x, facingDir.y, facingDir.z);
     }
 
     public static resolveHitboxCollisions(allNpcs: npc[]): void {

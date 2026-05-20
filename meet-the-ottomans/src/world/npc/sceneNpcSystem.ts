@@ -1,6 +1,7 @@
 import { AppBase, Entity, Vec3 } from "playcanvas";
 import { loadModel } from "../../util/loadModel";
 import { npc } from "./npc";
+import { Mongol } from "./troops/mongol";
 
 export type NpcSceneTeam = "friend" | "foe";
 
@@ -21,6 +22,7 @@ export interface NpcSpawnPoint {
     x: number;
     z: number;
     maxHealth?: number;
+    type?: string; // Optional type field for different NPC classes (e.g., "mongol")
 }
 
 export interface NpcSceneSpawnOptions {
@@ -164,11 +166,15 @@ export async function spawnSceneNpcs(
             rotation: modelRotation,
             scale: modelScale
         });
-
-        const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
+        if (spawn.type === "mongol") {
+            const mongolNpc = new Mongol(spawn.id, npcModel.modelEntity);
+            mongolNpc.getEntity().addChild(npcModel.modelEntity);
+        } else {
+            const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
         spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
         spawnedNpc.setHitboxRadius(hitboxRadius);
         npcs.push(spawnedNpc);
+        }
     }
 
     return npcs;
