@@ -1,4 +1,5 @@
 import { AppBase } from 'playcanvas';
+import { removeBattleHUD } from '../../util/battleHUD';
 import { unloadAll } from '../../util/unloadall';
 
 export function showVictoryScreen(options?: {
@@ -30,7 +31,9 @@ export function showVictoryScreen(options?: {
   }
   if (document.getElementById('victory-screen')) return;
 
-  const { onContinue, onMainMenu, message = 'Victory! All enemies defeated.' } = options ?? {};
+  removeBattleHUD();
+
+  const { onMainMenu, message = 'Victory! All enemies defeated.' } = options ?? {};
 
   const overlay = document.createElement('div');
   overlay.id = 'victory-screen';
@@ -65,13 +68,6 @@ export function showVictoryScreen(options?: {
   btnRow.className = 'btn-row';
   btnRow.style.justifyContent = 'center';
 
-  const continueBtn = document.createElement('button');
-  continueBtn.className = 'btn';
-  continueBtn.textContent = 'Continue';
-  continueBtn.addEventListener('click', () => {
-    if (onContinue) return onContinue();
-  });
-
   const menu = document.createElement('button');
   menu.className = 'btn';
   menu.textContent = 'Main Menu';
@@ -80,7 +76,6 @@ export function showVictoryScreen(options?: {
     window.location.href = '/';
   });
 
-  btnRow.appendChild(continueBtn);
   btnRow.appendChild(menu);
 
   card.appendChild(title);

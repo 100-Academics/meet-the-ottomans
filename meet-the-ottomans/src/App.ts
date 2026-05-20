@@ -4,7 +4,7 @@ import { defaultScene } from './world/scenes/default';
 import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
 import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts";
-import { showVictoryScreen } from "./world/scenes/victoryScreen.ts";
+import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScreen.ts";
 import { unloadAll } from "./util/unloadall.ts";
 
 
@@ -70,6 +70,7 @@ export async function changeScene(
   sceneNum: number,): Promise<unknown> {
   // Clear transient UI and runtime listeners so a scene switch starts clean.
   hideDeathScreen();
+  hideVictoryScreen();
   const overlay = ensureOverlayRoot();
   overlay.replaceChildren();
   app.mouse?.off();
@@ -91,8 +92,7 @@ export async function changeScene(
   } else if (sceneNum === 777) {
     return await showVictoryScreen({
       app,
-      onContinue: () => changeScene(canvas, app, 0),
-      onMainMenu: () => changeScene(canvas, app, -2),
+      onMainMenu: () => changeScene(canvas, app, 0),
       message: "Victory! All enemies defeated."
     });
   }

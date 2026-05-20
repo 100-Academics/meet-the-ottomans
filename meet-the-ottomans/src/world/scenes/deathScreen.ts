@@ -1,4 +1,5 @@
 import { AppBase } from 'playcanvas';
+import { removeBattleHUD } from '../../util/battleHUD';
 import { unloadAll } from '../../util/unloadall';
 
 /**
@@ -24,6 +25,7 @@ export function showDeathScreen(options?: {
     }
   }
   if (typeof document === 'undefined') return;
+  removeBattleHUD();
   document.querySelectorAll('.overlay').forEach((el) => {
     if ((el as HTMLElement).id !== 'death-screen') {
       el.remove();
