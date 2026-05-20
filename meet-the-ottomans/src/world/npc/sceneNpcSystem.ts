@@ -235,6 +235,34 @@ export function bindNpcCombatLoop(
 
         npc.resolveHitboxCollisions(npcs);
 
+        if (Mongol.hasRetreatedOnce && !Mongol.hordeSpawned && Mongol.retreatPoint) {
+            Mongol.hordeSpawned = true;
+            const newPoints: NpcSpawnPoint[] = [];
+            for (let i = 0; i < 6; i++) {
+                newPoints.push({
+                    id: 200 + i + Math.floor(Math.random() * 1000),
+                    team: "foe",
+                    x: Mongol.retreatPoint.x + (Math.random() * 12 - 6),
+                    z: Mongol.retreatPoint.z + (Math.random() * 12 - 6),
+                    type: "mongol",
+                    maxHealth: 250 // Stronger horde
+                });
+            }
+            console.log("Spawning stronger Mongol horde for false retreat!");
+            spawnSceneNpcs(app, rigidbodySystem, newPoints).then(newNpcs => {
+                for (const newNpc of newNpcs) {
+                    if (groundCollisionEnabled && rigidbodySystem) {
+                        const position = newNpc.getEntity().getPosition();
+                        const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
+                        npcGroundOffsets.set(newNpc, groundY !== undefined ? Math.max(defaultGroundClearance, position.y - groundY) : defaultGroundClearance);
+                    }
+                    npcs.push(newNpc);
+                }
+            }).catch(err => {
+                console.error("Failed to spawn Mongol horde:", err);
+            });
+        }
+
         if (groundCollisionEnabled && rigidbodySystem) {
             for (const currentNpc of npcs) {
                 if (!currentNpc.isAlive()) {

@@ -17,6 +17,11 @@ export class Mongol extends npc {
     protected static groupAngleDeg: number = 0;
     protected static circleAngularSpeedDeg: number = 30; // degrees per second
     protected static lastAngleUpdateTick: number = -Infinity;
+    public static hasRetreatedOnce: boolean = false;
+    public static retreatActive: boolean = false;
+    public static retreatPoint: Vec3 | null = null;
+    public static hordeSpawned: boolean = false;
+
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = 20;
@@ -43,8 +48,32 @@ export class Mongol extends npc {
                 totalHealth += mongolInstances[i].getHealth();
             }
 
-            if (totalHealth / len < 50) {
-                //TODO: FALSE RETREAT
+            if (!Mongol.hasRetreatedOnce && totalHealth / len < 50) {
+                Mongol.hasRetreatedOnce = true;
+                Mongol.retreatActive = true;
+                const dirX = myPos.x - playerPos.x;
+                const dirZ = myPos.z - playerPos.z;
+                const dist = Math.sqrt(dirX * dirX + dirZ * dirZ) || 1;
+                const retreatDist = 60; // Retreat away from player
+                Mongol.retreatPoint = new Vec3(
+                    playerPos.x + (dirX / dist) * retreatDist,
+                    myPos.y,
+                    playerPos.z + (dirZ / dist) * retreatDist
+                );
+            }
+
+            if (Mongol.retreatActive && Mongol.retreatPoint) {
+                let toSlotX = Mongol.retreatPoint.x - myPos.x;
+                let toSlotZ = Mongol.retreatPoint.z - myPos.z;
+                
+                let distToRetreat = Math.sqrt(toSlotX * toSlotX + toSlotZ * toSlotZ);
+                if (distToRetreat < 5) {
+                    Mongol.retreatActive = false;
+                } else {
+                    // Keep moving toward retreat point
+                    this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed * 1.5, deltaTime);
+                    return;
+                }
             }
 
             const count = Math.max(1, mongolInstances.length);
