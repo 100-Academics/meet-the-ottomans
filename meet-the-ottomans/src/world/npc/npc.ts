@@ -37,9 +37,9 @@ export class npc {
     private spawnCenter = new Vec3(0, 0, 0);
     private hitboxRadius = 1.1;
 
-    protected readonly aiConfig: NpcAiConfig = {
+    protected aiConfig: NpcAiConfig = {
         idleMoveSpeed: 0.8,
-        chaseMoveSpeed: 2.5,
+        chaseMoveSpeed: 10,
         detectionRange: 14,
         attackRange: 2,
         attackCooldown: 1,

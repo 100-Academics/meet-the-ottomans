@@ -21,6 +21,8 @@ export class Mongol extends npc {
         super(id, 'foe', 100, modelEntity);
     }
 
+    
+
     override updateCombatAI(deltaTime: number, currentTimeSeconds: number, allNpcs: npc[], onNpcAttack?: (attacker: npc, target: npc, damage: number) => void, playerEntity?: Entity | null, onPlayerAttack?: (attacker: npc, damage: number) => void): void {
         // Default to base behaviour unless we have a live player target.
         if (playerEntity && this.isAlive()) {
