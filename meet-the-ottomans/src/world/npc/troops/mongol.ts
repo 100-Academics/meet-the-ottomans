@@ -1,12 +1,13 @@
 import { AppBase, Entity, Vec3 } from "playcanvas";
 import { npc } from "../npc";
+import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
 export class Mongol extends npc {
     protected circleRadius: number = 5;
     // Ranged attack settings (Mongols shoot while circling)
     protected rangedAttackRange: number = 30;
     protected rangedAttackDamage: number = 8;
-    protected rangedAttackCooldown: number = 2.0; // seconds
+    protected rangedAttackCooldown: number = 1.0; // seconds
     private static lastGroupShotTime: number = -Infinity;
     private static lastShotSelectionTick: number = -Infinity;
     private static selectedShooterId: number | null = null;
@@ -21,11 +22,12 @@ export class Mongol extends npc {
     public static retreatActive: boolean = false;
     public static retreatPoint: Vec3 | null = null;
     public static hordeSpawned: boolean = false;
+    private static playerMoveSpeed = PLAYER_MOVE_SPEED;
 
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
-        this.aiConfig.chaseMoveSpeed = 20;
-        this.aiConfig.idleMoveSpeed = 10;
+        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
+        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
     }
 
     
