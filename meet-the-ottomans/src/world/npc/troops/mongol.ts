@@ -51,10 +51,6 @@ export class Mongol extends npc {
             }
             const averageHealth = len > 0 ? totalHealth / len : 0;
 
-            if (this.initFalseRetreat(playerPos, myPos, averageHealth)) {
-                return;
-            }
-
             if (Mongol.retreatActive && Mongol.retreatPoint) {
                 let toSlotX = Mongol.retreatPoint.x - myPos.x;
                 let toSlotZ = Mongol.retreatPoint.z - myPos.z;
@@ -68,6 +64,10 @@ export class Mongol extends npc {
                     this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed * 1.5, deltaTime);
                     return;
                 }
+            }
+
+            if (this.initFalseRetreat(playerPos, playerEntity, myPos, averageHealth)) {
+                return;
             }
 
             const count = Math.max(1, mongolInstances.length);
@@ -297,7 +297,7 @@ export class Mongol extends npc {
         }, tickMs);
     }
 
-    protected initFalseRetreat(playerPos: Vec3, myPos: Vec3, averageHealth: number): boolean {
+    protected initFalseRetreat(playerPos: Vec3, playerEntity: Entity, myPos: Vec3, averageHealth: number): boolean {
         if (Mongol.hasRetreatedOnce || averageHealth >= 50) {
             return false;
         }
@@ -305,15 +305,23 @@ export class Mongol extends npc {
         Mongol.hasRetreatedOnce = true;
         Mongol.retreatActive = true;
 
-        const dirX = myPos.x - playerPos.x;
-        const dirZ = myPos.z - playerPos.z;
-        const dist = Math.sqrt((dirX * dirX) + (dirZ * dirZ)) || 1;
-        const retreatDist = 60;
+        const retreatDist = 85;
+        const playerForward = new Vec3(playerEntity.forward.x, 0, playerEntity.forward.z);
+        if (playerForward.lengthSq() > 0.0001) {
+            playerForward.normalize();
+        } else {
+            playerForward.set(myPos.x - playerPos.x, 0, myPos.z - playerPos.z);
+            if (playerForward.lengthSq() > 0.0001) {
+                playerForward.normalize();
+            } else {
+                playerForward.set(0, 0, 1);
+            }
+        }
 
         Mongol.retreatPoint = new Vec3(
-            playerPos.x + (dirX / dist) * retreatDist,
+            playerPos.x - (playerForward.x * retreatDist),
             myPos.y,
-            playerPos.z + (dirZ / dist) * retreatDist
+            playerPos.z - (playerForward.z * retreatDist)
         );
 
         return true;
