@@ -19,6 +19,8 @@ export class Mongol extends npc {
     protected static lastAngleUpdateTick: number = -Infinity;
     constructor(id: number, modelEntity: Entity = new Entity("mongol")) {
         super(id, 'foe', 100, modelEntity);
+        this.aiConfig.chaseMoveSpeed = 20;
+        this.aiConfig.idleMoveSpeed = 10;
     }
 
     
@@ -71,7 +73,8 @@ export class Mongol extends npc {
             // Move toward the moving slot point.
             let toSlotX = desiredX - myPos.x;
             let toSlotZ = desiredZ - myPos.z;
-            this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed, deltaTime);
+            const mongolMoveSpeed = this.aiConfig.chaseMoveSpeed;
+            this.moveToward(toSlotX, toSlotZ, mongolMoveSpeed, deltaTime);
 
             // Select one Mongol to fire each cooldown window (randomized each time).
             const nowSeconds = currentTimeSeconds;
