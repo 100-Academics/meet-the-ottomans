@@ -1,5 +1,5 @@
 import { AppBase, Entity, Vec3 } from 'playcanvas';
-import { Weapon } from "./weapon";
+import { npc } from '../../world/npc/npc';
 import { Gun } from './gun';
 
 export class Bow extends Gun {
@@ -18,7 +18,11 @@ export class Bow extends Gun {
         return this.arrows;
     }
 
-    public draw(): boolean {
+    public draw(app?: AppBase, origin?: Vec3, direction?: Vec3, target?: npc | null): boolean {
+        return this.shoot(app, origin, direction, target);
+    }
+
+    public shoot(app?: AppBase, origin?: Vec3, direction?: Vec3, target?: npc | null): boolean {
         if (this.arrows <= 0) {
             console.log(`${this.getName()} is out of arrows!`);
             return false;
@@ -26,7 +30,7 @@ export class Bow extends Gun {
 
         if (this.isDrawing) {
             console.log(`${this.getName()} is currently being drawn...`);
-            return false; 
+            return false;
         }
 
         this.isDrawing = true;
@@ -38,134 +42,77 @@ export class Bow extends Gun {
 
             this.arrows -= 1;
             console.log(`${this.getName()} fired! Remaining arrows: ${this.arrows}`);
-            this.shoot(); // Call the shoot method to handle the visual effect and damage application
 
+            const sceneApp = app ?? (globalThis as { app?: AppBase }).app;
+            if (!sceneApp?.root) {
+                return;
+            }
+
+            const shotOrigin = origin?.clone() ?? new Vec3(0, 0, 0);
+            const shotDirection = direction?.clone() ?? new Vec3(0, 0, -1);
+            if (shotDirection.lengthSq() <= 0.0001) {
+                shotDirection.set(0, 0, -1);
+            }
+            shotDirection.normalize();
+
+            const arrowEntity = new Entity(`${this.getName()} arrow`);
+            arrowEntity.setPosition(shotOrigin);
+            arrowEntity.lookAt(shotOrigin.clone().add(shotDirection));
+
+            const tracer = new Entity(`${this.getName()} arrow tracer`);
+            tracer.addComponent('render', { type: 'cylinder' } as any);
+            tracer.setLocalScale(0.03, 0.03, 0.9);
+            arrowEntity.addChild(tracer);
+            sceneApp.root.addChild(arrowEntity);
+
+            let travelled = 0;
+            const speed = 35;
+            const maxRange = Math.max(1, this.getRange());
+            const tickMs = 16;
+
+            const cleanup = () => {
+                try { arrowEntity.destroy(); } catch (e) {}
+            };
+
+            const interval = window.setInterval(() => {
+                const dt = tickMs / 1000;
+                const move = speed * dt;
+                travelled += move;
+                const newPos = shotOrigin.clone().add(shotDirection.clone().mulScalar(travelled));
+                arrowEntity.setPosition(newPos);
+
+                if (target && target.isAlive()) {
+                    const targetPos = target.getEntity().getPosition();
+                    const dx = targetPos.x - newPos.x;
+                    const dy = targetPos.y - newPos.y;
+                    const dz = targetPos.z - newPos.z;
+                    const distance = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+                    const hitRadius = Math.max(1.0, target.getHitboxRadius());
+                    if (distance <= hitRadius) {
+                        if (target.getTeam() === 'foe') {
+                            target.takeDamage(this.getDamage());
+                        }
+                        window.clearInterval(interval);
+                        cleanup();
+                        return;
+                    }
+                }
+
+                if (travelled >= maxRange || !arrowEntity.parent) {
+                    window.clearInterval(interval);
+                    cleanup();
+                }
+            }, tickMs);
+
+            const maxLife = Math.max(2, maxRange / speed + 0.5);
+            window.setTimeout(() => {
+                window.clearInterval(interval);
+                cleanup();
+            }, maxLife * 1000);
         }, this.drawTimeMs);
 
-        return true; 
+        return true;
     }
-
-    // public shoot(app?: AppBase, origin?: Vec3, direction?: Vec3): boolean {
-    //     if (this.arrows <= 0) {
-    //         console.log(`${this.getName()} is out of arrows!`);
-    //         return false;
-    //     }
-
-    //     if (this.isDrawing) {
-    //         console.log(`${this.getName()} is currently being drawn...`);
-    //         return false; 
-    //     }
-
-    //     this.isDrawing = true;
-    //     console.log(`Drawing ${this.getName()}...`);
-
-    //     window.setTimeout(() => {
-            
-    //         this.isDrawing = false;
-
-    //         if (this.arrows <= 0) return;
-
-    //         this.arrows -= 1;
-    //         console.log(`${this.getName()} fired! Remaining arrows: ${this.arrows}`);
-
-    //         const sceneApp = app ?? (globalThis as { app?: AppBase }).app;
-    //         if (!sceneApp?.root) {
-    //             return; 
-    //         }
-
-    //         const hitscanOrigin = origin?.clone() ?? new Vec3(0, 0, 0);
-    //         const hitscanDirection = direction?.clone() ?? new Vec3(0, 0, -1);
-            
-    //         if (hitscanDirection.lengthSq() <= 0.0001) {
-    //             hitscanDirection.set(0, 0, -1);
-    //         }
-    //         hitscanDirection.normalize();
-
-    //         // ==========================================
-    //         // OPTION 1: HITSCAN (Current Implementation)
-    //         // ==========================================
-    //         const hitscanLength = Math.max(this.getRange(), 1); 
-            
-    //         // NOTE: PlayCanvas physics instant raycast for Hitscan:
-    //         // const endPos = hitscanOrigin.clone().add(hitscanDirection.clone().mulScalar(hitscanLength));
-    //         // const hit = sceneApp.systems.rigidbody?.raycastFirst(hitscanOrigin, endPos);
-    //         // if (hit) { 
-    //         //     console.log("Hitscan struck an entity: ", hit.entity.name);
-    //         //     // Apply damage to hit.entity here...
-    //         //     // hitscanLength = hitOriginToHitDistance; // Shorten the visual beam to stop at the wall/enemy
-    //         // }
-
-    //         // Calculate midpoint so the box scales outwards perfectly from the origin
-    //     const shotOrigin = origin?.clone() ?? new Vec3(0, 0, 0);
-    //     const shotDirection = direction?.clone() ?? new Vec3(0, 0, -1);
-    //     if (shotDirection.lengthSq() <= 0.0001) {
-    //         shotDirection.set(0, 0, -1);
-    //     }
-    //     shotDirection.normalize();
-
-    //     const shotLength = this.getRange();
-    //     const shotMidpoint = shotOrigin.clone().add(shotDirection.clone().mulScalar(shotLength * 0.5));
-    //     const shotEntity = new Entity(`${this.getName()} shot`);
-    //     shotEntity.setPosition(shotMidpoint);
-    //     shotEntity.lookAt(shotMidpoint.clone().add(shotDirection));
-
-    //     const tracer = new Entity(`${this.getName()} shot tracer`);
-    //     tracer.addComponent('render', { type: 'box' } as any);
-    //     tracer.setLocalScale(0.08, 0.08, shotLength);
-
-    //     shotEntity.addChild(tracer);
-    //     sceneApp.root.addChild(shotEntity);
-
-    //         // Despawn the hitscan beam rapidly
-    //         window.setTimeout(() => {
-    //             hitscanEntity.destroy();
-    //         }, 500);
-
-    //         /*
-    //         // ==========================================
-    //         // OPTION 2: PHYSICAL PROJECTILE (Alternative)
-    //         // ==========================================
-    //         // Instead of an instant raycast and an instant beam, you would spawn 
-    //         // a dynamic entity that travels through the world over time.
-            
-    //         const arrowEntity = new Entity(`${this.getName()} projectile`);
-    //         arrowEntity.setPosition(hitscanOrigin);
-    //         arrowEntity.lookAt(hitscanOrigin.clone().add(hitscanDirection));
-
-    //         // Add visual mesh
-    //         arrowEntity.addComponent('render', { type: 'cylinder' } as any);
-    //         arrowEntity.setLocalScale(0.02, 0.02, 1.0);
-
-    //         // Add physics components (Requires Ammo.js physics to be enabled in PlayCanvas)
-    //         arrowEntity.addComponent('collision', { type: 'cylinder', radius: 0.01, height: 1.0 });
-    //         arrowEntity.addComponent('rigidbody', { 
-    //             type: 'dynamic', 
-    //             mass: 0.1, 
-    //             friction: 0.5, 
-    //             restitution: 0 
-    //         });
-
-    //         sceneApp.root.addChild(arrowEntity);
-
-    //         // Apply forward velocity/impulse to shoot the arrow
-    //         const speed = 50; // Adjust for arrow speed
-    //         const velocity = hitscanDirection.clone().mulScalar(speed);
-    //         arrowEntity.rigidbody?.applyImpulse(velocity);
-
-    //         // Listen for collisions to deal damage and stop the arrow
-    //         arrowEntity.collision?.on('collisionstart', (result) => {
-    //             console.log("Arrow hit: ", result.other.name);
-    //             // Apply damage to result.other here...
-                
-    //             // Optional: Make the arrow stick to the target or destroy it
-    //             arrowEntity.destroy(); 
-    //         });
-    //         */
-
-    //     }, this.drawTimeMs);
-
-    //     return true; 
-    // }
 
     public reload(amount: number): void {
         this.arrows += Math.max(0, amount);

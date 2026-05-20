@@ -119,9 +119,14 @@ export class Player{
     }
 
     public attack(target?: npc | null): void {
+        if (this.equippedWeapon instanceof Bow) {
+            this.equippedWeapon.shoot(this.app, this.cameraEntity.getPosition(), this.cameraEntity.forward, target ?? null);
+            return;
+        }
+
         let canDealDamage = true;
 
-        if (this.equippedWeapon instanceof Gun || this.equippedWeapon instanceof Bow) {
+        if (this.equippedWeapon instanceof Gun) {
             canDealDamage = this.equippedWeapon.shoot(this.app, this.cameraEntity.getPosition(), this.cameraEntity.forward);
         }
 

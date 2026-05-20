@@ -7,7 +7,10 @@ export class Mongol extends npc {
     protected rangedAttackRange: number = 30;
     protected rangedAttackDamage: number = 8;
     protected rangedAttackCooldown: number = 2.0; // seconds
-    private lastRangedAttackTime: number = -Infinity;
+    private static lastGroupShotTime: number = -Infinity;
+    private static lastShotSelectionTick: number = -Infinity;
+    private static selectedShooterId: number | null = null;
+    private static lastShooterId: number | null = null;
     // Shared direction for all Mongols so they circle uniformly (1 = ccw, -1 = cw).
     protected static circleDirection: number = Math.random() > 0.5 ? 1 : -1;
     // Shared group angle (degrees) that advances once per frame so the whole group rotates together.
@@ -68,15 +71,53 @@ export class Mongol extends npc {
             let toSlotZ = desiredZ - myPos.z;
             this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed, deltaTime);
 
-            // Attempt ranged attack if in range and cooldown elapsed.
+            // Select one Mongol to fire each cooldown window (randomized each time).
+            const nowSeconds = currentTimeSeconds;
             const dx = playerPos.x - myPos.x;
             const dy = playerPos.y - myPos.y;
             const dz = playerPos.z - myPos.z;
             const distance3 = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-            if (distance3 <= this.rangedAttackRange && (currentTimeSeconds - this.lastRangedAttackTime) >= this.rangedAttackCooldown) {
-                this.lastRangedAttackTime = currentTimeSeconds;
-                // Fire a projectile toward the player. The projectile will call the provided onPlayerAttack when it hits.
-                this.fireProjectileAt(playerEntity, this.rangedAttackDamage, 25, onPlayerAttack);
+            const inRange = distance3 <= this.rangedAttackRange;
+
+            if ((nowSeconds - Mongol.lastGroupShotTime) >= this.rangedAttackCooldown) {
+                if (Mongol.lastShotSelectionTick !== nowSeconds) {
+                    const candidates: Mongol[] = [];
+                    for (const mongol of mongolInstances) {
+                        const mPos = mongol.getEntity().getPosition();
+                        const mdx = playerPos.x - mPos.x;
+                        const mdy = playerPos.y - mPos.y;
+                        const mdz = playerPos.z - mPos.z;
+                        const mDist = Math.sqrt((mdx * mdx) + (mdy * mdy) + (mdz * mdz));
+                        if (mDist <= mongol.rangedAttackRange) {
+                            candidates.push(mongol);
+                        }
+                    }
+
+                    let pool = candidates;
+                    if (pool.length > 1 && Mongol.lastShooterId !== null) {
+                        const filtered = pool.filter(m => m.getId() !== Mongol.lastShooterId);
+                        if (filtered.length > 0) {
+                            pool = filtered;
+                        }
+                    }
+
+                    if (pool.length > 0) {
+                        const pick = pool[Math.floor(Math.random() * pool.length)];
+                        Mongol.selectedShooterId = pick.getId();
+                    } else {
+                        Mongol.selectedShooterId = null;
+                    }
+
+                    Mongol.lastShotSelectionTick = nowSeconds;
+                }
+
+                if (Mongol.selectedShooterId === this.getId() && inRange) {
+                    Mongol.lastGroupShotTime = nowSeconds;
+                    Mongol.lastShooterId = this.getId();
+                    Mongol.selectedShooterId = null;
+                    // Fire a projectile toward the player. The projectile will call the provided onPlayerAttack when it hits.
+                    this.fireProjectileAt(playerEntity, this.rangedAttackDamage, 25, onPlayerAttack);
+                }
             }
 
             return;
@@ -93,10 +134,24 @@ export class Mongol extends npc {
         return new Vec3(x, 0, z);
     }
 
+    private resolveSceneApp(targetEntity?: Entity): AppBase | undefined {
+        const selfEntity = this.getEntity() as any;
+        const selfApp = (selfEntity?.app ?? selfEntity?._app) as AppBase | undefined;
+        if (selfApp?.root) return selfApp;
+        const targetAny = targetEntity as any;
+        const targetApp = (targetAny?.app ?? targetAny?._app) as AppBase | undefined;
+        if (targetApp?.root) return targetApp;
+        const globalApp = (globalThis as any)?.app as AppBase | undefined;
+        if (globalApp?.root) return globalApp;
+        return undefined;
+    }
+
     // Spawn a simple kinematic projectile that travels toward `targetEntity` and notifies via `onPlayerAttack` when it hits.
     protected fireProjectileAt(targetEntity: Entity, damage: number, speed: number = 25, onPlayerAttack?: (attacker: npc, damage: number) => void): void {
-        const sceneApp = (globalThis as any).app as AppBase | undefined;
-        if (!sceneApp?.root) return;
+        const sceneApp = this.resolveSceneApp(targetEntity);
+        if (!sceneApp?.root) {
+            return;
+        }
 
         const origin = this.getEntity().getPosition().clone();
         const targetPos = targetEntity.getPosition().clone();
@@ -106,13 +161,13 @@ export class Mongol extends npc {
         if (distance <= 0.001) return;
         dir.normalize();
 
-        const projectile = new Entity('mongol projectile');
+        const projectile = new Entity('mongol arrow');
         projectile.setPosition(origin);
         projectile.lookAt(origin.clone().add(dir));
 
-        const tracer = new Entity('mongol projectile tracer');
+        const tracer = new Entity('mongol arrow tracer');
         tracer.addComponent('render', { type: 'cylinder' } as any);
-        tracer.setLocalScale(0.06, 0.06, 1.0);
+        tracer.setLocalScale(0.04, 0.04, 0.9);
         projectile.addChild(tracer);
         sceneApp.root.addChild(projectile);
 
@@ -164,7 +219,7 @@ export class Mongol extends npc {
     // Melee attack option — creates a visible slow arcing weapon strike toward target.
     // Note: this method is intentionally not called anywhere by default.
     protected performMeleeArcAttack(targetEntity: Entity, damage: number, durationSeconds: number = 0.9, arcHeight: number = 2.0, onHit?: (attacker: npc, target: Entity, damage: number) => void): void {
-        const sceneApp = (globalThis as any).app as AppBase | undefined;
+        const sceneApp = this.resolveSceneApp(targetEntity);
         if (!sceneApp?.root) return;
 
         const origin = this.getEntity().getPosition().clone();
@@ -190,7 +245,7 @@ export class Mongol extends npc {
             const t = Math.min(1, elapsed / durationSeconds);
 
             // Horizontal interpolation
-            const horiz = origin.clone().lerp(targetStart, t);
+            const horiz = new Vec3().lerp(origin, targetStart, t);
             // Vertical arc (slow): sin curve for smooth rise/fall
             const y = origin.y + (Math.sin(Math.PI * t) * arcHeight);
             arcEntity.setPosition(horiz.x, y, horiz.z);

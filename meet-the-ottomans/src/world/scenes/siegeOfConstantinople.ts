@@ -25,7 +25,6 @@ import {
 	KEY_1,
 	KEY_2,
 	KEY_R,
-	KEY_3,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
