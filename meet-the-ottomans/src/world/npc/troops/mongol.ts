@@ -17,7 +17,7 @@ export class Mongol extends npc {
     protected static groupAngleDeg: number = 0;
     protected static circleAngularSpeedDeg: number = 30; // degrees per second
     protected static lastAngleUpdateTick: number = -Infinity;
-    constructor(id: number, modelEntity: Entity = new Entity("mongol")) {
+    constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = 20;
         this.aiConfig.idleMoveSpeed = 10;
@@ -35,6 +35,16 @@ export class Mongol extends npc {
             const mongolInstances = allNpcs.filter(n => n instanceof Mongol && n.isAlive()) as Mongol[];
             if (mongolInstances.length > 0) {
                 mongolInstances.sort((a, b) => a.getId() - b.getId());
+            }
+            const len = mongolInstances.length;
+            var totalHealth = 0;
+
+            for (let i = 0; i < len; i++) {
+                totalHealth += mongolInstances[i].getHealth();
+            }
+
+            if (totalHealth / len < 50) {
+                //TODO: FALSE RETREAT
             }
 
             const count = Math.max(1, mongolInstances.length);
@@ -262,5 +272,9 @@ export class Mongol extends npc {
                 window.clearInterval(interval);
             }
         }, tickMs);
+    }
+
+    protected initFalseRetreat(): boolean{
+        return true; // TODO
     }
 }
