@@ -167,13 +167,16 @@ export async function spawnSceneNpcs(
             scale: modelScale
         });
         if (spawn.type === "mongol") {
-            const mongolNpc = new Mongol(spawn.id, npcModel.modelEntity);
-            mongolNpc.getEntity().addChild(npcModel.modelEntity);
+            console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+            const mongol = new Mongol(spawn.id, npcModel.modelEntity);
+            mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+            mongol.setHitboxRadius(hitboxRadius);
+            npcs.push(mongol);
         } else {
             const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
-        spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-        spawnedNpc.setHitboxRadius(hitboxRadius);
-        npcs.push(spawnedNpc);
+            spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+            spawnedNpc.setHitboxRadius(hitboxRadius);
+            npcs.push(spawnedNpc);
         }
     }
 

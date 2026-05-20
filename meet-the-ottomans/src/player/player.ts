@@ -16,7 +16,7 @@ export class Player{
     private maxHealth = 100;
     private health = this.maxHealth;
     private team = 'friend'; // Player is always on the 'friend' team
-    private readonly swordWeapon = new Sword(8, 25);
+    private readonly swordWeapon = new Sword(4, 25);
     private readonly gunWeapon = new Gun(100, 100, 12);
     private readonly bowWeapon = new Bow(50, 100, 20);
     private equippedWeapon: Weapon = this.swordWeapon;
