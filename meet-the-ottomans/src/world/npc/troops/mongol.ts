@@ -1,8 +1,13 @@
-import { Entity, Vec3 } from "playcanvas";
+import { AppBase, Entity, Vec3 } from "playcanvas";
 import { npc } from "../npc";
 
 export class Mongol extends npc {
-    protected circleRadius: number = 4.5;
+    protected circleRadius: number = 5;
+    // Ranged attack settings (Mongols shoot while circling)
+    protected rangedAttackRange: number = 30;
+    protected rangedAttackDamage: number = 8;
+    protected rangedAttackCooldown: number = 2.0; // seconds
+    private lastRangedAttackTime: number = -Infinity;
     // Shared direction for all Mongols so they circle uniformly (1 = ccw, -1 = cw).
     protected static circleDirection: number = Math.random() > 0.5 ? 1 : -1;
     // Shared group angle (degrees) that advances once per frame so the whole group rotates together.
@@ -40,7 +45,14 @@ export class Mongol extends npc {
             // Determine radius that maintains minimum arc spacing per Mongol.
             const minArcSpacing = Math.max(1.6, this.getHitboxRadius() * 1.8);
             const requiredRadius = (count * minArcSpacing) / (2 * Math.PI);
-            const radius = Math.max(this.circleRadius, requiredRadius);
+
+            // Allow the player's camera controller to define a preferred minimum circle radius
+            const playerController = (playerEntity as any)?.script?.FirstPersonCamera ?? (playerEntity as any)?.script?.firstPersonCamera;
+            const playerPreferredMin = (playerController && Number.isFinite(playerController.preferredNpcCircleRadius)) ? playerController.preferredNpcCircleRadius : undefined;
+            const baseMinFromPlayer = playerPreferredMin ?? Math.max(this.circleRadius, (playerController?.playerHeight ?? 2) * 1.2);
+            // Increase radius proportional to player movement speed so faster players get a wider circle.
+            const speedFactor = (playerController?.moveSpeed ?? 0) * 0.25;
+            const radius = Math.max(baseMinFromPlayer + speedFactor, requiredRadius);
 
             // Assigned angular slot for this Mongol (degrees), offset by group rotation.
             const separationDegrees = 360 / count;
@@ -55,6 +67,18 @@ export class Mongol extends npc {
             let toSlotX = desiredX - myPos.x;
             let toSlotZ = desiredZ - myPos.z;
             this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed, deltaTime);
+
+            // Attempt ranged attack if in range and cooldown elapsed.
+            const dx = playerPos.x - myPos.x;
+            const dy = playerPos.y - myPos.y;
+            const dz = playerPos.z - myPos.z;
+            const distance3 = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+            if (distance3 <= this.rangedAttackRange && (currentTimeSeconds - this.lastRangedAttackTime) >= this.rangedAttackCooldown) {
+                this.lastRangedAttackTime = currentTimeSeconds;
+                // Fire a projectile toward the player. The projectile will call the provided onPlayerAttack when it hits.
+                this.fireProjectileAt(playerEntity, this.rangedAttackDamage, 25, onPlayerAttack);
+            }
+
             return;
         }
 
@@ -67,5 +91,116 @@ export class Mongol extends npc {
         const x = radius * Math.cos(angleRadians);
         const z = radius * Math.sin(angleRadians);
         return new Vec3(x, 0, z);
+    }
+
+    // Spawn a simple kinematic projectile that travels toward `targetEntity` and notifies via `onPlayerAttack` when it hits.
+    protected fireProjectileAt(targetEntity: Entity, damage: number, speed: number = 25, onPlayerAttack?: (attacker: npc, damage: number) => void): void {
+        const sceneApp = (globalThis as any).app as AppBase | undefined;
+        if (!sceneApp?.root) return;
+
+        const origin = this.getEntity().getPosition().clone();
+        const targetPos = targetEntity.getPosition().clone();
+
+        const dir = targetPos.clone().sub(origin);
+        const distance = Math.sqrt(dir.x * dir.x + dir.y * dir.y + dir.z * dir.z);
+        if (distance <= 0.001) return;
+        dir.normalize();
+
+        const projectile = new Entity('mongol projectile');
+        projectile.setPosition(origin);
+        projectile.lookAt(origin.clone().add(dir));
+
+        const tracer = new Entity('mongol projectile tracer');
+        tracer.addComponent('render', { type: 'cylinder' } as any);
+        tracer.setLocalScale(0.06, 0.06, 1.0);
+        projectile.addChild(tracer);
+        sceneApp.root.addChild(projectile);
+
+        let travelled = 0;
+        const maxLife = Math.max(3, distance / speed + 1);
+        const tickMs = 16;
+
+        const interval = window.setInterval(() => {
+            const dt = tickMs / 1000;
+            const move = speed * dt;
+            travelled += move;
+            const newPos = origin.clone().add(dir.clone().mulScalar(travelled));
+            projectile.setPosition(newPos);
+
+            // Recalculate target position (player may move)
+            const currentTargetPos = targetEntity.getPosition();
+            const dx = currentTargetPos.x - newPos.x;
+            const dy = currentTargetPos.y - newPos.y;
+            const dz = currentTargetPos.z - newPos.z;
+            const distToTarget = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+
+            // Simple hit test: if projectile is within hit radius, notify and destroy.
+            const hitRadius = Math.max(1.5, (targetEntity.collision?.radius as number) ?? 1.5);
+            if (distToTarget <= hitRadius) {
+                if (onPlayerAttack) {
+                    onPlayerAttack(this, damage);
+                }
+                projectile.destroy();
+                window.clearInterval(interval);
+                return;
+            }
+
+            // Lifespan check
+            if (travelled >= (distance + 4) || (projectile && !projectile.parent)) {
+                // remove after exceeding range or if parentless
+                try { projectile.destroy(); } catch (e) {}
+                window.clearInterval(interval);
+                return;
+            }
+        }, tickMs);
+
+        // Ensure projectile cleanup after maxLife seconds
+        window.setTimeout(() => {
+            try { projectile.destroy(); } catch (e) {}
+            window.clearInterval(interval);
+        }, maxLife * 1000);
+    }
+
+    // Melee attack option — creates a visible slow arcing weapon strike toward target.
+    // Note: this method is intentionally not called anywhere by default.
+    protected performMeleeArcAttack(targetEntity: Entity, damage: number, durationSeconds: number = 0.9, arcHeight: number = 2.0, onHit?: (attacker: npc, target: Entity, damage: number) => void): void {
+        const sceneApp = (globalThis as any).app as AppBase | undefined;
+        if (!sceneApp?.root) return;
+
+        const origin = this.getEntity().getPosition().clone();
+        const targetStart = targetEntity.getPosition().clone();
+        const dir = targetStart.clone().sub(origin);
+        const flatDist = Math.sqrt(dir.x * dir.x + dir.z * dir.z);
+        if (flatDist <= 0.001) return;
+        dir.normalize();
+
+        const arcEntity = new Entity('mongol melee arc');
+        arcEntity.setPosition(origin);
+
+        const visual = new Entity('melee visual');
+        visual.addComponent('render', { type: 'sphere' } as any);
+        visual.setLocalScale(0.5, 0.5, 0.5);
+        arcEntity.addChild(visual);
+        sceneApp.root.addChild(arcEntity);
+
+        const startTime = Date.now();
+        const tickMs = 16;
+        const interval = window.setInterval(() => {
+            const elapsed = (Date.now() - startTime) / 1000;
+            const t = Math.min(1, elapsed / durationSeconds);
+
+            // Horizontal interpolation
+            const horiz = origin.clone().lerp(targetStart, t);
+            // Vertical arc (slow): sin curve for smooth rise/fall
+            const y = origin.y + (Math.sin(Math.PI * t) * arcHeight);
+            arcEntity.setPosition(horiz.x, y, horiz.z);
+
+            if (t >= 1) {
+                // On hit callback (optional)
+                if (onHit) onHit(this, targetEntity, damage);
+                try { arcEntity.destroy(); } catch (e) {}
+                window.clearInterval(interval);
+            }
+        }, tickMs);
     }
 }

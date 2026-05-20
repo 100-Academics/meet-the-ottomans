@@ -35,7 +35,7 @@ export class questionPool{
     private questions: Record<number, Record<number, LegacyQuestionEntry>> = {
         0: {
             // N/A
-            0: { question: "How are you here?", answer: "Begone" },
+            0: { question: "How are you here?", answer: "Begone" }, // questions should be formatted like this
             1: { question: "You shouldn't see this", answer: "My bad man" },
             2: { question: "Your end is nigh.", answer: "GET OUT" }
         },
