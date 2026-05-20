@@ -3,41 +3,63 @@ import { npc } from "../npc";
 
 export class Mongol extends npc {
     protected circleRadius: number = 4.5;
+    // Shared direction for all Mongols so they circle uniformly (1 = ccw, -1 = cw).
+    protected static circleDirection: number = Math.random() > 0.5 ? 1 : -1;
+    // Shared group angle (degrees) that advances once per frame so the whole group rotates together.
+    protected static groupAngleDeg: number = 0;
+    protected static circleAngularSpeedDeg: number = 30; // degrees per second
+    protected static lastAngleUpdateTick: number = -Infinity;
     constructor(id: number, modelEntity: Entity = new Entity("mongol")) {
         super(id, 'foe', 100, modelEntity);
     }
 
     override updateCombatAI(deltaTime: number, currentTimeSeconds: number, allNpcs: npc[], onNpcAttack?: (attacker: npc, target: npc, damage: number) => void, playerEntity?: Entity | null, onPlayerAttack?: (attacker: npc, damage: number) => void): void {
-        var doElse = true;
-        var theta = -999;
+        // Default to base behaviour unless we have a live player target.
         if (playerEntity && this.isAlive()) {
-            const distance = this.getDistanceToEntity(playerEntity);
-            if (distance < 5) { // try to avoid getting too close to the player, will implement circling later
-                                // TODO CIRCLING
+            const playerPos = playerEntity.getPosition();
+            const myPos = this.getEntity().getPosition();
 
-                var playerFacing = this.getEntityFacing(playerEntity);
-
-                // forces the mongols onto a circle around the player.
-                var xCoord = Math.sin(playerFacing.x) * this.circleRadius;
-                var zCoord = Math.sin(playerFacing.z) * this.circleRadius;
-                theta = Math.atan2(playerFacing.z, playerFacing.x);
-                this.moveToward(xCoord, zCoord, this.aiConfig.chaseMoveSpeed, deltaTime);
+            // Gather living Mongol instances and determine this NPC's slot.
+            const mongolInstances = allNpcs.filter(n => n instanceof Mongol && n.isAlive()) as Mongol[];
+            if (mongolInstances.length > 0) {
+                mongolInstances.sort((a, b) => a.getId() - b.getId());
             }
 
-            if(distance > 5 && distance < this.aiConfig.attackRange){
-                if (theta != -999) {
-
-                var point = this.getPointOnCircle(this.circleRadius, theta + 5);
-
-                this.moveToward(point.x, point.z, this.aiConfig.chaseMoveSpeed, deltaTime);
-                }
+            const count = Math.max(1, mongolInstances.length);
+            let index = mongolInstances.findIndex(m => m === this);
+            if (index < 0) {
+                index = 0;
             }
 
-            doElse = false;
+            // Update shared group angle once per frame (scene passes same currentTimeSeconds to all NPCs).
+            if (Mongol.lastAngleUpdateTick !== currentTimeSeconds) {
+                Mongol.groupAngleDeg = (Mongol.groupAngleDeg + (Mongol.circleAngularSpeedDeg * deltaTime * Mongol.circleDirection)) % 360;
+                Mongol.lastAngleUpdateTick = currentTimeSeconds;
+            }
+
+            // Determine radius that maintains minimum arc spacing per Mongol.
+            const minArcSpacing = Math.max(1.6, this.getHitboxRadius() * 1.8);
+            const requiredRadius = (count * minArcSpacing) / (2 * Math.PI);
+            const radius = Math.max(this.circleRadius, requiredRadius);
+
+            // Assigned angular slot for this Mongol (degrees), offset by group rotation.
+            const separationDegrees = 360 / count;
+            const assignedAngleDeg = (index * separationDegrees) + Mongol.groupAngleDeg;
+            const assignedAngleRad = assignedAngleDeg * (Math.PI / 180);
+
+            // Desired world-space point on the rotating circle around player.
+            const desiredX = playerPos.x + (radius * Math.cos(assignedAngleRad));
+            const desiredZ = playerPos.z + (radius * Math.sin(assignedAngleRad));
+
+            // Move toward the moving slot point.
+            let toSlotX = desiredX - myPos.x;
+            let toSlotZ = desiredZ - myPos.z;
+            this.moveToward(toSlotX, toSlotZ, this.aiConfig.chaseMoveSpeed, deltaTime);
+            return;
         }
-        if (doElse) {
-            super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
-        }
+
+        // Fallback to default NPC behaviour when no player present or NPC dead.
+        super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
     }
 
     getPointOnCircle(radius: number, angleDegrees: number): Vec3 {
