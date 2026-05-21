@@ -8,6 +8,18 @@ export class Boss extends npc {
     private statusEl: HTMLElement | null = null;
     private statusTimeoutId: number | undefined;
     private title = "Boss";
+    private taunts: string[] = [
+        "You cannot stop me.",
+        "Your courage ends here.",
+        "This battle is mine.",
+        "Kneel before me.",
+        "You are already defeated."
+    ];
+    private tauntMinDelaySeconds = 6;
+    private tauntMaxDelaySeconds = 12;
+    private tauntDurationMs = 2200;
+    private nextTauntAtSeconds: number | null = null;
+    private lastTauntIndex: number | null = null;
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("boss"), title?: string) {
         super(id, "foe", maxHealth, entity);
@@ -29,6 +41,86 @@ export class Boss extends npc {
         if (this.titleEl) {
             this.titleEl.textContent = this.title;
         }
+    }
+
+    public setTaunts(taunts: string[]): void {
+        if (!Array.isArray(taunts)) {
+            return;
+        }
+
+        const trimmed = taunts.map(taunt => taunt.trim()).filter(Boolean);
+        this.taunts = trimmed;
+        this.lastTauntIndex = null;
+        this.nextTauntAtSeconds = null;
+    }
+
+    public setTauntIntervalSeconds(minSeconds: number, maxSeconds: number): void {
+        if (!Number.isFinite(minSeconds) || !Number.isFinite(maxSeconds)) {
+            return;
+        }
+
+        const safeMin = Math.max(1, minSeconds);
+        const safeMax = Math.max(safeMin, maxSeconds);
+        this.tauntMinDelaySeconds = safeMin;
+        this.tauntMaxDelaySeconds = safeMax;
+        this.nextTauntAtSeconds = null;
+    }
+
+    private scheduleNextTaunt(nowSeconds: number): void {
+        const min = Math.max(1, this.tauntMinDelaySeconds);
+        const max = Math.max(min, this.tauntMaxDelaySeconds);
+        this.nextTauntAtSeconds = nowSeconds + min + (Math.random() * (max - min));
+    }
+
+    private pickRandomTaunt(): string | null {
+        if (this.taunts.length === 0) {
+            return null;
+        }
+
+        if (this.taunts.length === 1) {
+            this.lastTauntIndex = 0;
+            return this.taunts[0];
+        }
+
+        let index = Math.floor(Math.random() * this.taunts.length);
+        if (this.lastTauntIndex !== null && this.taunts.length > 1) {
+            if (index === this.lastTauntIndex) {
+                index = (index + 1) % this.taunts.length;
+            }
+        }
+
+        this.lastTauntIndex = index;
+        return this.taunts[index];
+    }
+
+    private updateTaunt(nowSeconds: number, playerEntity?: Entity | null): void {
+        if (!this.isAlive()) {
+            return;
+        }
+
+        if (!playerEntity) {
+            return;
+        }
+
+        if (this.taunts.length === 0) {
+            return;
+        }
+
+        if (this.nextTauntAtSeconds === null) {
+            this.scheduleNextTaunt(nowSeconds);
+            return;
+        }
+
+        if (nowSeconds < this.nextTauntAtSeconds) {
+            return;
+        }
+
+        const taunt = this.pickRandomTaunt();
+        if (taunt) {
+            this.showStatusText(taunt, this.tauntDurationMs);
+        }
+
+        this.scheduleNextTaunt(nowSeconds);
     }
 
     private buildHealthBar(bar: HTMLElement): void {
@@ -94,6 +186,18 @@ export class Boss extends npc {
         this.fillEl.style.width = `${Math.max(0, pct)}%`;
     }
 
+    public override updateCombatAI(
+        deltaTime: number,
+        currentTimeSeconds: number,
+        allNpcs: npc[],
+        onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
+        playerEntity?: Entity | null,
+        onPlayerAttack?: (attacker: npc, damage: number) => void
+    ): void {
+        super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
+        this.updateTaunt(currentTimeSeconds, playerEntity);
+    }
+
     public showStatusText(message: string, durationMs: number = 3000): void {
         if (!message || !message.trim()) {
             return;
@@ -150,6 +254,8 @@ export class Boss extends npc {
         const didKill = super.kill();
         if (didKill) {
             try {
+                this.nextTauntAtSeconds = null;
+                this.lastTauntIndex = null;
                 this.removeHealthBar();
             } catch (e) {
                 // ignore
