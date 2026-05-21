@@ -1,7 +1,6 @@
 import { AppBase } from 'playcanvas';
 import { removeBattleHUD } from '../../util/battleHUD';
 import { Question } from '../../util/question';
-import { unloadAll } from '../../util/unloadall';
 
 /**
  * Simple "You Died" overlay utilities.
@@ -17,16 +16,6 @@ export function showDeathScreen(options?: {
   message?: string;
 }) {
 
-  if (options?.app) {
-    unloadAll(options.app);
-    options.app.mouse?.off();
-    options.app.keyboard?.off();
-    options.app.touch?.off();
-    const canvas = options.app.graphicsDevice?.canvas as HTMLCanvasElement | undefined;
-    if (canvas) {
-      canvas.style.display = 'none';
-    }
-  }
   if (typeof document === 'undefined') return;
   removeBattleHUD();
   document.querySelectorAll('.overlay').forEach((el) => {
@@ -216,6 +205,14 @@ export function hideDeathScreen() {
   if (canvas instanceof HTMLCanvasElement) {
     canvas.style.display = '';
   }
+}
+
+export function isDeathScreenVisible(): boolean {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  return document.getElementById('death-screen') !== null;
 }
 
 export default { showDeathScreen, hideDeathScreen };

@@ -29,6 +29,20 @@ export class Mongol extends npc {
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
     }
 
+    public static resetBattleState(): void {
+        Mongol.lastGroupShotTime = -Infinity;
+        Mongol.lastShotSelectionTick = -Infinity;
+        Mongol.selectedShooterId = null;
+        Mongol.lastShooterId = null;
+        Mongol.circleDirection = Math.random() > 0.5 ? 1 : -1;
+        Mongol.groupAngleDeg = 0;
+        Mongol.lastAngleUpdateTick = -Infinity;
+        Mongol.hasRetreatedOnce = false;
+        Mongol.retreatActive = false;
+        Mongol.retreatPoint = null;
+        Mongol.hordeSpawned = false;
+    }
+
     
 
     override updateCombatAI(deltaTime: number, currentTimeSeconds: number, allNpcs: npc[], onNpcAttack?: (attacker: npc, target: npc, damage: number) => void, playerEntity?: Entity | null, onPlayerAttack?: (attacker: npc, damage: number) => void): void {
