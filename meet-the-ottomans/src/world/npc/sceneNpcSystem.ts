@@ -288,6 +288,7 @@ export function bindNpcCombatLoop(
     const groundProbeDepth = options.groundProbeDepth ?? 300;
     const defaultGroundClearance = options.defaultGroundClearance ?? 0.1;
     const npcGroundOffsets = new Map<npc, number>();
+    const npcLastValidPositions = new Map<npc, Vec3>();
 
     if (groundCollisionEnabled && rigidbodySystem) {
         for (const currentNpc of npcs) {
@@ -295,10 +296,12 @@ export function bindNpcCombatLoop(
             const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
             if (groundY === undefined) {
                 npcGroundOffsets.set(currentNpc, defaultGroundClearance);
+                npcLastValidPositions.set(currentNpc, position.clone());
                 continue;
             }
 
             npcGroundOffsets.set(currentNpc, Math.max(defaultGroundClearance, position.y - groundY));
+            npcLastValidPositions.set(currentNpc, new Vec3(position.x, groundY + (npcGroundOffsets.get(currentNpc) ?? defaultGroundClearance), position.z));
         }
     }
 
@@ -360,6 +363,10 @@ export function bindNpcCombatLoop(
                 const position = currentNpc.getEntity().getPosition();
                 const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
                 if (groundY === undefined) {
+                    const fallbackPosition = npcLastValidPositions.get(currentNpc);
+                    if (fallbackPosition) {
+                        currentNpc.getEntity().setPosition(fallbackPosition);
+                    }
                     continue;
                 }
 
@@ -371,7 +378,9 @@ export function bindNpcCombatLoop(
                 }
 
                 const groundOffset = npcGroundOffsets.get(currentNpc) ?? defaultGroundClearance;
-                currentNpc.getEntity().setPosition(position.x, groundY + groundOffset, position.z);
+                const groundedPosition = new Vec3(position.x, groundY + groundOffset, position.z);
+                currentNpc.getEntity().setPosition(groundedPosition);
+                npcLastValidPositions.set(currentNpc, groundedPosition.clone());
             }
         }
     };

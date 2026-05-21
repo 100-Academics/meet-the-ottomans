@@ -367,6 +367,10 @@ export async function siegeOfConstantinopleScene(
 		updateBattleHUD(player);
 	});
 	const cameraController = player.getCameraController();
+	const cameraEntity = player.getCameraEntity();
+	if (cameraEntity.camera) {
+		cameraEntity.camera.clearColor = new Color(0.24, 0.24, 0.26);
+	}
 
 	// Load and set up the battlefield ground model
 	try {
@@ -413,6 +417,7 @@ export async function siegeOfConstantinopleScene(
     
 		// If we got the bounds, spawn at the center of the ground surface
 		if (bounds) {
+			cameraController?.setMovementBounds(bounds, 2.5);
 			const spawnX = (bounds.minX + bounds.maxX) * 0.5;
 			const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
 			const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
@@ -504,20 +509,26 @@ export async function siegeOfConstantinopleScene(
 	}
 
 
+	// Build a smoky, low-contrast battlefield atmosphere.
+	app.scene.fog = 'linear';
+	app.scene.fogColor = new Color(0.27, 0.27, 0.29);
+	app.scene.fogStart = 18;
+	app.scene.fogEnd = 220;
+
 	// Set up basic scene lighting
 	// Ambient light provides a baseline light level everywhere
-	app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
+	app.scene.ambientLight = new Color(0.16, 0.16, 0.17);
 
 	// Create a directional light (like the sun) to cast shadows
 	if (app.systems.light) {
 		const light = new Entity('directional-light');
 		light.addComponent('light', {
 			type: 'directional',
-			color: new Color(1, 1, 1),  // White light
-			intensity: 1,
+			color: new Color(0.86, 0.86, 0.88),
+			intensity: 0.82,
 			castShadows: true  // This light casts shadows for realism
 		});
-		light.setLocalEulerAngles(45, 30, 0);  // Light coming from above and at an angle
+		light.setLocalEulerAngles(38, -24, 0);  // Lower, harsher attack-time lighting
 		app.root.addChild(light);
 	}
 

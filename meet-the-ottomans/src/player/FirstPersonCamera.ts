@@ -81,6 +81,10 @@ export class FirstPersonCamera extends ScriptType {
     public collisionTag = 'model-obstacle';
     public maxLookDelta = 40;
     public mouseSpikeThreshold = 250;
+    public movementBoundsMinX = Number.NEGATIVE_INFINITY;
+    public movementBoundsMaxX = Number.POSITIVE_INFINITY;
+    public movementBoundsMinZ = Number.NEGATIVE_INFINITY;
+    public movementBoundsMaxZ = Number.POSITIVE_INFINITY;
     
     private keys: Record<string, boolean> = {};
     private airJumpsRemaining = PLAYER_MAX_AIR_JUMPS;
@@ -113,9 +117,45 @@ export class FirstPersonCamera extends ScriptType {
         return typeof value === 'number' && Number.isFinite(value);
     }
 
+    public setMovementBounds(
+        bounds: { minX: number; maxX: number; minZ: number; maxZ: number } | null | undefined,
+        padding = 0
+    ): void {
+        if (!bounds) {
+            this.movementBoundsMinX = Number.NEGATIVE_INFINITY;
+            this.movementBoundsMaxX = Number.POSITIVE_INFINITY;
+            this.movementBoundsMinZ = Number.NEGATIVE_INFINITY;
+            this.movementBoundsMaxZ = Number.POSITIVE_INFINITY;
+            return;
+        }
+
+        const minX = bounds.minX + padding;
+        const maxX = bounds.maxX - padding;
+        const minZ = bounds.minZ + padding;
+        const maxZ = bounds.maxZ - padding;
+
+        this.movementBoundsMinX = minX <= maxX ? minX : (bounds.minX + bounds.maxX) * 0.5;
+        this.movementBoundsMaxX = minX <= maxX ? maxX : (bounds.minX + bounds.maxX) * 0.5;
+        this.movementBoundsMinZ = minZ <= maxZ ? minZ : (bounds.minZ + bounds.maxZ) * 0.5;
+        this.movementBoundsMaxZ = minZ <= maxZ ? maxZ : (bounds.minZ + bounds.maxZ) * 0.5;
+    }
+
+    private clampToMovementBounds(position: Vec3): void {
+        if (this.isFiniteNumber(this.movementBoundsMinX) && this.isFiniteNumber(this.movementBoundsMaxX)) {
+            position.x = math.clamp(position.x, this.movementBoundsMinX, this.movementBoundsMaxX);
+        }
+
+        if (this.isFiniteNumber(this.movementBoundsMinZ) && this.isFiniteNumber(this.movementBoundsMaxZ)) {
+            position.z = math.clamp(position.z, this.movementBoundsMinZ, this.movementBoundsMaxZ);
+        }
+    }
+
     private tryMoveHorizontally(position: Vec3, direction: Vec3, speed: number, dt: number, currentGroundHeight?: number): void {
         const movement = direction.clone().mulScalar(speed * dt);
         const proposedPos = position.clone().add(movement);
+        if (!this.hasGroundSupport(proposedPos)) {
+            return;
+        }
         if (this.isFiniteNumber(currentGroundHeight) && !this.canStepTo(currentGroundHeight, proposedPos)) {
             return;
         }
@@ -127,6 +167,10 @@ export class FirstPersonCamera extends ScriptType {
     private tryMoveDash(position: Vec3, direction: Vec3, speed: number, dt: number, currentGroundHeight?: number): void {
         const movement = direction.clone().mulScalar(speed * dt);
         const proposedPos = position.clone().add(movement);
+
+        if (!this.hasGroundSupport(proposedPos)) {
+            return;
+        }
 
         if (this.isFiniteNumber(currentGroundHeight) && !this.canStepTo(currentGroundHeight, proposedPos)) {
             return;
@@ -505,11 +549,15 @@ export class FirstPersonCamera extends ScriptType {
 
         const highestNextGround = this.sampleGroundHeight(nextPos, Number.POSITIVE_INFINITY);
         if (!this.isFiniteNumber(highestNextGround)) {
-            return true;
+            return false;
         }
 
         const maxStepY = currentGroundHeight + this.maxStepHeight + this.groundedEpsilon;
         return highestNextGround <= maxStepY;
+    }
+
+    private hasGroundSupport(position: Vec3): boolean {
+        return this.isFiniteNumber(this.sampleGroundHeight(position, Number.POSITIVE_INFINITY, this.groundHeight));
     }
 
     private getGroundHeightAt(position: Vec3): number {
@@ -643,6 +691,7 @@ export class FirstPersonCamera extends ScriptType {
         }
         
         const entityPos = this.entity.getPosition();
+        const lastCommittedPos = entityPos.clone();
         if (!this.basePositionReady) {
             this.basePosition.copy(entityPos);
             this.basePositionReady = true;
@@ -651,6 +700,7 @@ export class FirstPersonCamera extends ScriptType {
             this.basePosition.copy(entityPos);
         }
         const pos = this.basePosition.clone();
+        this.clampToMovementBounds(pos);
 
         const currentGroundHeight = this.getGroundHeightAt(pos);
         if (!this.isFiniteNumber(currentGroundHeight)) {
@@ -896,6 +946,19 @@ export class FirstPersonCamera extends ScriptType {
             }
             // Lower camera to make the crouched slide stance visually obvious.
             finalPos.y -= this.slideCameraDrop * this.slideCameraBlend;
+        }
+
+        this.clampToMovementBounds(finalPos);
+
+        if (!this.hasGroundSupport(finalPos)) {
+            finalPos.x = lastCommittedPos.x;
+            finalPos.z = lastCommittedPos.z;
+
+            const fallbackGroundHeight = this.sampleGroundHeight(lastCommittedPos, Number.POSITIVE_INFINITY, this.groundHeight);
+            if (this.isFiniteNumber(fallbackGroundHeight)) {
+                this.groundHeight = fallbackGroundHeight;
+                finalPos.y = Math.max(finalPos.y, fallbackGroundHeight + this.playerHeight);
+            }
         }
 
         this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);

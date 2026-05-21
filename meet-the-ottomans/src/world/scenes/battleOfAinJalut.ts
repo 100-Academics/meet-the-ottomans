@@ -367,6 +367,10 @@ export async function battleOfAinJalutScene(
     updateBattleHUD(player);
   });
   const cameraController = player.getCameraController();
+  const cameraEntity = player.getCameraEntity();
+  if (cameraEntity.camera) {
+    cameraEntity.camera.clearColor = new Color(0.44, 0.72, 0.98);
+  }
 
   // Load and set up the battlefield ground model
   try {
@@ -413,6 +417,7 @@ export async function battleOfAinJalutScene(
     
     // If we got the bounds, spawn at the center of the ground surface
     if (bounds) {
+      cameraController?.setMovementBounds(bounds, 2.5);
       const spawnX = (bounds.minX + bounds.maxX) * 0.5;
       const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
       const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
@@ -504,20 +509,26 @@ export async function battleOfAinJalutScene(
   }
 
 
+  // Create a bright, open-sky look with light distance haze.
+  app.scene.fog = 'linear';
+  app.scene.fogColor = new Color(0.72, 0.84, 0.98);
+  app.scene.fogStart = 120;
+  app.scene.fogEnd = 520;
+
   // Set up basic scene lighting
   // Ambient light provides a baseline light level everywhere
-  app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
+  app.scene.ambientLight = new Color(0.38, 0.46, 0.58);
 
   // Create a directional light (like the sun) to cast shadows
   if (app.systems.light) {
-    const light = new Entity('directional-light');
+    const light = new Entity('sun-light');
     light.addComponent('light', {
       type: 'directional',
-      color: new Color(1, 1, 1),  // White light
-      intensity: 1,
+      color: new Color(1, 0.96, 0.82),
+      intensity: 1.45,
       castShadows: true  // This light casts shadows for realism
     });
-    light.setLocalEulerAngles(45, 30, 0);  // Light coming from above and at an angle
+    light.setLocalEulerAngles(52, 35, 0);  // Midday sun from a high angle
     app.root.addChild(light);
   }
 
