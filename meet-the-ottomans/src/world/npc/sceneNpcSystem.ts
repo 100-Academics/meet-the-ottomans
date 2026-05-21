@@ -308,6 +308,13 @@ export function bindNpcCombatLoop(
                     continue;
                 }
 
+                if (!npcGroundOffsets.has(currentNpc)) {
+                    npcGroundOffsets.set(
+                        currentNpc,
+                        Math.max(defaultGroundClearance, position.y - groundY)
+                    );
+                }
+
                 const groundOffset = npcGroundOffsets.get(currentNpc) ?? defaultGroundClearance;
                 currentNpc.getEntity().setPosition(position.x, groundY + groundOffset, position.z);
             }
