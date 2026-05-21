@@ -1,10 +1,12 @@
 import { AppBase, Entity, Vec3 } from "playcanvas";
-import { loadModel } from "../../util/loadModel";
+import { loadModel, type LoadModelOptions, type Model } from "../../util/loadModel";
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
 import { GenghisKhan } from "./bosses/genghisKhan";
 
 export type NpcSceneTeam = "friend" | "foe";
+
+const DEFAULT_FALLBACK_NPC_MODEL = "test/armored_king.glb";
 
 interface RigidbodyRaycastHit {
     entity?: Entity | null;
@@ -130,6 +132,29 @@ function getSpawnY(
     return groundY + defaultGroundClearance;
 }
 
+async function loadNpcModelWithFallback(
+    app: AppBase,
+    primaryPath: string,
+    options: LoadModelOptions
+): Promise<Model> {
+    try {
+        return await loadModel(primaryPath, app, options);
+    } catch (error) {
+        console.warn(`[NPC] Failed to load model "${primaryPath}". Falling back to "${DEFAULT_FALLBACK_NPC_MODEL}".`, error);
+    }
+
+    if (primaryPath !== DEFAULT_FALLBACK_NPC_MODEL) {
+        try {
+            return await loadModel(DEFAULT_FALLBACK_NPC_MODEL, app, options);
+        } catch (fallbackError) {
+            console.error(`[NPC] Fallback model "${DEFAULT_FALLBACK_NPC_MODEL}" failed to load.`, fallbackError);
+            throw fallbackError;
+        }
+    }
+
+    throw new Error(`Failed to load NPC model: ${primaryPath}`);
+}
+
 export async function spawnSceneNpcs(
     app: AppBase,
     rigidbodySystem: RigidbodyRaycastSystem | undefined,
@@ -160,7 +185,7 @@ export async function spawnSceneNpcs(
             defaultGroundClearance
         );
         
-        const npcModel = await loadModel(modelPath, app, {
+        const npcModel = await loadNpcModelWithFallback(app, modelPath, {
             rigidbodyType: "kinematic",
             includeDescendants: true,
             position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),

@@ -11,7 +11,7 @@ export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
 };
 
 export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
-    modelPath: "npc/boss/genghis_khan.glb",
+    modelPath: "models/npc/boss/genghis_khan.glb",
     modelRotation: new Vec3(-90, 0, 0),
     modelScale: new Vec3(4, 4, 4),
     modelHeightOffset: 4,

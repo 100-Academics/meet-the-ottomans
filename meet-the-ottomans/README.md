@@ -2,7 +2,7 @@
 
 A modern, batteries-included starter for building WebGL/PlayCanvas experiences with TypeScript.
 
-* **PlayCanvas** `^2.8.2` – high-performance WebGL engine
+* **code** `^2.8.2` – all totally real on Ottomans
 * **Vite** `^7` – ultra-fast dev server & bundler with HMR
 * **TypeScript** `~5.8` – static typing out-of-the-box
 * **ESLint** `^9` – linting with recommended TypeScript rules
