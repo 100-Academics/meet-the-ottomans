@@ -281,7 +281,7 @@ export class npc {
         this.entity.setLocalEulerAngles(this.basePitchDegrees, yawDegrees, this.baseRollDegrees);
     }
 
-    private getCombatProfile(): NpcCombatProfile {
+    protected getCombatProfile(): NpcCombatProfile {
         if (this.team === "friend") {
             return {
                 attackDamage: 8,
