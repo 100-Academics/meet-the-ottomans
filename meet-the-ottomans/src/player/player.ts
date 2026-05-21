@@ -1,7 +1,7 @@
 import { AppBase, Entity, Color, Vec3 } from 'playcanvas';
 import { FirstPersonCamera } from './FirstPersonCamera';
-import { unloadAll } from '../util/unloadall';
 import { changeScene } from '../App';
+import { showDeathScreen } from '../world/scenes/deathScreen';
 import { npc } from '../world/npc/npc';
 import { Weapon } from './weapon/weapon';
 import { Gun } from './weapon/gun';
@@ -20,6 +20,8 @@ export class Player{
     private readonly gunWeapon = new Gun(100, 100, 12);
     private readonly bowWeapon = new Bow(50, 100, 20, 250);
     private equippedWeapon: Weapon = this.swordWeapon;
+    private deathQuizTimePeriod = -1;
+    private restartBattle: (() => void) | undefined;
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
         this.app = app;
@@ -68,6 +70,11 @@ export class Player{
         return this.team;
     }
 
+    public setDeathQuizContext(timePeriod: number, restartBattle?: () => void): void {
+        this.deathQuizTimePeriod = timePeriod;
+        this.restartBattle = restartBattle;
+    }
+
     public takeDamage(damage: number): void {
         this.health -= damage;
         if(!this.isAlive()) {
@@ -79,9 +86,14 @@ export class Player{
     private die(isAlive: boolean): void {
         if (!isAlive) {
             console.log("You have failed to bring glory to the Ottoman Empire. Game Over.");
-            unloadAll(this.app);
-            changeScene(this.app.graphicsDevice.canvas, this.app, 666); 
-            // Show death screen ^^
+            const canvas = this.app.graphicsDevice.canvas as HTMLCanvasElement | undefined;
+            showDeathScreen({
+                app: this.app,
+                timePeriod: this.deathQuizTimePeriod,
+                onRestart: this.restartBattle,
+                onMainMenu: canvas ? () => void changeScene(canvas, this.app, 0) : undefined,
+                message: 'You have failed to bring glory to the Ottoman Empire. Game Over.'
+            });
         }
     }
 

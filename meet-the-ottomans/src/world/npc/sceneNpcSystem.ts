@@ -132,6 +132,43 @@ function getSpawnY(
     return groundY + defaultGroundClearance;
 }
 
+function getEntityMinY(entity: Entity): number | undefined {
+    let minY = Number.POSITIVE_INFINITY;
+    let found = false;
+
+    const visit = (node: Entity) => {
+        const meshInstances = node.render?.meshInstances;
+        if (meshInstances && meshInstances.length > 0) {
+            for (const meshInstance of meshInstances) {
+                const aabb = meshInstance.aabb;
+                if (!aabb) {
+                    continue;
+                }
+
+                const min = aabb.getMin();
+                if (!Number.isFinite(min.y)) {
+                    continue;
+                }
+
+                minY = Math.min(minY, min.y);
+                found = true;
+            }
+        }
+
+        for (const child of node.children) {
+            visit(child as Entity);
+        }
+    };
+
+    visit(entity);
+
+    if (!found) {
+        return undefined;
+    }
+
+    return minY;
+}
+
 async function loadNpcModelWithFallback(
     app: AppBase,
     primaryPath: string,
@@ -192,6 +229,15 @@ export async function spawnSceneNpcs(
             rotation: modelRotation,
             scale: modelScale
         });
+        const modelMinY = getEntityMinY(npcModel.modelEntity);
+        if (modelMinY !== undefined) {
+            const targetMinY = npcSpawnY + defaultGroundClearance;
+            if (modelMinY < targetMinY) {
+                const deltaY = targetMinY - modelMinY;
+                const currentPos = npcModel.modelEntity.getPosition();
+                npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
+            }
+        }
         if (spawn.type === "mongol") {
             console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
             const mongol = new Mongol(spawn.id, npcModel.modelEntity);

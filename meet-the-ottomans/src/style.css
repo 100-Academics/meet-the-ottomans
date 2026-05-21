@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Spectral:wght@300;400;600&display=swap');
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -157,22 +159,213 @@ button:focus-visible {
   margin-top: 0.5rem;
 }
 
-/* Title screen styles */
-#title-screen {
-  width: min(700px, 90vw);
-  margin: 2rem auto;
+/* Intro screen styles */
+#intro-screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(1rem, 4vw, 3rem);
   pointer-events: auto;
-  text-align: center;
+  font-family: "Spectral", serif;
+  color: #f6efe4;
 }
 
-#title-screen h1 {
-  font-size: 2.6rem;
-  margin: 0.2rem 0 0.4rem 0;
+#intro-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(178, 108, 40, 0.35), transparent 55%),
+    radial-gradient(circle at 85% 90%, rgba(32, 74, 120, 0.3), transparent 50%),
+    linear-gradient(135deg, rgba(7, 6, 6, 0.96), rgba(8, 12, 18, 0.95));
+  z-index: 0;
 }
 
-#title-screen p {
-  color: #ccc;
-  margin: 0 0 1rem 0;
+#intro-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.05) 0,
+    rgba(255, 255, 255, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.18;
+  animation: intro-scan 6s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.intro-card {
+  position: relative;
+  z-index: 2;
+  width: min(880px, 92vw);
+  padding: clamp(1.2rem, 3vw, 2.6rem);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(11, 9, 8, 0.92), rgba(10, 14, 19, 0.92));
+  border: 1px solid rgba(239, 190, 120, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 40px rgba(255, 170, 80, 0.08);
+  backdrop-filter: blur(8px);
+  animation: intro-rise 0.8s ease both;
+}
+
+.intro-kicker {
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  color: rgba(255, 215, 160, 0.75);
+  margin-bottom: 0.6rem;
+}
+
+.intro-title {
+  font-family: "Cinzel Decorative", serif;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  margin: 0 0 0.6rem 0;
+  text-shadow: 0 0 24px rgba(255, 198, 120, 0.3);
+}
+
+.intro-body {
+  position: relative;
+  min-height: 8.5rem;
+  font-size: clamp(1rem, 2.2vw, 1.2rem);
+  line-height: 1.7;
+  color: rgba(250, 242, 228, 0.9);
+}
+
+.intro-body::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0.2rem;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255, 216, 150, 0.35), transparent);
+  opacity: 0.7;
+  animation: intro-stream 4.8s linear infinite;
+}
+
+.intro-line {
+  margin: 0 0 0.7rem 0;
+}
+
+.intro-line--active::after {
+  content: '|';
+  margin-left: 4px;
+  opacity: 0.7;
+  animation: intro-caret 0.8s steps(2, end) infinite;
+}
+
+.intro-line--done {
+  animation: intro-line-in 0.4s ease both;
+}
+
+.intro-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  margin-top: 1.4rem;
+}
+
+#intro-screen .btn {
+  font-size: 0.95rem;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 210, 140, 0.35);
+  background: rgba(25, 21, 18, 0.8);
+  color: #f6efe4;
+}
+
+#intro-screen .btn:hover {
+  border-color: rgba(255, 230, 170, 0.75);
+}
+
+#intro-screen .btn.ghost {
+  background: transparent;
+  color: rgba(246, 239, 228, 0.7);
+}
+
+#intro-screen .btn.primary {
+  background: linear-gradient(120deg, #b46b1f, #e5b76a);
+  color: #0f0a06;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(198, 120, 25, 0.35);
+}
+
+.intro-progress {
+  display: flex;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-top: 1.1rem;
+}
+
+.intro-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 236, 200, 0.2);
+  border: 1px solid rgba(255, 236, 200, 0.35);
+}
+
+.intro-dot.active {
+  background: rgba(255, 210, 130, 0.9);
+  box-shadow: 0 0 12px rgba(255, 200, 120, 0.6);
+}
+
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes intro-line-in {
+  from {
+    opacity: 0.4;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes intro-caret {
+  0%,
+  100% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes intro-stream {
+  0% {
+    transform: translateX(-30%);
+  }
+  100% {
+    transform: translateX(30%);
+  }
+}
+
+@keyframes intro-scan {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 12px;
+  }
 }
 
 /* Ensure the canvas background matches the page */

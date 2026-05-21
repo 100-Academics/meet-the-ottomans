@@ -382,6 +382,9 @@ export async function battleOfLegnicaScene(
 
   // Create the player with camera and first-person controls
   const player = new Player(app, new Vec3(0, 8, 8));
+  player.setDeathQuizContext(1, () => {
+    void battleOfLegnicaScene(canvas, app, _onClick, _sceneNum);
+  });
   const cameraController = player.getCameraController();
 
   // Load and set up the battlefield ground model
