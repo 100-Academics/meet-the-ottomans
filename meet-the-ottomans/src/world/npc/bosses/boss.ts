@@ -5,6 +5,8 @@ export class Boss extends npc {
     private healthBarEl: HTMLElement | null = null;
     private fillEl: HTMLElement | null = null;
     private titleEl: HTMLElement | null = null;
+    private statusEl: HTMLElement | null = null;
+    private statusTimeoutId: number | undefined;
     private title = "Boss";
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("boss"), title?: string) {
@@ -32,6 +34,7 @@ export class Boss extends npc {
     private buildHealthBar(bar: HTMLElement): void {
         bar.className = "boss-health-bar";
         bar.innerHTML = "";
+        this.statusEl = null;
 
         const title = document.createElement("div");
         title.className = "boss-health-title";
@@ -43,13 +46,19 @@ export class Boss extends npc {
         const fill = document.createElement("div");
         fill.className = "boss-health-fill";
 
+        const status = document.createElement("div");
+        status.className = "boss-health-status";
+        status.style.display = "none";
+
         track.appendChild(fill);
         bar.appendChild(title);
         bar.appendChild(track);
+        bar.appendChild(status);
 
         this.healthBarEl = bar;
         this.titleEl = title;
         this.fillEl = fill;
+        this.statusEl = status;
     }
 
     public drawHealthBar(): void {
@@ -85,7 +94,51 @@ export class Boss extends npc {
         this.fillEl.style.width = `${Math.max(0, pct)}%`;
     }
 
+    public showStatusText(message: string, durationMs: number = 3000): void {
+        if (!message || !message.trim()) {
+            return;
+        }
+
+        if (!this.healthBarEl) {
+            this.drawHealthBar();
+        }
+
+        if (!this.healthBarEl) {
+            return;
+        }
+
+        if (!this.statusEl) {
+            const status = document.createElement("div");
+            status.className = "boss-health-status";
+            status.style.display = "none";
+            this.healthBarEl.appendChild(status);
+            this.statusEl = status;
+        }
+
+        this.statusEl.textContent = message.trim();
+        this.statusEl.style.display = "block";
+
+        if (this.statusTimeoutId !== undefined) {
+            window.clearTimeout(this.statusTimeoutId);
+            this.statusTimeoutId = undefined;
+        }
+
+        this.statusTimeoutId = window.setTimeout(() => {
+            if (this.statusEl) {
+                this.statusEl.textContent = "";
+                this.statusEl.style.display = "none";
+            }
+            this.statusTimeoutId = undefined;
+        }, Math.max(0, durationMs));
+    }
+
     public removeHealthBar(): void {
+        if (this.statusTimeoutId !== undefined) {
+            window.clearTimeout(this.statusTimeoutId);
+            this.statusTimeoutId = undefined;
+        }
+        this.statusEl?.remove();
+        this.statusEl = null;
         this.healthBarEl?.remove();
         this.healthBarEl = null;
         this.titleEl = null;
