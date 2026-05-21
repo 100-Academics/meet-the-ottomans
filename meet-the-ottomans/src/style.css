@@ -395,6 +395,44 @@ canvas#application-canvas {
   z-index: 2000;
 }
 
+/* Boss health bar */
+#boss-health-bar {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(600px, 80vw);
+  z-index: 9999;
+  color: #f5f5f5;
+  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.boss-health-title {
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.35rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+}
+
+.boss-health-track {
+  height: 22px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 2px solid #fff;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+}
+
+.boss-health-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #b30000, #ff3b30);
+  transition: width 0.12s ease-out;
+}
+
 /* Battle HUD */
 #battle-hud {
   position: fixed;

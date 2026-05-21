@@ -133,11 +133,15 @@ function getSpawnY(
 }
 
 function getEntityMinY(entity: Entity): number | undefined {
+    if (typeof (entity as { syncHierarchy?: () => void }).syncHierarchy === "function") {
+        (entity as { syncHierarchy: () => void }).syncHierarchy();
+    }
+
     let minY = Number.POSITIVE_INFINITY;
     let found = false;
 
     const visit = (node: Entity) => {
-        const meshInstances = node.render?.meshInstances;
+        const meshInstances = node.render?.meshInstances ?? (node as { model?: { meshInstances?: any[] } }).model?.meshInstances;
         if (meshInstances && meshInstances.length > 0) {
             for (const meshInstance of meshInstances) {
                 const aabb = meshInstance.aabb;
@@ -232,8 +236,8 @@ export async function spawnSceneNpcs(
         const modelMinY = getEntityMinY(npcModel.modelEntity);
         if (modelMinY !== undefined) {
             const targetMinY = npcSpawnY + defaultGroundClearance;
-            if (modelMinY < targetMinY) {
-                const deltaY = targetMinY - modelMinY;
+            const deltaY = targetMinY - modelMinY;
+            if (Math.abs(deltaY) > 0.001) {
                 const currentPos = npcModel.modelEntity.getPosition();
                 npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
             }
