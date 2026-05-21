@@ -6,7 +6,7 @@ export class Mongol extends npc {
     protected circleRadius: number = 5;
     // Ranged attack settings (Mongols shoot while circling)
     protected rangedAttackRange: number = 30;
-    protected rangedAttackDamage: number = 8;
+    protected rangedAttackDamage: number = 5;
     protected rangedAttackCooldown: number = 1.0; // seconds
     private static lastGroupShotTime: number = -Infinity;
     private static lastShotSelectionTick: number = -Infinity;
@@ -26,7 +26,7 @@ export class Mongol extends npc {
 
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
-        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.9;
+        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
     }
 
