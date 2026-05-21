@@ -10,6 +10,15 @@ export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     hitboxRadius: 1.2
 };
 
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    modelPath: "npc/bosses/genghis_khan.glb",
+    modelRotation: new Vec3(-90, 0, 0),
+    modelScale: new Vec3(4, 4, 4),
+    modelHeightOffset: 4,
+    facingYawOffsetDegrees: 180,
+    hitboxRadius: 2.4
+};
+
 export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: 0, type: "mongol" },
     //{ id: 2, team: "friend", x: -5, z: 0 },
@@ -24,6 +33,8 @@ export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     // { id: 11, team: "foe", x: 9, z: 0, type: "mongol" },
     //{ id: 12, team: "friend", x: -9, z: 0 }
 ];
+
+export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
 
 export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: 0 },

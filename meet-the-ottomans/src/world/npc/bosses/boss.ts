@@ -49,4 +49,17 @@ export class Boss extends npc {
         this.healthBarEl = null;
         this.fillEl = null;
     }
+
+    // Ensure health bar is removed when boss dies
+    public kill(): boolean {
+        const didKill = super.kill();
+        if (didKill) {
+            try {
+                this.removeHealthBar();
+            } catch (e) {
+                // ignore
+            }
+        }
+        return didKill;
+    }
 }

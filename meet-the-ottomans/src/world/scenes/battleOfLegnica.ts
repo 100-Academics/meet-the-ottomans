@@ -36,7 +36,9 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
-import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, LEGNICA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
+import { Boss } from "../npc/bosses/boss";
+import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, LEGNICA_BOSS_SPAWN_POINT, LEGNICA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
+import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
@@ -154,6 +156,24 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
   return Number.isFinite(firstHit.point.y) ? firstHit.point.y : undefined;
 }
 
+
+async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[]): Promise<void> { // spawn the Khan boss and wire UI
+  if (isBossSpawned) return;
+
+  try {
+    const spawned = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_BOSS_SPAWN_POINT, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS);
+    for (const s of spawned) {
+      npcs.push(s);
+      if (s instanceof Boss) {
+        s.drawHealthBar();
+      }
+    }
+    isBossSpawned = true;
+  } catch (err) {
+    console.error('Failed to spawn boss:', err);
+  }
+}
+
 /**
  * Recursively scans an entity and all its children to find the bounding box of all
  * renderable mesh instances. Returns the min/max X,Z coordinates and maximum Y.
@@ -235,6 +255,10 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
 * This function replaces the globe view with a first-person 3D environment where the user can walk around
 * the historical battlefield. The scene persists until the user exits back to the main view.
  */
+
+
+var isBossSpawned = false; // Track whether the boss has been spawned yet
+
 export async function battleOfLegnicaScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
@@ -537,6 +561,13 @@ export async function battleOfLegnicaScene(
     updateBattleHUD(player);
     if (hitNpc) {
       console.log(`Hit NPC`);
+      try {
+        if ((hitNpc as any) instanceof Boss) {
+          (hitNpc as unknown as Boss).updateHealthBar();
+        }
+      } catch (e) {
+        // ignore
+      }
     }
   });
 
@@ -544,6 +575,13 @@ export async function battleOfLegnicaScene(
     updateKey: '__legnicaNpcUpdate',
     onNpcAttack: (attacker, target, damage) => {
       target.takeDamage(damage);
+      try {
+        if ((target as any) instanceof Boss) {
+          (target as unknown as Boss).updateHealthBar();
+        }
+      } catch (e) {
+        // ignore
+      }
       console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
     },
     onPlayerAttack: (attacker, damage) => {
@@ -560,10 +598,14 @@ export async function battleOfLegnicaScene(
     }
 
     const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-    if (remainingFoes.length === 0) {
+    if (remainingFoes.length === 0 && isBossSpawned) {
       victoryHandled = true;
       removeBattleHUD();
       changeScene(canvas, app, 777);
+    }
+    else if (remainingFoes.length === 0 && !isBossSpawned) {
+      // spawn the boss asynchronously
+      spawnBoss(app, rigidbodySystem, npcs).catch((err) => console.error(err));
     }
   };
 

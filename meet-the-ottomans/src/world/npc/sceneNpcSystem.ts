@@ -2,6 +2,7 @@ import { AppBase, Entity, Vec3 } from "playcanvas";
 import { loadModel } from "../../util/loadModel";
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
+import { GenghisKhan } from "./bosses/genghisKhan";
 
 export type NpcSceneTeam = "friend" | "foe";
 
@@ -158,7 +159,7 @@ export async function spawnSceneNpcs(
             groundProbeDepth,
             defaultGroundClearance
         );
-
+        
         const npcModel = await loadModel(modelPath, app, {
             rigidbodyType: "kinematic",
             includeDescendants: true,
@@ -172,6 +173,13 @@ export async function spawnSceneNpcs(
             mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
             mongol.setHitboxRadius(hitboxRadius);
             npcs.push(mongol);
+        }else if (spawn.type === "genghisKhan") {
+            console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+            const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+            boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+            boss.setHitboxRadius(hitboxRadius);
+            boss.drawHealthBar();
+            npcs.push(boss);
         } else {
             const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
             spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
