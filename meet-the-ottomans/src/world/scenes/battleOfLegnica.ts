@@ -49,6 +49,8 @@ import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
 
+const taunts = ["this is a test", "I will of man you"];
+
 /**
  * Checks if an entity or any of its parents in the hierarchy has the specified tag.
  * Walks up the parent chain from the given entity to see if the tag exists anywhere.
