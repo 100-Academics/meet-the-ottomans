@@ -158,7 +158,8 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
 
 
 async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[]): Promise<void> { // spawn the Khan boss and wire UI
-  if (isBossSpawned) return;
+  if (isBossSpawned || isBossSpawning) return;
+  isBossSpawning = true;
 
   try {
     const spawned = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_BOSS_SPAWN_POINT, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS);
@@ -171,6 +172,8 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[]): Promi
     isBossSpawned = true;
   } catch (err) {
     console.error('Failed to spawn boss:', err);
+  } finally {
+    isBossSpawning = false;
   }
 }
 
@@ -258,6 +261,7 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
 
 
 var isBossSpawned = false; // Track whether the boss has been spawned yet
+var isBossSpawning = false; // Track whether a boss spawn attempt is in progress
 
 export async function battleOfLegnicaScene(
   canvas: HTMLCanvasElement,
