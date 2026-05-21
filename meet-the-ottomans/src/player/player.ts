@@ -1,7 +1,7 @@
 import { AppBase, Entity, Color, Vec3 } from 'playcanvas';
 import { FirstPersonCamera } from './FirstPersonCamera';
 import { changeScene } from '../App';
-import { showDeathScreen } from '../world/scenes/deathScreen';
+import { hideDeathScreen, showDeathScreen } from '../world/scenes/deathScreen';
 import { npc } from '../world/npc/npc';
 import { Weapon } from './weapon/weapon';
 import { Gun } from './weapon/gun';
@@ -76,11 +76,23 @@ export class Player{
     }
 
     public takeDamage(damage: number): void {
+        if (!this.isAlive()) {
+            return;
+        }
+
         this.health -= damage;
         if(!this.isAlive()) {
             this.health = 0; // prevent negative health
         }
         this.die(this.isAlive()); // checks for death
+    }
+
+    public revive(position?: Vec3): void {
+        this.health = this.maxHealth;
+        if (position) {
+            this.setPosition(position);
+        }
+        hideDeathScreen();
     }
 
     private die(isAlive: boolean): void {

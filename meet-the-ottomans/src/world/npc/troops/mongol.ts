@@ -22,12 +22,25 @@ export class Mongol extends npc {
     public static retreatActive: boolean = false;
     public static retreatPoint: Vec3 | null = null;
     public static hordeSpawned: boolean = false;
-    private static playerMoveSpeed = PLAYER_MOVE_SPEED;
 
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
+    }
+
+    public static resetBattleState(): void {
+        Mongol.lastGroupShotTime = -Infinity;
+        Mongol.lastShotSelectionTick = -Infinity;
+        Mongol.selectedShooterId = null;
+        Mongol.lastShooterId = null;
+        Mongol.circleDirection = Math.random() > 0.5 ? 1 : -1;
+        Mongol.groupAngleDeg = 0;
+        Mongol.lastAngleUpdateTick = -Infinity;
+        Mongol.hasRetreatedOnce = false;
+        Mongol.retreatActive = false;
+        Mongol.retreatPoint = null;
+        Mongol.hordeSpawned = false;
     }
 
     

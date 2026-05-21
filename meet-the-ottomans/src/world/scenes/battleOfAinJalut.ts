@@ -30,6 +30,7 @@ import {
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
+import { isDeathScreenVisible } from './deathScreen';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -353,9 +354,17 @@ export async function battleOfAinJalutScene(
   app.scene.envAtlas = envAtlasAsset.resource as Texture;
 
   // Create the player with camera and first-person controls
-  const player = new Player(app, new Vec3(0, 8, 8));
+  const playerSpawn = new Vec3(0, 8, 8);
+  const player = new Player(app, playerSpawn);
+  let respawnPosition = playerSpawn.clone();
+  let respawnGroundY = 0;
   player.setDeathQuizContext(1, () => {
-    void battleOfAinJalutScene(canvas, app, _onClick, _sceneNum);
+    player.revive(respawnPosition);
+    if (cameraController) {
+      cameraController.groundHeight = respawnGroundY;
+    }
+    createBattleHUD();
+    updateBattleHUD(player);
   });
   const cameraController = player.getCameraController();
 
@@ -410,6 +419,8 @@ export async function battleOfAinJalutScene(
       const surfaceY = seededGroundY ?? bounds.maxY;  // Fall back to bounds if raycast fails
       const spawnY = surfaceY + spawnSurfaceOffset;
       player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
+      respawnPosition = player.getPosition().clone();
+      respawnGroundY = surfaceY;
 
       // Tell the camera controller where the ground is for gravity calculations
       if (cameraController) {
@@ -454,6 +465,8 @@ export async function battleOfAinJalutScene(
       if (bestSpawnCandidate && bestSpawnGroundY !== undefined) {
         const spawnY = bestSpawnGroundY + spawnSurfaceOffset;
         player.setPosition(new Vec3(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z));
+          respawnPosition = player.getPosition().clone();
+          respawnGroundY = bestSpawnGroundY;
         if (cameraController) {
           cameraController.groundHeight = bestSpawnGroundY;
         }
@@ -515,6 +528,10 @@ export async function battleOfAinJalutScene(
   updateBattleHUD(player);
 
   app.keyboard?.on('keydown', (event: { key: number | null }) => {
+    if (isDeathScreenVisible()) {
+      return;
+    }
+
     if (event.key === KEY_1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
@@ -528,6 +545,10 @@ export async function battleOfAinJalutScene(
   });
 
   app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
+    if (isDeathScreenVisible()) {
+      return;
+    }
+
     if (event.button !== 0) {
       return;
     }
@@ -555,6 +576,10 @@ export async function battleOfAinJalutScene(
 
   let victoryHandled = false;
   const victoryCheck = () => {
+    if (isDeathScreenVisible()) {
+      return;
+    }
+
     if (victoryHandled) {
       return;
     }

@@ -3,6 +3,7 @@ import { loadModel, type LoadModelOptions, type Model } from "../../util/loadMod
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
 import { GenghisKhan } from "./bosses/genghisKhan";
+import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
 
@@ -302,6 +303,10 @@ export function bindNpcCombatLoop(
     }
 
     const updateHandler = (deltaTime: number) => {
+        if (isDeathScreenVisible()) {
+            return;
+        }
+
         const nowSeconds = Date.now() / 1000;
         const playerEntity = getPlayerEntity();
 

@@ -34,6 +34,7 @@ import {
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
+import { isDeathScreenVisible } from './deathScreen';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -42,6 +43,7 @@ import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, LEGNICA_BOSS_SPAWN_POINT, LEGNICA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
+import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
@@ -330,12 +332,19 @@ function createStarfieldTexture(device: AppBase['graphicsDevice'], width = 1024,
 var isBossSpawned = false; // Track whether the boss has been spawned yet
 var isBossSpawning = false; // Track whether a boss spawn attempt is in progress
 
+function resetLegnicaBattleState(): void {
+  isBossSpawned = false;
+  isBossSpawning = false;
+  Mongol.resetBattleState();
+}
+
 export async function battleOfLegnicaScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
   _onClick: (battle: Battle) => void,
   _sceneNum: number
 ) {
+  resetLegnicaBattleState();
   // Clean up any previous scene assets and input listeners
   unloadAll(app);
   app.mouse?.off();
@@ -448,9 +457,17 @@ export async function battleOfLegnicaScene(
   app.scene.envAtlas = envAtlasAsset.resource as Texture;
 
   // Create the player with camera and first-person controls
-  const player = new Player(app, new Vec3(0, 8, 8));
+  const playerSpawn = new Vec3(0, 8, 8);
+  const player = new Player(app, playerSpawn);
+  let respawnPosition = playerSpawn.clone();
+  let respawnGroundY = 0;
   player.setDeathQuizContext(1, () => {
-    void battleOfLegnicaScene(canvas, app, _onClick, _sceneNum);
+    player.revive(respawnPosition);
+    if (cameraController) {
+      cameraController.groundHeight = respawnGroundY;
+    }
+    createBattleHUD();
+    updateBattleHUD(player);
   });
   const cameraController = player.getCameraController();
   const cameraEntity = player.getCameraEntity();
@@ -531,6 +548,8 @@ export async function battleOfLegnicaScene(
       const surfaceY = seededGroundY ?? bounds.maxY;  // Fall back to bounds if raycast fails
       const spawnY = surfaceY + spawnSurfaceOffset;
       player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
+      respawnPosition = player.getPosition().clone();
+      respawnGroundY = surfaceY;
 
       // Tell the camera controller where the ground is for gravity calculations
       if (cameraController) {
@@ -575,6 +594,8 @@ export async function battleOfLegnicaScene(
       if (bestSpawnCandidate && bestSpawnGroundY !== undefined) {
         const spawnY = bestSpawnGroundY + spawnSurfaceOffset;
         player.setPosition(new Vec3(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z));
+        respawnPosition = player.getPosition().clone();
+        respawnGroundY = bestSpawnGroundY;
         if (cameraController) {
           cameraController.groundHeight = bestSpawnGroundY;
         }
@@ -636,6 +657,10 @@ export async function battleOfLegnicaScene(
   updateBattleHUD(player);
 
   app.keyboard?.on('keydown', (event: { key: number | null }) => {
+    if (isDeathScreenVisible()) {
+      return;
+    }
+
     if (event.key === KEY_1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
@@ -649,6 +674,10 @@ export async function battleOfLegnicaScene(
   });
 
   app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
+    if (isDeathScreenVisible()) {
+      return;
+    }
+
     if (event.button !== 0) {
       return;
     }
@@ -693,6 +722,10 @@ export async function battleOfLegnicaScene(
 
   let victoryHandled = false;
   const victoryCheck = () => {
+    if (isDeathScreenVisible()) {
+      return;
+    }
+
     if (victoryHandled) {
       return;
     }
