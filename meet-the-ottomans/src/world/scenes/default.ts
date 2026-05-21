@@ -28,6 +28,8 @@ import {
   TEXTURETYPE_RGBP,
   createSphere,
   EVENT_MOUSEDOWN,
+  BLEND_ADDITIVE,
+  CULLFACE_FRONT,
 } from "playcanvas";
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
@@ -46,8 +48,10 @@ import { battleOfLegnicaScene } from "./battleOfLegnica";
 import { battleOfAinJalutScene } from "./battleOfAinJalut";
 import { siegeOfConstantinopleScene } from "./siegeOfConstantinople";
 
-const HOVER_COLOR = new Color(1, 0.647, 0);
 const DEFAULT_COLOR = new Color(1, 1, 1);
+const BEAM_COLOR = new Color(0.2, 0.68, 1);
+const BEAM_HOVER_COLOR = new Color(0.62, 0.9, 1);
+const BEAM_DIFFUSE = new Color(0.02, 0.08, 0.14);
 const SPHERE_SEGMENTS = 256;
 
 // Assets to load
@@ -77,6 +81,96 @@ function latLonToSpherical(lat: number, lon: number): { phi: number; theta: numb
     phi: Math.PI / 2 - latRad,
     theta: Math.PI / 2 - lonRad
   };
+}
+
+function createStarfieldTexture(device: AppBase['graphicsDevice'], width = 1024, height = 512): Texture {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return new Texture(device!, { mipmaps: true, name: 'starfield-fallback' });
+  }
+
+  const baseGradient = ctx.createLinearGradient(0, 0, width, height);
+  baseGradient.addColorStop(0, '#05040d');
+  baseGradient.addColorStop(0.45, '#0b1229');
+  baseGradient.addColorStop(1, '#020209');
+  ctx.fillStyle = baseGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.save();
+  ctx.translate(width * 0.5, height * 0.5);
+  ctx.rotate(-0.35);
+  const bandGradient = ctx.createRadialGradient(0, 0, height * 0.05, 0, 0, height * 0.8);
+  bandGradient.addColorStop(0, 'rgba(130, 190, 255, 0.35)');
+  bandGradient.addColorStop(0.35, 'rgba(72, 120, 210, 0.18)');
+  bandGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bandGradient;
+  ctx.fillRect(-width, -height * 0.32, width * 2, height * 0.64);
+  ctx.restore();
+
+  const nebulae = [
+    { x: width * 0.18, y: height * 0.28, r: width * 0.18, color: 'rgba(112, 140, 255, 0.22)' },
+    { x: width * 0.72, y: height * 0.22, r: width * 0.14, color: 'rgba(220, 130, 255, 0.16)' },
+    { x: width * 0.76, y: height * 0.7, r: width * 0.2, color: 'rgba(70, 200, 255, 0.18)' },
+  ];
+
+  nebulae.forEach((nebula) => {
+    const glow = ctx.createRadialGradient(nebula.x, nebula.y, 0, nebula.x, nebula.y, nebula.r);
+    glow.addColorStop(0, nebula.color);
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(nebula.x, nebula.y, nebula.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  const starCount = 1400;
+  for (let i = 0; i < starCount; i += 1) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const size = Math.random() < 0.92 ? 1 : 2;
+    const alpha = 0.4 + Math.random() * 0.6;
+    const tint = Math.random();
+    const r = Math.floor(200 + tint * 55);
+    const g = Math.floor(210 + tint * 45);
+    const b = Math.floor(235 + tint * 20);
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    ctx.fillRect(x, y, size, size);
+  }
+
+  for (let i = 0; i < 80; i += 1) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 6);
+    glow.addColorStop(0, 'rgba(230, 245, 255, 0.8)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = new Texture(device!, { mipmaps: true, name: 'starfield' });
+  texture.setSource(canvas);
+  return texture;
+}
+
+function configureBeamMaterial(material: StandardMaterial) {
+  material.diffuse.copy(BEAM_DIFFUSE);
+  material.emissive.copy(BEAM_COLOR);
+  material.emissiveIntensity = 2.2;
+  material.opacity = 0.95;
+  material.blendType = BLEND_ADDITIVE;
+  material.update();
+}
+
+function setBeamHighlight(material: StandardMaterial, isActive: boolean) {
+  material.emissive.copy(isActive ? BEAM_HOVER_COLOR : BEAM_COLOR);
+  material.emissiveIntensity = isActive ? 2.8 : 2.2;
+  material.opacity = isActive ? 1 : 0.95;
+  material.update();
 }
 
 async function defaultScene(
@@ -300,7 +394,7 @@ unloadAll(app);
   app.scene.envAtlas = assets.envAtlas.resource as Texture;
   const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   if (skyboxLayer) {
-    skyboxLayer.enabled = false;
+    skyboxLayer.enabled = true;
   }
 
   // Create a new material
@@ -308,6 +402,14 @@ unloadAll(app);
   material.diffuse.copy(DEFAULT_COLOR);
   (material as any).vertexColors = true;
   material.update();
+
+  // Create starfield backdrop
+  const starMaterial = new StandardMaterial();
+  starMaterial.diffuse.set(0, 0, 0);
+  starMaterial.emissive.set(1, 1, 1);
+  starMaterial.emissiveMap = createStarfieldTexture(device);
+  starMaterial.cull = CULLFACE_FRONT;
+  starMaterial.update();
 
   // Create sphere entity (heightmap-ready sphere)
   const sphere = new Entity('heightmap-sphere');
@@ -322,10 +424,24 @@ unloadAll(app);
   });
   app.root.addChild(sphere);
 
+  const starDome = new Entity('star-dome');
+  const starMesh = createSphere(app.graphicsDevice, {
+    radius: 18,
+    latitudeBands: 64,
+    longitudeBands: 64
+  });
+  starDome.addComponent('render', {
+    meshInstances: [new MeshInstance(starMesh, starMaterial)]
+  });
+  if (skyboxLayer) {
+    starDome.render.layers = [skyboxLayer.id];
+  }
+  app.root.addChild(starDome);
+
   // Create camera entity
   const camera = new Entity('camera');
   camera.addComponent('camera', {
-    clearColor: new Color(0.14117647, 0.14117647, 0.14117647)
+    clearColor: new Color(0.02, 0.02, 0.05)
   });
   camera.setPosition(new Vec3(4, 1, 4));
   app.root.addChild(camera);
@@ -409,8 +525,7 @@ unloadAll(app);
       if (hoveredBattle && hoveredBattle !== intersectedEntity) {
         const material = battleMaterials.get(hoveredBattle);
         if (material) {
-          material.diffuse.copy(DEFAULT_COLOR);
-          material.update();
+          setBeamHighlight(material, false);
         }
       }
 
@@ -419,8 +534,7 @@ unloadAll(app);
         hoveredBattle = intersectedEntity;
         const material = battleMaterials.get(intersectedEntity);
         if (material) {
-          material.diffuse.copy(HOVER_COLOR);
-          material.update();
+          setBeamHighlight(material, true);
         }
         document.body.style.cursor = 'pointer';
         const battle = entityToBattle.get(intersectedEntity);
@@ -487,16 +601,18 @@ unloadAll(app);
 
         // Create a unique material for this battle
         const battleMaterial = new StandardMaterial();
-        battleMaterial.diffuse.copy(DEFAULT_COLOR);
-        battleMaterial.update();
+        configureBeamMaterial(battleMaterial);
 
         const battleEntity = new Entity(battle.getName());
         battleEntity.addComponent('render', {
-          type: 'capsule',
+          type: 'cylinder',
           material: battleMaterial
         });
-        battleEntity.setLocalPosition(battlePoint);
-        battleEntity.setLocalScale(0.04, 0.08, 0.04);
+
+        const beamOffset = 0.075;
+        const beamPosition = battlePoint.clone().add(battleNormal.clone().mulScalar(beamOffset));
+        battleEntity.setLocalPosition(beamPosition);
+        battleEntity.setLocalScale(0.03, 0.24, 0.03);
 
         // Align the entity's up-axis (Y) with the normal vector
         const upAxis = new Vec3(0, 1, 0);

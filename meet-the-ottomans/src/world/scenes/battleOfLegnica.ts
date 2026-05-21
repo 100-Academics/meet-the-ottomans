@@ -20,11 +20,15 @@ import {
   AssetListLoader,
   TEXTURETYPE_RGBP,
   Texture,
+  StandardMaterial,
+  MeshInstance,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
   KEY_R,
+  createSphere,
+  CULLFACE_FRONT,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -250,6 +254,69 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
   return { minX, maxX, minZ, maxZ, maxY };
 }
 
+function createStarfieldTexture(device: AppBase['graphicsDevice'], width = 1024, height = 512): Texture {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return new Texture(device!, { mipmaps: true, name: 'legnica-starfield-fallback' });
+  }
+
+  const baseGradient = ctx.createLinearGradient(0, 0, width, height);
+  baseGradient.addColorStop(0, '#000000');
+  baseGradient.addColorStop(0.5, '#04040b');
+  baseGradient.addColorStop(1, '#000000');
+  ctx.fillStyle = baseGradient;
+  ctx.fillRect(0, 0, width, height);
+
+  const nebulae = [
+    { x: width * 0.2, y: height * 0.3, r: width * 0.18, color: 'rgba(70, 120, 255, 0.16)' },
+    { x: width * 0.7, y: height * 0.22, r: width * 0.14, color: 'rgba(160, 110, 255, 0.12)' },
+    { x: width * 0.75, y: height * 0.7, r: width * 0.22, color: 'rgba(60, 190, 255, 0.14)' },
+  ];
+
+  nebulae.forEach((nebula) => {
+    const glow = ctx.createRadialGradient(nebula.x, nebula.y, 0, nebula.x, nebula.y, nebula.r);
+    glow.addColorStop(0, nebula.color);
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(nebula.x, nebula.y, nebula.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  const starCount = 1200;
+  for (let i = 0; i < starCount; i += 1) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const size = Math.random() < 0.9 ? 1 : 2;
+    const alpha = 0.45 + Math.random() * 0.55;
+    const tint = Math.random();
+    const r = Math.floor(190 + tint * 60);
+    const g = Math.floor(200 + tint * 45);
+    const b = Math.floor(230 + tint * 25);
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    ctx.fillRect(x, y, size, size);
+  }
+
+  for (let i = 0; i < 70; i += 1) {
+    const x = Math.random() * width;
+    const y = Math.random() * height;
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 6);
+    glow.addColorStop(0, 'rgba(230, 245, 255, 0.85)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const texture = new Texture(device!, { mipmaps: true, name: 'legnica-starfield' });
+  texture.setSource(canvas);
+  return texture;
+}
+
 /**
  * Main scene initialization for the Battle of Legnica.
  * Sets up the 3D environment, camera, ground physics, lighting, and handles player spawning.
@@ -386,6 +453,32 @@ export async function battleOfLegnicaScene(
     void battleOfLegnicaScene(canvas, app, _onClick, _sceneNum);
   });
   const cameraController = player.getCameraController();
+  const cameraEntity = player.getCameraEntity();
+  if (cameraEntity.camera) {
+    cameraEntity.camera.clearColor = new Color(0, 0, 0);
+  }
+
+  const starMaterial = new StandardMaterial();
+  starMaterial.useLighting = false;
+  starMaterial.emissive.set(1, 1, 1);
+  starMaterial.emissiveMap = createStarfieldTexture(app.graphicsDevice);
+  starMaterial.cull = CULLFACE_FRONT;
+  starMaterial.update();
+
+  const starDome = new Entity('legnica-star-dome');
+  const starMesh = createSphere(app.graphicsDevice, {
+    radius: 220,
+    latitudeBands: 64,
+    longitudeBands: 64
+  });
+  starDome.addComponent('render', {
+    meshInstances: [new MeshInstance(starMesh, starMaterial)]
+  });
+  starDome.setPosition(cameraEntity.getPosition());
+  app.root.addChild(starDome);
+  app.on('update', () => {
+    starDome.setPosition(cameraEntity.getPosition());
+  });
 
   // Load and set up the battlefield ground model
   try {
