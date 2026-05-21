@@ -23,6 +23,8 @@ export class Mongol extends npc {
     public static retreatPoint: Vec3 | null = null;
     public static hordeSpawned: boolean = false;
 
+    private static taunts: string[] = ["this is a test", "I will of man you"];
+
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
