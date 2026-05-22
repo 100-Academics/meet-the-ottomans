@@ -1,4 +1,4 @@
-import { AppBase, Entity, Vec3 } from "playcanvas";
+import { AppBase, Color, Entity, LAYERID_IMMEDIATE, OutlineRenderer, Vec3 } from "playcanvas";
 import { loadModel, type LoadModelOptions, type Model } from "../../util/loadModel";
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
@@ -49,6 +49,22 @@ export interface NpcCombatLoopOptions {
     groundProbeHeight?: number;
     groundProbeDepth?: number;
     defaultGroundClearance?: number;
+    battleStatus?: {
+        getCameraEntity?: () => Entity | null | undefined;
+        initialTotal?: number;
+        outlineThreshold?: number;
+        outlineColor?: Color;
+        onRemainingCountChange?: (remaining: number, total: number) => void;
+    };
+}
+
+const SCENE_CLEANUP_HANDLERS_KEY = "__sceneCleanupHandlers";
+
+function registerSceneCleanup(app: AppBase, cleanup: () => void): void {
+    const keyedApp = app as AppBase & Record<string, unknown>;
+    const handlers = (keyedApp[SCENE_CLEANUP_HANDLERS_KEY] as Array<() => void> | undefined) ?? [];
+    handlers.push(cleanup);
+    keyedApp[SCENE_CLEANUP_HANDLERS_KEY] = handlers;
 }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
@@ -300,6 +316,61 @@ export function bindNpcCombatLoop(
     const defaultGroundClearance = options.defaultGroundClearance ?? 0.1;
     const npcGroundOffsets = new Map<npc, number>();
     const npcLastValidPositions = new Map<npc, Vec3>();
+    const battleStatus = options.battleStatus;
+    const outlineLayer = battleStatus
+        ? (app.scene.layers.getLayerById(LAYERID_IMMEDIATE) ?? app.scene.layers.getLayerByName("Immediate"))
+        : null;
+    const outlineRenderer = battleStatus && outlineLayer ? new OutlineRenderer(app, outlineLayer) : null;
+    const defaultOutlineColor = battleStatus?.outlineColor ?? new Color(0.94, 0.84, 0.24);
+    const initialTotal = Math.max(0, battleStatus?.initialTotal ?? npcs.filter((currentNpc) => currentNpc.getTeam() === "foe").length);
+    const outlineThreshold = battleStatus?.outlineThreshold ?? 0.25;
+    let outlinedNpcIds = new Set<number>();
+
+    const syncBattleStatus = (cameraEntity: Entity | null | undefined) => {
+        const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive());
+        battleStatus?.onRemainingCountChange?.(remainingFoes.length, initialTotal);
+
+        if (!outlineRenderer || initialTotal <= 0) {
+            return;
+        }
+
+        const shouldOutline = remainingFoes.length > 0 && (remainingFoes.length / initialTotal) < outlineThreshold;
+        if (!shouldOutline) {
+            if (outlinedNpcIds.size > 0) {
+                outlineRenderer.removeAllEntities();
+                outlinedNpcIds = new Set<number>();
+            }
+            return;
+        }
+
+        const nextOutlinedIds = new Set(remainingFoes.map((currentNpc) => currentNpc.getId()));
+        let changed = nextOutlinedIds.size !== outlinedNpcIds.size;
+        if (!changed) {
+            for (const id of nextOutlinedIds) {
+                if (!outlinedNpcIds.has(id)) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        if (changed) {
+            outlineRenderer.removeAllEntities();
+            outlinedNpcIds = new Set<number>();
+            for (const currentNpc of remainingFoes) {
+                outlineRenderer.addEntity(currentNpc.getEntity(), defaultOutlineColor, true);
+                outlinedNpcIds.add(currentNpc.getId());
+            }
+        }
+
+        if (cameraEntity?.camera) {
+            outlineRenderer.frameUpdate(cameraEntity, outlineLayer, false);
+        }
+    };
+
+    if (battleStatus) {
+        syncBattleStatus(battleStatus.getCameraEntity?.() ?? undefined);
+    }
 
     if (groundCollisionEnabled && rigidbodySystem) {
         for (const currentNpc of npcs) {
@@ -323,6 +394,8 @@ export function bindNpcCombatLoop(
 
         const nowSeconds = Date.now() / 1000;
         const playerEntity = getPlayerEntity();
+
+        syncBattleStatus(battleStatus?.getCameraEntity?.() ?? playerEntity);
 
         for (const currentNpc of npcs) {
             currentNpc.updateCombatAI(
@@ -399,10 +472,20 @@ export function bindNpcCombatLoop(
     keyedApp[updateKey] = updateHandler;
     app.on("update", updateHandler);
 
-    return () => {
+    const cleanup = () => {
         app.off("update", updateHandler);
         if (keyedApp[updateKey] === updateHandler) {
             delete keyedApp[updateKey];
         }
+
+        if (outlineRenderer) {
+            outlineRenderer.destroy();
+        }
+    };
+
+    registerSceneCleanup(app, cleanup);
+
+    return () => {
+        cleanup();
     };
 }

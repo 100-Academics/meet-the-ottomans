@@ -632,6 +632,11 @@ export async function battleOfAinJalutScene(
 
   bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
     updateKey: '__ainJalutNpcUpdate',
+    battleStatus: {
+      getCameraEntity: () => player.getCameraEntity(),
+      initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length,
+      onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
+    },
     onNpcAttack: (attacker, target, damage) => {
       target.takeDamage(damage);
       console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);

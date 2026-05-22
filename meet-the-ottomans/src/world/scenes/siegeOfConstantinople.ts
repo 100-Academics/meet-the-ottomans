@@ -584,6 +584,11 @@ export async function siegeOfConstantinopleScene(
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',
+		battleStatus: {
+			getCameraEntity: () => player.getCameraEntity(),
+			initialTotal: CONSTANTINOPLE_NPC_SPAWN_POINTS.length,
+			onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
+		},
 		onNpcAttack: (attacker, target, damage) => {
 			target.takeDamage(damage);
 			console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);

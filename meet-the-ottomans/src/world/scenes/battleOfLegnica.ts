@@ -708,6 +708,11 @@ export async function battleOfLegnicaScene(
 
   bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
     updateKey: '__legnicaNpcUpdate',
+    battleStatus: {
+      getCameraEntity: () => player.getCameraEntity(),
+      initialTotal: LEGNICA_NPC_SPAWN_POINTS.length + LEGNICA_BOSS_SPAWN_POINT.length,
+      onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
+    },
     onNpcAttack: (attacker, target, damage) => {
       target.takeDamage(damage);
       try {

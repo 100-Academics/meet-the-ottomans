@@ -17,6 +17,10 @@ export function createBattleHUD() {
         <span class="hud-label">Health:</span>
         <span class="hud-value" id="hud-health">100/100</span>
       </div>
+      <div class="hud-row">
+        <span class="hud-label">NPCs left:</span>
+        <span class="hud-value" id="hud-npcs">--</span>
+      </div>
     </div>
   `;
   document.body.appendChild(hud);
@@ -40,9 +44,10 @@ export function removeBattleHUD() {
   }
 }
 
-export function updateBattleHUD(player: Player) {
+export function updateBattleHUD(player: Player, remainingNpcs?: number) {
   const weaponEl = document.getElementById('hud-weapon');
   const healthEl = document.getElementById('hud-health');
+  const npcCountEl = document.getElementById('hud-npcs');
 
   if (weaponEl) {
     weaponEl.textContent = player.getEquippedWeaponName();
@@ -64,4 +69,8 @@ export function updateBattleHUD(player: Player) {
     
     healthEl.textContent = `${health}/${maxHealth}`;
   }
+
+      if (npcCountEl && typeof remainingNpcs === 'number' && Number.isFinite(remainingNpcs)) {
+        npcCountEl.textContent = `${Math.max(0, Math.floor(remainingNpcs))}`;
+      }
 }
