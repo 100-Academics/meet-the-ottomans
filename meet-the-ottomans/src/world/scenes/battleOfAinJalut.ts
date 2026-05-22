@@ -20,8 +20,6 @@ import {
   AssetListLoader,
   TEXTURETYPE_RGBP,
   Texture,
-  StandardMaterial,
-  CULLFACE_FRONT,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
   KEY_1,
@@ -356,38 +354,10 @@ export async function battleOfAinJalutScene(
   app.scene.envAtlas = envAtlasAsset.resource as Texture;
   app.scene.skyboxIntensity = 0.2;
 
-  // Force a clear daytime sky by rendering an inverted skydome around the battlefield.
-  const skyDome = new Entity('ain-jalut-skydome');
-  skyDome.addComponent('render', { type: 'sphere' });
-  skyDome.setLocalScale(1800, 900, 1800);
-  skyDome.setPosition(0, 250, 0);
-  if (skyDome.render?.meshInstances?.[0]) {
-    const skyMaterial = new StandardMaterial();
-    skyMaterial.useLighting = false;
-    skyMaterial.diffuse = new Color(0.48, 0.74, 0.99);
-    skyMaterial.emissive = new Color(0.54, 0.8, 1);
-    skyMaterial.emissiveIntensity = 1.15;
-    skyMaterial.cull = CULLFACE_FRONT;
-    skyMaterial.update();
-    skyDome.render.meshInstances[0].material = skyMaterial;
+  const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
+  if (skyboxLayer) {
+    skyboxLayer.enabled = false;
   }
-  app.root.addChild(skyDome);
-
-  // Add a visible sun disc so the sky reads as daytime immediately.
-  const sunDisc = new Entity('ain-jalut-sun-disc');
-  sunDisc.addComponent('render', { type: 'sphere' });
-  sunDisc.setLocalScale(35, 35, 35);
-  sunDisc.setPosition(340, 300, -420);
-  if (sunDisc.render?.meshInstances?.[0]) {
-    const sunMaterial = new StandardMaterial();
-    sunMaterial.useLighting = false;
-    sunMaterial.diffuse = new Color(1, 0.95, 0.72);
-    sunMaterial.emissive = new Color(1, 0.93, 0.62);
-    sunMaterial.emissiveIntensity = 2.2;
-    sunMaterial.update();
-    sunDisc.render.meshInstances[0].material = sunMaterial;
-  }
-  app.root.addChild(sunDisc);
 
   // Create the player with camera and first-person controls
   const playerSpawn = new Vec3(0, 8, 8);
