@@ -26,7 +26,6 @@ import {
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
-  KEY_R,
   createSphere,
   CULLFACE_FRONT,
 } from "playcanvas";
@@ -165,12 +164,16 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
 }
 
 
-async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[]): Promise<void> { // spawn the Khan boss and wire UI
+async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], groundYFallback: number): Promise<void> { // spawn the Khan boss and wire UI
   if (isBossSpawned || isBossSpawning) return;
   isBossSpawning = true;
 
   try {
-    const spawned = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_BOSS_SPAWN_POINT, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS);
+    const bossSpawnOptions = {
+      ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+      groundYFallback
+    };
+    const spawned = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_BOSS_SPAWN_POINT, bossSpawnOptions);
     for (const s of spawned) {
       npcs.push(s);
       if (s instanceof Boss) {
@@ -652,9 +655,13 @@ export async function battleOfLegnicaScene(
     app.root.addChild(light);
   }
 
-  const npcs = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  const npcSpawnOptions = {
+    ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+    groundYFallback: respawnGroundY
+  };
+  const npcs = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_NPC_SPAWN_POINTS, npcSpawnOptions);
 
-  // Create battle HUD to display weapon, health, and ammo
+  // Create battle HUD to display weapon and health
   createBattleHUD();
   updateBattleHUD(player);
 
@@ -668,9 +675,6 @@ export async function battleOfLegnicaScene(
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
       player.equipWeapon(3); // equip bow; too early of a time pd for gun
-      updateBattleHUD(player);
-    } else if (event.key === KEY_R) {
-      player.reloadEquippedWeapon();
       updateBattleHUD(player);
     }
   });
@@ -740,7 +744,7 @@ export async function battleOfLegnicaScene(
     }
     else if (remainingFoes.length === 0 && !isBossSpawned) {
       // spawn the boss asynchronously
-      spawnBoss(app, rigidbodySystem, npcs).catch((err) => console.error(err));
+      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
     }
   };
 

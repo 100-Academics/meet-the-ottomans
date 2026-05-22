@@ -26,7 +26,6 @@ import {
 	RESOLUTION_AUTO,
 	KEY_1,
 	KEY_2,
-	KEY_R,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -538,10 +537,14 @@ export async function siegeOfConstantinopleScene(
 		app.root.addChild(light);
 	}
 
-	let npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+	const npcSpawnOptions = {
+		...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+		groundYFallback: respawnGroundY
+	};
+	let npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, npcSpawnOptions);
 	if (npcs.length === 0) {
 		console.warn('[NPC] Constantinople spawn returned no soldiers on the first pass, retrying once');
-		npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+		npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, npcSpawnOptions);
 	}
 
 	app.keyboard?.on('keydown', (event: { key: number | null }) => {
@@ -558,9 +561,6 @@ export async function siegeOfConstantinopleScene(
 		// } else if (event.key === KEY_3) { // unecessary weapon slot for this scene.
 		// 	player.equipWeapon(3);
 		// 	updateBattleHUD(player);
-		} else if (event.key === KEY_R) {
-			player.reloadEquippedWeapon();
-			updateBattleHUD(player);
 		}
 	});
 

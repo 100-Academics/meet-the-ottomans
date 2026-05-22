@@ -26,7 +26,6 @@ import {
   KEY_2,
   KEY_NUMPAD_1,
   KEY_NUMPAD_2,
-  KEY_R,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -580,10 +579,14 @@ export async function battleOfAinJalutScene(
   }
 
   const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
-  let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  const npcSpawnOptions = {
+    ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+    groundYFallback: respawnGroundY
+  };
+  let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
   if (npcs.length === 0) {
     console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-    npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+    npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
   }
 
   app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
@@ -598,16 +601,11 @@ export async function battleOfAinJalutScene(
 
     const isKey1 = keyCode === KEY_1 || keyCode === KEY_NUMPAD_1 || keyValue === '1' || keyCodeValue === 'Digit1' || keyCodeValue === 'Numpad1';
     const isKey2 = keyCode === KEY_2 || keyCode === KEY_NUMPAD_2 || keyValue === '2' || keyCodeValue === 'Digit2' || keyCodeValue === 'Numpad2';
-    const isReload = keyCode === KEY_R || keyValue === 'r' || keyValue === 'R' || keyCodeValue === 'KeyR';
-
     if (isKey1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (isKey2) {
       player.equipWeapon(3);
-      updateBattleHUD(player);
-    } else if (isReload) {
-      player.reloadEquippedWeapon();
       updateBattleHUD(player);
     }
   });

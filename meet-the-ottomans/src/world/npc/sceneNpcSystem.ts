@@ -36,6 +36,7 @@ export interface NpcSceneSpawnOptions {
     modelHeightOffset?: number;
     facingYawOffsetDegrees?: number;
     hitboxRadius?: number;
+    groundYFallback?: number;
 }
 
 export interface NpcCombatLoopOptions {
@@ -123,10 +124,14 @@ function getSpawnY(
     groundTag: string,
     probeHeight: number,
     probeDepth: number,
-    defaultGroundClearance: number
+    defaultGroundClearance: number,
+    fallbackGroundY?: number
 ): number {
     const groundY = getGroundYAt(rigidbodySystem, x, z, groundTag, probeHeight, probeDepth);
     if (groundY === undefined) {
+        if (typeof fallbackGroundY === "number" && Number.isFinite(fallbackGroundY)) {
+            return fallbackGroundY + defaultGroundClearance;
+        }
         return 0;
     }
 
@@ -209,6 +214,7 @@ export async function spawnSceneNpcs(
     const modelHeightOffset = options.modelHeightOffset ?? 2;
     const facingYawOffsetDegrees = options.facingYawOffsetDegrees ?? 180;
     const hitboxRadius = options.hitboxRadius ?? 1.2;
+    const groundYFallback = options.groundYFallback;
     const groundTag = "ground";
     const groundProbeHeight = 300;
     const groundProbeDepth = 300;
@@ -225,7 +231,8 @@ export async function spawnSceneNpcs(
                 groundTag,
                 groundProbeHeight,
                 groundProbeDepth,
-                defaultGroundClearance
+                defaultGroundClearance,
+                groundYFallback
             );
 
             const npcModel = await loadNpcModelWithFallback(app, modelPath, {

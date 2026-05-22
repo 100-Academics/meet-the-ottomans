@@ -840,7 +840,7 @@ export class FirstPersonCamera extends ScriptType {
 
         if (this.wallRunActive) {
             if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt);
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, safeGroundHeight);
                 this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
             } else {
                 const baseDir = walkForward;
@@ -882,7 +882,7 @@ export class FirstPersonCamera extends ScriptType {
             }
         } else {
             if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, onGround ? safeGroundHeight : undefined);
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, safeGroundHeight);
                 this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
             } else if (this.slideActive && this.slideDirection.lengthSq() > 0) {
                 this.tryMoveHorizontally(

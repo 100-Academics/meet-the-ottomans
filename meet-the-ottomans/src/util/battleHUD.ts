@@ -1,5 +1,4 @@
 import { Player } from '../player/player';
-import { Gun } from '../player/weapon/gun';
 
 export function createBattleHUD() {
   if (document.getElementById('battle-hud')) {
@@ -17,10 +16,6 @@ export function createBattleHUD() {
       <div class="hud-row">
         <span class="hud-label">Health:</span>
         <span class="hud-value" id="hud-health">100/100</span>
-      </div>
-      <div class="hud-row" id="hud-ammo-row" style="display: none;">
-        <span class="hud-label">Ammo:</span>
-        <span class="hud-value" id="hud-ammo">12</span>
       </div>
     </div>
   `;
@@ -48,8 +43,6 @@ export function removeBattleHUD() {
 export function updateBattleHUD(player: Player) {
   const weaponEl = document.getElementById('hud-weapon');
   const healthEl = document.getElementById('hud-health');
-  const ammoRowEl = document.getElementById('hud-ammo-row');
-  const ammoEl = document.getElementById('hud-ammo');
 
   if (weaponEl) {
     weaponEl.textContent = player.getEquippedWeaponName();
@@ -70,27 +63,5 @@ export function updateBattleHUD(player: Player) {
     }
     
     healthEl.textContent = `${health}/${maxHealth}`;
-  }
-
-  // Get the equipped weapon and check if it's a Gun
-  const equippedWeapon = (player as any).equippedWeapon;
-  if (equippedWeapon instanceof Gun) {
-    if (ammoRowEl) {
-      ammoRowEl.style.display = 'flex';
-    }
-    if (ammoEl) {
-      const ammo = equippedWeapon.getAmmo();
-      ammoEl.textContent = ammo.toString();
-      ammoEl.classList.remove('critical', 'warning');
-      if (ammo === 0) {
-        ammoEl.classList.add('critical');
-      } else if (ammo <= 3) {
-        ammoEl.classList.add('warning');
-      }
-    }
-  } else {
-    if (ammoRowEl) {
-      ammoRowEl.style.display = 'none';
-    }
   }
 }
