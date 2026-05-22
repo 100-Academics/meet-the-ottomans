@@ -24,6 +24,8 @@ import {
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
+  KEY_NUMPAD_1,
+  KEY_NUMPAD_2,
   KEY_R,
 } from "playcanvas";
 
@@ -36,7 +38,7 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
-import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
 
@@ -226,6 +228,41 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
 
   // Return the calculated bounding box
   return { minX, maxX, minZ, maxZ, maxY };
+}
+
+function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
+  const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
+  if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
+    return basePoints;
+  }
+
+  if (basePoints.length > 0) {
+    const first = basePoints[0];
+    const allSame = basePoints.every((spawn) =>
+      Math.abs(spawn.x - first.x) < 0.01 && Math.abs(spawn.z - first.z) < 0.01
+    );
+    if (!allSame) {
+      return basePoints;
+    }
+  }
+
+  const fallbackOffsets = [
+    { x: 12, z: 6 },
+    { x: -14, z: 4 },
+    { x: 8, z: -10 },
+    { x: -10, z: -8 },
+    { x: 16, z: -2 },
+    { x: -6, z: 12 }
+  ];
+
+  const spawnCount = Math.max(3, basePoints.length || 0);
+  return fallbackOffsets.slice(0, spawnCount).map((offset, index) => ({
+    id: 100 + index,
+    team: "foe",
+    x: anchor.x + offset.x,
+    z: anchor.z + offset.z,
+    type: "mongol"
+  }));
 }
 
 /**
@@ -542,24 +579,34 @@ export async function battleOfAinJalutScene(
     app.root.addChild(light);
   }
 
-  let npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
+  let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
   if (npcs.length === 0) {
     console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-    npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+    npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
   }
 
-  app.keyboard?.on('keydown', (event: { key: number | null }) => {
+  app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
     if (isDeathScreenVisible()) {
       return;
     }
 
-    if (event.key === KEY_1) {
+    const keyCode = typeof event.key === 'number' ? event.key : null;
+    const rawEvent = event.event ?? null;
+    const keyValue = rawEvent?.key ?? (typeof event.key === 'string' ? event.key : null);
+    const keyCodeValue = rawEvent?.code ?? null;
+
+    const isKey1 = keyCode === KEY_1 || keyCode === KEY_NUMPAD_1 || keyValue === '1' || keyCodeValue === 'Digit1' || keyCodeValue === 'Numpad1';
+    const isKey2 = keyCode === KEY_2 || keyCode === KEY_NUMPAD_2 || keyValue === '2' || keyCodeValue === 'Digit2' || keyCodeValue === 'Numpad2';
+    const isReload = keyCode === KEY_R || keyValue === 'r' || keyValue === 'R' || keyCodeValue === 'KeyR';
+
+    if (isKey1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
-    } else if (event.key === KEY_2) {
+    } else if (isKey2) {
       player.equipWeapon(3);
       updateBattleHUD(player);
-    } else if (event.key === KEY_R) {
+    } else if (isReload) {
       player.reloadEquippedWeapon();
       updateBattleHUD(player);
     }
