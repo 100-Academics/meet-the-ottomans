@@ -122,7 +122,12 @@ export class Mongol extends npc {
             let toSlotX = desiredX - myPos.x;
             let toSlotZ = desiredZ - myPos.z;
             const mongolMoveSpeed = this.aiConfig.chaseMoveSpeed;
-            this.moveToward(toSlotX, toSlotZ, mongolMoveSpeed, deltaTime);
+            const distanceToSlot = Math.sqrt((toSlotX * toSlotX) + (toSlotZ * toSlotZ));
+            const orbitArrivalRadius = Math.max(0.85, this.getHitboxRadius() * 0.7);
+            if (distanceToSlot > orbitArrivalRadius) {
+                const orbitMoveSpeed = Math.min(mongolMoveSpeed, distanceToSlot * 4);
+                this.moveToward(toSlotX, toSlotZ, orbitMoveSpeed, deltaTime);
+            }
 
             // Select one Mongol to fire each cooldown window (randomized each time).
             const nowSeconds = currentTimeSeconds;

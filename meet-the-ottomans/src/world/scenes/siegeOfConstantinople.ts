@@ -12,8 +12,6 @@ import {
 	CameraComponentSystem,
 	ScriptComponentSystem,
 	LightComponentSystem,
-	StandardMaterial,
-	CULLFACE_FRONT,
 	CollisionComponentSystem,
 	RigidBodyComponentSystem,
 	TextureHandler,
@@ -515,10 +513,10 @@ export async function siegeOfConstantinopleScene(
 
 
 	// Build a smoky, low-contrast battlefield atmosphere.
-	app.scene.fog = 'linear';
-	app.scene.fogColor = new Color(0.34, 0.35, 0.36);
-	app.scene.fogStart = 12;
-	app.scene.fogEnd = 170;
+	app.scene.fog.type = 'linear';
+	app.scene.fog.color = new Color(0.34, 0.35, 0.36);
+	app.scene.fog.start = 12;
+	app.scene.fog.end = 170;
 
 	// Set up basic scene lighting
 	// Ambient light provides a baseline light level everywhere

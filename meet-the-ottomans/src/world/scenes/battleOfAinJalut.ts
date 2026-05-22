@@ -556,10 +556,10 @@ export async function battleOfAinJalutScene(
 
 
   // Create a bright, open-sky look with light distance haze.
-  app.scene.fog = 'linear';
-  app.scene.fogColor = new Color(0.72, 0.84, 0.98);
-  app.scene.fogStart = 120;
-  app.scene.fogEnd = 520;
+  app.scene.fog.type = 'linear';
+  app.scene.fog.color = new Color(0.72, 0.84, 0.98);
+  app.scene.fog.start = 120;
+  app.scene.fog.end = 520;
 
   // Set up basic scene lighting
   // Ambient light provides a baseline light level everywhere
