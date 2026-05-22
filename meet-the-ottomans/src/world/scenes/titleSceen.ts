@@ -64,7 +64,7 @@ async function titleScreen(
   introWrap.id = 'intro-screen';
   introWrap.innerHTML = `
     <div class="intro-card">
-      <div class="intro-kicker">Interactive prologue</div>
+      <div class="intro-kicker"></div>
       <div class="intro-title" id="intro-title"></div>
       <div class="intro-body" id="intro-body" aria-live="polite"></div>
       <div class="intro-controls">
