@@ -232,6 +232,7 @@ button:focus-visible {
 .intro-body {
   position: relative;
   min-height: 8.5rem;
+  padding-top: 0.8rem;
   font-size: clamp(1rem, 2.2vw, 1.2rem);
   line-height: 1.7;
   color: rgba(250, 242, 228, 0.9);
@@ -245,8 +246,8 @@ button:focus-visible {
   top: 0.2rem;
   height: 3px;
   background: linear-gradient(90deg, transparent, rgba(255, 216, 150, 0.35), transparent);
-  opacity: 0.7;
-  animation: intro-stream 4.8s linear infinite;
+  opacity: 0.55;
+  animation: intro-glow 6s ease-in-out infinite;
 }
 
 .intro-line {
@@ -350,12 +351,13 @@ button:focus-visible {
   }
 }
 
-@keyframes intro-stream {
-  0% {
-    transform: translateX(-30%);
-  }
+@keyframes intro-glow {
+  0%,
   100% {
-    transform: translateX(30%);
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.8;
   }
 }
 

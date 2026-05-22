@@ -60,10 +60,10 @@ export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 ];
 
 export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 8, z: -2 },
+    { id: 1, team: "foe", x: 0, z: 0, type: "mongol" },
     // { id: 2, team: "friend", x: -8, z: 2 },
-    { id: 3, team: "foe", x: 10, z: 2 },
+    { id: 3, team: "foe", x: 0, z: 0, type: "mongol" },
     // { id: 4, team: "friend", x: -10, z: -2 },
-    { id: 5, team: "foe", x: 6, z: 4 },
+    { id: 5, team: "foe", x: 0, z: 0, type: "mongol" },
     // { id: 6, team: "friend", x: -6, z: -4 }
 ];

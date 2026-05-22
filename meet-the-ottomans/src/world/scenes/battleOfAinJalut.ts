@@ -20,12 +20,12 @@ import {
   AssetListLoader,
   TEXTURETYPE_RGBP,
   Texture,
-  StandardMaterial,
-  CULLFACE_FRONT,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
+  KEY_NUMPAD_1,
+  KEY_NUMPAD_2,
   KEY_R,
 } from "playcanvas";
 
@@ -38,7 +38,7 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
-import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
 
@@ -230,6 +230,41 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
   return { minX, maxX, minZ, maxZ, maxY };
 }
 
+function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
+  const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
+  if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
+    return basePoints;
+  }
+
+  if (basePoints.length > 0) {
+    const first = basePoints[0];
+    const allSame = basePoints.every((spawn) =>
+      Math.abs(spawn.x - first.x) < 0.01 && Math.abs(spawn.z - first.z) < 0.01
+    );
+    if (!allSame) {
+      return basePoints;
+    }
+  }
+
+  const fallbackOffsets = [
+    { x: 12, z: 6 },
+    { x: -14, z: 4 },
+    { x: 8, z: -10 },
+    { x: -10, z: -8 },
+    { x: 16, z: -2 },
+    { x: -6, z: 12 }
+  ];
+
+  const spawnCount = Math.max(3, basePoints.length || 0);
+  return fallbackOffsets.slice(0, spawnCount).map((offset, index) => ({
+    id: 100 + index,
+    team: "foe",
+    x: anchor.x + offset.x,
+    z: anchor.z + offset.z,
+    type: "mongol"
+  }));
+}
+
 /**
  * Main scene initialization for the Battle of Ain Jalut.
  * Sets up the 3D environment, camera, ground physics, lighting, and handles player spawning.
@@ -356,38 +391,10 @@ export async function battleOfAinJalutScene(
   app.scene.envAtlas = envAtlasAsset.resource as Texture;
   app.scene.skyboxIntensity = 0.2;
 
-  // Force a clear daytime sky by rendering an inverted skydome around the battlefield.
-  const skyDome = new Entity('ain-jalut-skydome');
-  skyDome.addComponent('render', { type: 'sphere' });
-  skyDome.setLocalScale(1800, 900, 1800);
-  skyDome.setPosition(0, 250, 0);
-  if (skyDome.render?.meshInstances?.[0]) {
-    const skyMaterial = new StandardMaterial();
-    skyMaterial.useLighting = false;
-    skyMaterial.diffuse = new Color(0.48, 0.74, 0.99);
-    skyMaterial.emissive = new Color(0.54, 0.8, 1);
-    skyMaterial.emissiveIntensity = 1.15;
-    skyMaterial.cull = CULLFACE_FRONT;
-    skyMaterial.update();
-    skyDome.render.meshInstances[0].material = skyMaterial;
+  const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
+  if (skyboxLayer) {
+    skyboxLayer.enabled = false;
   }
-  app.root.addChild(skyDome);
-
-  // Add a visible sun disc so the sky reads as daytime immediately.
-  const sunDisc = new Entity('ain-jalut-sun-disc');
-  sunDisc.addComponent('render', { type: 'sphere' });
-  sunDisc.setLocalScale(35, 35, 35);
-  sunDisc.setPosition(340, 300, -420);
-  if (sunDisc.render?.meshInstances?.[0]) {
-    const sunMaterial = new StandardMaterial();
-    sunMaterial.useLighting = false;
-    sunMaterial.diffuse = new Color(1, 0.95, 0.72);
-    sunMaterial.emissive = new Color(1, 0.93, 0.62);
-    sunMaterial.emissiveIntensity = 2.2;
-    sunMaterial.update();
-    sunDisc.render.meshInstances[0].material = sunMaterial;
-  }
-  app.root.addChild(sunDisc);
 
   // Create the player with camera and first-person controls
   const playerSpawn = new Vec3(0, 8, 8);
@@ -572,24 +579,34 @@ export async function battleOfAinJalutScene(
     app.root.addChild(light);
   }
 
-  let npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
+  let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
   if (npcs.length === 0) {
     console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-    npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+    npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
   }
 
-  app.keyboard?.on('keydown', (event: { key: number | null }) => {
+  app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
     if (isDeathScreenVisible()) {
       return;
     }
 
-    if (event.key === KEY_1) {
+    const keyCode = typeof event.key === 'number' ? event.key : null;
+    const rawEvent = event.event ?? null;
+    const keyValue = rawEvent?.key ?? (typeof event.key === 'string' ? event.key : null);
+    const keyCodeValue = rawEvent?.code ?? null;
+
+    const isKey1 = keyCode === KEY_1 || keyCode === KEY_NUMPAD_1 || keyValue === '1' || keyCodeValue === 'Digit1' || keyCodeValue === 'Numpad1';
+    const isKey2 = keyCode === KEY_2 || keyCode === KEY_NUMPAD_2 || keyValue === '2' || keyCodeValue === 'Digit2' || keyCodeValue === 'Numpad2';
+    const isReload = keyCode === KEY_R || keyValue === 'r' || keyValue === 'R' || keyCodeValue === 'KeyR';
+
+    if (isKey1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
-    } else if (event.key === KEY_2) {
+    } else if (isKey2) {
       player.equipWeapon(3);
       updateBattleHUD(player);
-    } else if (event.key === KEY_R) {
+    } else if (isReload) {
       player.reloadEquippedWeapon();
       updateBattleHUD(player);
     }
