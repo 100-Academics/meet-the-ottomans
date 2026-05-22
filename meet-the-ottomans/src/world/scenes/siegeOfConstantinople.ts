@@ -41,7 +41,6 @@ import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
-import { Mongol } from "../npc/troops/mongol";
 import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
@@ -868,15 +867,6 @@ export async function siegeOfConstantinopleScene(
 	let currentWaveIndex = 0;
 	let waveSpawnInProgress = false;
 
-	const configureMongolWave = (waveNpcs: SpawnedNpc[]) => {
-		for (const currentNpc of waveNpcs) {
-			if (currentNpc instanceof Mongol) {
-				currentNpc.setRangedAttackDamage(4);
-				currentNpc.setGuaranteedRangedHits(true);
-			}
-		}
-	};
-
 	const spawnWave = async (waveIndex: number): Promise<SpawnedNpc[]> => {
 		const wavePoints = waveSpawnPoints[waveIndex] ?? [];
 		if (wavePoints.length === 0) {
@@ -889,7 +879,6 @@ export async function siegeOfConstantinopleScene(
 			waveNpcs = await spawnSceneNpcs(app, rigidbodySystem, wavePoints, npcSpawnOptions);
 		}
 
-		configureMongolWave(waveNpcs);
 		npcs.push(...waveNpcs);
 		spawnedWaveFoes += wavePoints.length;
 		return waveNpcs;
