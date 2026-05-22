@@ -44,20 +44,19 @@ export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 
 export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
 
-export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 0 },
-    // { id: 2, team: "friend", x: -5, z: 0 },
-    { id: 3, team: "foe", x: 5, z: 0 },
-    // { id: 4, team: "friend", x: -7, z: 0 },
-    { id: 5, team: "foe", x: 7, z: 0 },
-    // { id: 6, team: "friend", x: -4, z: 0 },
-    { id: 7, team: "foe", x: 4, z: 0 },
-    // { id: 8, team: "friend", x: -6, z: 0 },
-    { id: 9, team: "foe", x: 8, z: 0 },
-    // { id: 10, team: "friend", x: -8, z: 0 },
-    { id: 11, team: "foe", x: 9, z: 0 },
-    // { id: 12, team: "friend", x: -9, z: 0 }
-];
+const CONSTANTINOPLE_MONGOL_X_POSITIONS = [6, 9, 12, 15, 18];
+const CONSTANTINOPLE_MONGOL_Z_POSITIONS = [-12, -9, -6, -3, 0, 3, 6, 9, 12, 15];
+
+export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = CONSTANTINOPLE_MONGOL_Z_POSITIONS.flatMap(
+    (z, rowIndex) =>
+        CONSTANTINOPLE_MONGOL_X_POSITIONS.map((x, colIndex) => ({
+            id: rowIndex * CONSTANTINOPLE_MONGOL_X_POSITIONS.length + colIndex + 1,
+            team: "foe",
+            x,
+            z,
+            type: "mongol"
+        }))
+);
 
 export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 0, z: 0, type: "mongol" },

@@ -8,6 +8,7 @@ export class Mongol extends npc {
     protected rangedAttackRange: number = 30;
     protected rangedAttackDamage: number = 5;
     protected rangedAttackCooldown: number = 1.0; // seconds
+    private guaranteedRangedHits: boolean = false;
     private static lastGroupShotTime: number = -Infinity;
     private static lastShotSelectionTick: number = -Infinity;
     private static selectedShooterId: number | null = null;
@@ -29,6 +30,16 @@ export class Mongol extends npc {
         super(id, 'foe', 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
+    }
+
+    public setRangedAttackDamage(damage: number): void {
+        if (Number.isFinite(damage) && damage > 0) {
+            this.rangedAttackDamage = damage;
+        }
+    }
+
+    public setGuaranteedRangedHits(enabled: boolean): void {
+        this.guaranteedRangedHits = enabled;
     }
 
     public static resetBattleState(): void {
@@ -173,8 +184,13 @@ export class Mongol extends npc {
                     Mongol.lastGroupShotTime = nowSeconds;
                     Mongol.lastShooterId = this.getId();
                     Mongol.selectedShooterId = null;
-                    // Fire a projectile toward the player. The projectile will call the provided onPlayerAttack when it hits.
-                    this.fireProjectileAt(playerEntity, this.rangedAttackDamage, 25, onPlayerAttack);
+                    // Fire a projectile toward the player. Optionally apply damage immediately for guaranteed hits.
+                    if (this.guaranteedRangedHits && onPlayerAttack) {
+                        onPlayerAttack(this, this.rangedAttackDamage);
+                        this.fireProjectileAt(playerEntity, this.rangedAttackDamage, 25);
+                    } else {
+                        this.fireProjectileAt(playerEntity, this.rangedAttackDamage, 25, onPlayerAttack);
+                    }
                 }
             }
 

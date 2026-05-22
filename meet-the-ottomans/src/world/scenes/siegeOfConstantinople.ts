@@ -35,8 +35,9 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
-import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+import { Mongol } from "../npc/troops/mongol";
 import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
@@ -537,13 +538,70 @@ export async function siegeOfConstantinopleScene(
 
 	const npcSpawnOptions = {
 		...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+		modelScale: new Vec3(2.2, 2.2, 2.2),
+		hitboxRadius: 1.3,
 		groundYFallback: respawnGroundY
 	};
-	let npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, npcSpawnOptions);
-	if (npcs.length === 0) {
-		console.warn('[NPC] Constantinople spawn returned no soldiers on the first pass, retrying once');
-		npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, npcSpawnOptions);
+	const waveSize = 15;
+	const targetWaveCount = 3;
+	const waveSpawnPoints: NpcSpawnPoint[][] = [];
+	const maxWaveCount = Math.min(
+		targetWaveCount,
+		Math.floor(CONSTANTINOPLE_NPC_SPAWN_POINTS.length / waveSize)
+	);
+
+	if (maxWaveCount < targetWaveCount) {
+		console.warn(`[NPC] Constantinople only has spawn data for ${maxWaveCount} wave(s); requested ${targetWaveCount}.`);
 	}
+
+	for (let waveIndex = 0; waveIndex < maxWaveCount; waveIndex++) {
+		const start = waveIndex * waveSize;
+		const wavePoints = CONSTANTINOPLE_NPC_SPAWN_POINTS.slice(start, start + waveSize);
+		if (wavePoints.length > 0) {
+			waveSpawnPoints.push(wavePoints);
+		}
+	}
+
+	if (waveSpawnPoints.length === 0) {
+		console.warn('[NPC] Constantinople wave list is empty; spawning all available NPCs at once.');
+		waveSpawnPoints.push(CONSTANTINOPLE_NPC_SPAWN_POINTS);
+	}
+
+	const totalWaveFoes = waveSpawnPoints.reduce((sum, wave) => sum + wave.length, 0);
+	type SpawnedNpc = Awaited<ReturnType<typeof spawnSceneNpcs>>[number];
+	let npcs: SpawnedNpc[] = [];
+	let spawnedWaveFoes = 0;
+	let currentWaveIndex = 0;
+	let waveSpawnInProgress = false;
+
+	const configureMongolWave = (waveNpcs: SpawnedNpc[]) => {
+		for (const currentNpc of waveNpcs) {
+			if (currentNpc instanceof Mongol) {
+				currentNpc.setRangedAttackDamage(4);
+				currentNpc.setGuaranteedRangedHits(true);
+			}
+		}
+	};
+
+	const spawnWave = async (waveIndex: number): Promise<SpawnedNpc[]> => {
+		const wavePoints = waveSpawnPoints[waveIndex] ?? [];
+		if (wavePoints.length === 0) {
+			return [];
+		}
+
+		let waveNpcs = await spawnSceneNpcs(app, rigidbodySystem, wavePoints, npcSpawnOptions);
+		if (waveNpcs.length === 0) {
+			console.warn(`[NPC] Constantinople wave ${waveIndex + 1} returned no soldiers on the first pass, retrying once`);
+			waveNpcs = await spawnSceneNpcs(app, rigidbodySystem, wavePoints, npcSpawnOptions);
+		}
+
+		configureMongolWave(waveNpcs);
+		npcs.push(...waveNpcs);
+		spawnedWaveFoes += wavePoints.length;
+		return waveNpcs;
+	};
+
+	await spawnWave(currentWaveIndex);
 
 	app.keyboard?.on('keydown', (event: { key: number | null }) => {
 		if (isDeathScreenVisible()) {
@@ -584,10 +642,16 @@ export async function siegeOfConstantinopleScene(
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',
+		obstacleCollisionEnabled: true,
+		obstacleIgnoreTags: ['ground'],
+		disableMongolHordeSpawn: true,
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
-			initialTotal: CONSTANTINOPLE_NPC_SPAWN_POINTS.length,
-			onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
+			initialTotal: totalWaveFoes,
+			onRemainingCountChange: (remaining) => {
+				const pendingFoes = Math.max(0, totalWaveFoes - spawnedWaveFoes);
+				updateBattleHUD(player, remaining + pendingFoes);
+			}
 		},
 		onNpcAttack: (attacker, target, damage) => {
 			target.takeDamage(damage);
@@ -601,6 +665,29 @@ export async function siegeOfConstantinopleScene(
 	});
 
 	let victoryHandled = false;
+	const spawnNextWave = () => {
+		if (waveSpawnInProgress) {
+			return;
+		}
+
+		const nextWaveIndex = currentWaveIndex + 1;
+		if (nextWaveIndex >= waveSpawnPoints.length) {
+			return;
+		}
+
+		waveSpawnInProgress = true;
+		spawnWave(nextWaveIndex)
+			.then(() => {
+				currentWaveIndex = nextWaveIndex;
+			})
+			.catch((error) => {
+				console.error(`[NPC] Failed to spawn Constantinople wave ${nextWaveIndex + 1}`, error);
+			})
+			.finally(() => {
+				waveSpawnInProgress = false;
+			});
+	};
+
 	const victoryCheck = () => {
 		if (isDeathScreenVisible()) {
 			return;
@@ -612,6 +699,11 @@ export async function siegeOfConstantinopleScene(
 
 		const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
 		if (remainingFoes.length === 0) {
+			if (currentWaveIndex + 1 < waveSpawnPoints.length) {
+				spawnNextWave();
+				return;
+			}
+
 			victoryHandled = true;
 			removeBattleHUD();
 			changeScene(canvas, app, 777);
