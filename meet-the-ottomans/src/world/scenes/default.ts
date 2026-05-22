@@ -433,7 +433,7 @@ unloadAll(app);
   starDome.addComponent('render', {
     meshInstances: [new MeshInstance(starMesh, starMaterial)]
   });
-  if (skyboxLayer) {
+  if (skyboxLayer && starDome.render) {
     starDome.render.layers = [skyboxLayer.id];
   }
   app.root.addChild(starDome);

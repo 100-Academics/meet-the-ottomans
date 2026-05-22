@@ -392,7 +392,7 @@ export function bindNpcCombatLoop(
             }
         }
 
-        if (cameraEntity?.camera) {
+        if (cameraEntity?.camera && outlineLayer) {
             outlineRenderer.frameUpdate(cameraEntity, outlineLayer, false);
         }
     };
