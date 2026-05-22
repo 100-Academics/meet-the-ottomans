@@ -217,50 +217,54 @@ export async function spawnSceneNpcs(
     const npcs: npc[] = [];
 
     for (const spawn of spawnPoints) {
-        const npcSpawnY = getSpawnY(
-            rigidbodySystem,
-            spawn.x,
-            spawn.z,
-            groundTag,
-            groundProbeHeight,
-            groundProbeDepth,
-            defaultGroundClearance
-        );
-        
-        const npcModel = await loadNpcModelWithFallback(app, modelPath, {
-            rigidbodyType: "kinematic",
-            includeDescendants: true,
-            position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),
-            rotation: modelRotation,
-            scale: modelScale
-        });
-        const modelMinY = getEntityMinY(npcModel.modelEntity);
-        if (modelMinY !== undefined) {
-            const targetMinY = npcSpawnY + defaultGroundClearance;
-            const deltaY = targetMinY - modelMinY;
-            if (Math.abs(deltaY) > 0.001) {
-                const currentPos = npcModel.modelEntity.getPosition();
-                npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
+        try {
+            const npcSpawnY = getSpawnY(
+                rigidbodySystem,
+                spawn.x,
+                spawn.z,
+                groundTag,
+                groundProbeHeight,
+                groundProbeDepth,
+                defaultGroundClearance
+            );
+
+            const npcModel = await loadNpcModelWithFallback(app, modelPath, {
+                rigidbodyType: "kinematic",
+                includeDescendants: true,
+                position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),
+                rotation: modelRotation,
+                scale: modelScale
+            });
+            const modelMinY = getEntityMinY(npcModel.modelEntity);
+            if (modelMinY !== undefined) {
+                const targetMinY = npcSpawnY + defaultGroundClearance;
+                const deltaY = targetMinY - modelMinY;
+                if (Math.abs(deltaY) > 0.001) {
+                    const currentPos = npcModel.modelEntity.getPosition();
+                    npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
+                }
             }
-        }
-        if (spawn.type === "mongol") {
-            console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-            const mongol = new Mongol(spawn.id, npcModel.modelEntity);
-            mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-            mongol.setHitboxRadius(hitboxRadius);
-            npcs.push(mongol);
-        }else if (spawn.type === "genghisKhan") {
-            console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-            const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
-            boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-            boss.setHitboxRadius(hitboxRadius);
-            boss.drawHealthBar();
-            npcs.push(boss);
-        } else {
-            const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
-            spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-            spawnedNpc.setHitboxRadius(hitboxRadius);
-            npcs.push(spawnedNpc);
+            if (spawn.type === "mongol") {
+                console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const mongol = new Mongol(spawn.id, npcModel.modelEntity);
+                mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                mongol.setHitboxRadius(hitboxRadius);
+                npcs.push(mongol);
+            } else if (spawn.type === "genghisKhan") {
+                console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                npcs.push(boss);
+            } else {
+                const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
+                spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                spawnedNpc.setHitboxRadius(hitboxRadius);
+                npcs.push(spawnedNpc);
+            }
+        } catch (error) {
+            console.error(`[NPC] Failed to spawn NPC ${spawn.id} at (${spawn.x}, ${spawn.z})`, error);
         }
     }
 

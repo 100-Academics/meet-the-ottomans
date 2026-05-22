@@ -12,6 +12,8 @@ import {
 	CameraComponentSystem,
 	ScriptComponentSystem,
 	LightComponentSystem,
+	StandardMaterial,
+	CULLFACE_FRONT,
 	CollisionComponentSystem,
 	RigidBodyComponentSystem,
 	TextureHandler,
@@ -366,10 +368,14 @@ export async function siegeOfConstantinopleScene(
 		createBattleHUD();
 		updateBattleHUD(player);
 	});
+	// Show the battle HUD immediately so it remains visible even if NPC loading is delayed.
+	createBattleHUD();
+	updateBattleHUD(player);
 	const cameraController = player.getCameraController();
 	const cameraEntity = player.getCameraEntity();
 	if (cameraEntity.camera) {
-		cameraEntity.camera.clearColor = new Color(0.24, 0.24, 0.26);
+		cameraEntity.camera.clearColor = new Color(0.29, 0.3, 0.32);
+		cameraEntity.camera.clearColorBuffer = true;
 	}
 
 	// Load and set up the battlefield ground model
@@ -511,9 +517,9 @@ export async function siegeOfConstantinopleScene(
 
 	// Build a smoky, low-contrast battlefield atmosphere.
 	app.scene.fog = 'linear';
-	app.scene.fogColor = new Color(0.27, 0.27, 0.29);
-	app.scene.fogStart = 18;
-	app.scene.fogEnd = 220;
+	app.scene.fogColor = new Color(0.34, 0.35, 0.36);
+	app.scene.fogStart = 12;
+	app.scene.fogEnd = 170;
 
 	// Set up basic scene lighting
 	// Ambient light provides a baseline light level everywhere
@@ -532,11 +538,11 @@ export async function siegeOfConstantinopleScene(
 		app.root.addChild(light);
 	}
 
-	const npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
-
-	// Create battle HUD to display weapon, health, and ammo
-	createBattleHUD();
-	updateBattleHUD(player);
+	let npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+	if (npcs.length === 0) {
+		console.warn('[NPC] Constantinople spawn returned no soldiers on the first pass, retrying once');
+		npcs = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+	}
 
 	app.keyboard?.on('keydown', (event: { key: number | null }) => {
 		if (isDeathScreenVisible()) {
@@ -547,7 +553,7 @@ export async function siegeOfConstantinopleScene(
 			player.equipWeapon(1);
 			updateBattleHUD(player);
 		} else if (event.key === KEY_2) { 
-			player.equipWeapon(3); // wrong time period for a gun
+			player.equipWeapon(3);
 			updateBattleHUD(player);
 		// } else if (event.key === KEY_3) { // unecessary weapon slot for this scene.
 		// 	player.equipWeapon(3);
@@ -567,7 +573,10 @@ export async function siegeOfConstantinopleScene(
 			return;
 		}
 
-		const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, player.getAttackRange());
+		const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
+		const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
+		const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+		const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
 		player.attack(hitNpc ?? null);
 		updateBattleHUD(player);
 		if (hitNpc) {

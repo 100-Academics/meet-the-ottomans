@@ -402,6 +402,9 @@ export async function battleOfAinJalutScene(
     createBattleHUD();
     updateBattleHUD(player);
   });
+  // Show the battle HUD immediately so it is visible even if NPC loading is delayed.
+  createBattleHUD();
+  updateBattleHUD(player);
   const cameraController = player.getCameraController();
   const cameraEntity = player.getCameraEntity();
   if (cameraEntity.camera) {
@@ -569,11 +572,11 @@ export async function battleOfAinJalutScene(
     app.root.addChild(light);
   }
 
-  const npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
-
-  // Create battle HUD to display weapon, health, and ammo
-  createBattleHUD();
-  updateBattleHUD(player);
+  let npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  if (npcs.length === 0) {
+    console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
+    npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  }
 
   app.keyboard?.on('keydown', (event: { key: number | null }) => {
     if (isDeathScreenVisible()) {
@@ -584,7 +587,7 @@ export async function battleOfAinJalutScene(
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
-      player.equipWeapon(2);
+      player.equipWeapon(3);
       updateBattleHUD(player);
     } else if (event.key === KEY_R) {
       player.reloadEquippedWeapon();
@@ -601,7 +604,10 @@ export async function battleOfAinJalutScene(
       return;
     }
 
-    const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, player.getAttackRange());
+    const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
+    const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
+    const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+    const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
     player.attack(hitNpc ?? null);
     updateBattleHUD(player);
     if (hitNpc) {
