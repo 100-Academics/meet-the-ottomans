@@ -648,6 +648,9 @@ export async function siegeOfConstantinopleScene(
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
 			initialTotal: totalWaveFoes,
+			alwaysOutline: true,
+			outlineTargets: 'all',
+			outlineColor: new Color(1, 0.9, 0.2),
 			onRemainingCountChange: (remaining) => {
 				const pendingFoes = Math.max(0, totalWaveFoes - spawnedWaveFoes);
 				updateBattleHUD(player, remaining + pendingFoes);

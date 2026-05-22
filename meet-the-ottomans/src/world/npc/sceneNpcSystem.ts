@@ -61,6 +61,8 @@ export interface NpcCombatLoopOptions {
         initialTotal?: number;
         outlineThreshold?: number;
         outlineColor?: Color;
+        alwaysOutline?: boolean;
+        outlineTargets?: "foe" | "all";
         onRemainingCountChange?: (remaining: number, total: number) => void;
     };
 }
@@ -344,6 +346,8 @@ export function bindNpcCombatLoop(
     const defaultOutlineColor = battleStatus?.outlineColor ?? new Color(0.94, 0.84, 0.24);
     const initialTotal = Math.max(0, battleStatus?.initialTotal ?? npcs.filter((currentNpc) => currentNpc.getTeam() === "foe").length);
     const outlineThreshold = battleStatus?.outlineThreshold ?? 0.25;
+    const alwaysOutline = battleStatus?.alwaysOutline ?? false;
+    const outlineTargets = battleStatus?.outlineTargets ?? "foe";
     let outlinedNpcIds = new Set<number>();
 
     const syncBattleStatus = (cameraEntity: Entity | null | undefined) => {
@@ -354,7 +358,12 @@ export function bindNpcCombatLoop(
             return;
         }
 
-        const shouldOutline = remainingFoes.length > 0 && (remainingFoes.length / initialTotal) < outlineThreshold;
+        const outlineCandidates = outlineTargets === "all"
+            ? npcs.filter((currentNpc) => currentNpc.isAlive())
+            : remainingFoes;
+        const shouldOutline = alwaysOutline
+            ? outlineCandidates.length > 0
+            : (remainingFoes.length > 0 && (remainingFoes.length / initialTotal) < outlineThreshold);
         if (!shouldOutline) {
             if (outlinedNpcIds.size > 0) {
                 outlineRenderer.removeAllEntities();
@@ -363,7 +372,7 @@ export function bindNpcCombatLoop(
             return;
         }
 
-        const nextOutlinedIds = new Set(remainingFoes.map((currentNpc) => currentNpc.getId()));
+        const nextOutlinedIds = new Set(outlineCandidates.map((currentNpc) => currentNpc.getId()));
         let changed = nextOutlinedIds.size !== outlinedNpcIds.size;
         if (!changed) {
             for (const id of nextOutlinedIds) {
@@ -377,7 +386,7 @@ export function bindNpcCombatLoop(
         if (changed) {
             outlineRenderer.removeAllEntities();
             outlinedNpcIds = new Set<number>();
-            for (const currentNpc of remainingFoes) {
+            for (const currentNpc of outlineCandidates) {
                 outlineRenderer.addEntity(currentNpc.getEntity(), defaultOutlineColor, true);
                 outlinedNpcIds.add(currentNpc.getId());
             }
