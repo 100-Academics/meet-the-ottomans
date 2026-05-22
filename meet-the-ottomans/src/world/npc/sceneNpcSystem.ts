@@ -2,6 +2,7 @@ import { AppBase, Color, Entity, LAYERID_IMMEDIATE, OutlineRenderer, Vec3 } from
 import { loadModel, type LoadModelOptions, type Model } from "../../util/loadModel";
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
+import { Templar } from "./troops/templars";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
@@ -273,6 +274,12 @@ export async function spawnSceneNpcs(
                 mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 mongol.setHitboxRadius(hitboxRadius);
                 npcs.push(mongol);
+            } else if (spawn.type === "templar") {
+                console.log(`Spawning Templar NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const templar = new Templar(spawn.id, npcModel.modelEntity);
+                templar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                templar.setHitboxRadius(hitboxRadius);
+                npcs.push(templar);
             } else if (spawn.type === "genghisKhan") {
                 console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
