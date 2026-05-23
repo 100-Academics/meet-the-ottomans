@@ -2,26 +2,16 @@ import { AppBase, Entity, Vec3 } from 'playcanvas';
 import { Weapon } from "./weapon";
 
 export class Gun extends Weapon {
-    
-    private ammo: number;
-
-    constructor(damage: number, range: number, ammo: number, name: string = "Gun") {
+    constructor(damage: number, range: number, _ammo: number, name: string = "Gun") {
         super(name, damage, range);
-        this.ammo = ammo;
     }
 
     public getAmmo(): number {
-        return this.ammo;
+        return Number.POSITIVE_INFINITY;
     }
 
     public shoot(app?: AppBase, origin?: Vec3, direction?: Vec3): boolean {
-        if (this.ammo <= 0) {
-            console.log(`${this.getName()} is out of ammo!`);
-            return false;
-        }
-
-        this.ammo -= 1;
-        console.log(`${this.getName()} fired! Remaining ammo: ${this.ammo}`);
+        console.log(`${this.getName()} fired!`);
 
         const sceneApp = app ?? (globalThis as { app?: AppBase }).app;
         if (!sceneApp?.root) {
@@ -56,8 +46,7 @@ export class Gun extends Weapon {
     }
 
     public reload(amount: number): void {
-        this.ammo += Math.max(0, amount);
-        console.log(`${this.getName()} reloaded! Current ammo: ${this.ammo}`);
+        void amount;
     }
 
 }

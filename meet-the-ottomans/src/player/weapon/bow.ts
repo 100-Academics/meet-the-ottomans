@@ -10,8 +10,9 @@ export class Bow extends Gun {
 
     constructor(damage: number, range: number, arrows: number, drawTimeMs: number = 800) {
         super(damage, range, 90, "Bow");
-        this.arrows = arrows;
+        this.arrows = Number.POSITIVE_INFINITY;
         this.drawTimeMs = drawTimeMs; 
+        void arrows;
     }
 
     public getArrows(): number {
@@ -23,11 +24,6 @@ export class Bow extends Gun {
     }
 
     public shoot(app?: AppBase, origin?: Vec3, direction?: Vec3, target?: npc | null): boolean {
-        if (this.arrows <= 0) {
-            console.log(`${this.getName()} is out of arrows!`);
-            return false;
-        }
-
         if (this.isDrawing) {
             console.log(`${this.getName()} is currently being drawn...`);
             return false;
@@ -38,10 +34,7 @@ export class Bow extends Gun {
 
         window.setTimeout(() => {
             this.isDrawing = false;
-            if (this.arrows <= 0) return;
-
-            this.arrows -= 1;
-            console.log(`${this.getName()} fired! Remaining arrows: ${this.arrows}`);
+            console.log(`${this.getName()} fired!`);
 
             const sceneApp = app ?? (globalThis as { app?: AppBase }).app;
             if (!sceneApp?.root) {
@@ -115,8 +108,7 @@ export class Bow extends Gun {
     }
 
     public reload(amount: number): void {
-        this.arrows += Math.max(0, amount);
-        console.log(`${this.getName()} restocked! Current arrows: ${this.arrows}`);
+        void amount;
     }
 
 }

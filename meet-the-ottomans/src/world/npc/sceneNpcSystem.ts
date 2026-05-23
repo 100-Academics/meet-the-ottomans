@@ -1,7 +1,8 @@
-import { AppBase, Entity, Vec3 } from "playcanvas";
+import { AppBase, Color, Entity, LAYERID_IMMEDIATE, OutlineRenderer, Vec3 } from "playcanvas";
 import { loadModel, type LoadModelOptions, type Model } from "../../util/loadModel";
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
+import { Templar } from "./troops/templars";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
@@ -36,6 +37,7 @@ export interface NpcSceneSpawnOptions {
     modelHeightOffset?: number;
     facingYawOffsetDegrees?: number;
     hitboxRadius?: number;
+    groundYFallback?: number;
 }
 
 export interface NpcCombatLoopOptions {
@@ -48,6 +50,30 @@ export interface NpcCombatLoopOptions {
     groundProbeHeight?: number;
     groundProbeDepth?: number;
     defaultGroundClearance?: number;
+    obstacleCollisionEnabled?: boolean;
+    obstacleProbeHeight?: number;
+    obstacleProbePadding?: number;
+    obstacleMinMove?: number;
+    obstacleIgnoreTags?: string[];
+    disableMongolHordeSpawn?: boolean;
+    battleStatus?: {
+        getCameraEntity?: () => Entity | null | undefined;
+        initialTotal?: number;
+        outlineThreshold?: number;
+        outlineColor?: Color;
+        alwaysOutline?: boolean;
+        outlineTargets?: "foe" | "all";
+        onRemainingCountChange?: (remaining: number, total: number) => void;
+    };
+}
+
+const SCENE_CLEANUP_HANDLERS_KEY = "__sceneCleanupHandlers";
+
+function registerSceneCleanup(app: AppBase, cleanup: () => void): void {
+    const keyedApp = app as AppBase & Record<string, unknown>;
+    const handlers = (keyedApp[SCENE_CLEANUP_HANDLERS_KEY] as Array<() => void> | undefined) ?? [];
+    handlers.push(cleanup);
+    keyedApp[SCENE_CLEANUP_HANDLERS_KEY] = handlers;
 }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
@@ -123,10 +149,14 @@ function getSpawnY(
     groundTag: string,
     probeHeight: number,
     probeDepth: number,
-    defaultGroundClearance: number
+    defaultGroundClearance: number,
+    fallbackGroundY?: number
 ): number {
     const groundY = getGroundYAt(rigidbodySystem, x, z, groundTag, probeHeight, probeDepth);
     if (groundY === undefined) {
+        if (typeof fallbackGroundY === "number" && Number.isFinite(fallbackGroundY)) {
+            return fallbackGroundY + defaultGroundClearance;
+        }
         return 0;
     }
 
@@ -209,6 +239,7 @@ export async function spawnSceneNpcs(
     const modelHeightOffset = options.modelHeightOffset ?? 2;
     const facingYawOffsetDegrees = options.facingYawOffsetDegrees ?? 180;
     const hitboxRadius = options.hitboxRadius ?? 1.2;
+    const groundYFallback = options.groundYFallback;
     const groundTag = "ground";
     const groundProbeHeight = 300;
     const groundProbeDepth = 300;
@@ -217,50 +248,62 @@ export async function spawnSceneNpcs(
     const npcs: npc[] = [];
 
     for (const spawn of spawnPoints) {
-        const npcSpawnY = getSpawnY(
-            rigidbodySystem,
-            spawn.x,
-            spawn.z,
-            groundTag,
-            groundProbeHeight,
-            groundProbeDepth,
-            defaultGroundClearance
-        );
-        
-        const npcModel = await loadNpcModelWithFallback(app, modelPath, {
-            rigidbodyType: "kinematic",
-            includeDescendants: true,
-            position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),
-            rotation: modelRotation,
-            scale: modelScale
-        });
-        const modelMinY = getEntityMinY(npcModel.modelEntity);
-        if (modelMinY !== undefined) {
-            const targetMinY = npcSpawnY + defaultGroundClearance;
-            const deltaY = targetMinY - modelMinY;
-            if (Math.abs(deltaY) > 0.001) {
-                const currentPos = npcModel.modelEntity.getPosition();
-                npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
+        try {
+            const npcSpawnY = getSpawnY(
+                rigidbodySystem,
+                spawn.x,
+                spawn.z,
+                groundTag,
+                groundProbeHeight,
+                groundProbeDepth,
+                defaultGroundClearance,
+                groundYFallback
+            );
+
+            const npcModel = await loadNpcModelWithFallback(app, modelPath, {
+                rigidbodyType: "kinematic",
+                includeDescendants: true,
+                position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),
+                rotation: modelRotation,
+                scale: modelScale
+            });
+            npcModel.modelEntity.tags.add("npc");
+            const modelMinY = getEntityMinY(npcModel.modelEntity);
+            if (modelMinY !== undefined) {
+                const targetMinY = npcSpawnY + defaultGroundClearance;
+                const deltaY = targetMinY - modelMinY;
+                if (Math.abs(deltaY) > 0.001) {
+                    const currentPos = npcModel.modelEntity.getPosition();
+                    npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
+                }
             }
-        }
-        if (spawn.type === "mongol") {
-            console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-            const mongol = new Mongol(spawn.id, npcModel.modelEntity);
-            mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-            mongol.setHitboxRadius(hitboxRadius);
-            npcs.push(mongol);
-        }else if (spawn.type === "genghisKhan") {
-            console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-            const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
-            boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-            boss.setHitboxRadius(hitboxRadius);
-            boss.drawHealthBar();
-            npcs.push(boss);
-        } else {
-            const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
-            spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-            spawnedNpc.setHitboxRadius(hitboxRadius);
-            npcs.push(spawnedNpc);
+            if (spawn.type === "mongol") {
+                console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const mongol = new Mongol(spawn.id, npcModel.modelEntity);
+                mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                mongol.setHitboxRadius(hitboxRadius);
+                npcs.push(mongol);
+            } else if (spawn.type === "templar") {
+                console.log(`Spawning Templar NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const templar = new Templar(spawn.id, npcModel.modelEntity);
+                templar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                templar.setHitboxRadius(hitboxRadius);
+                npcs.push(templar);
+            } else if (spawn.type === "genghisKhan") {
+                console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                npcs.push(boss);
+            } else {
+                const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
+                spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                spawnedNpc.setHitboxRadius(hitboxRadius);
+                npcs.push(spawnedNpc);
+            }
+        } catch (error) {
+            console.error(`[NPC] Failed to spawn NPC ${spawn.id} at (${spawn.x}, ${spawn.z})`, error);
         }
     }
 
@@ -287,7 +330,76 @@ export function bindNpcCombatLoop(
     const groundProbeHeight = options.groundProbeHeight ?? 300;
     const groundProbeDepth = options.groundProbeDepth ?? 300;
     const defaultGroundClearance = options.defaultGroundClearance ?? 0.1;
+    const obstacleCollisionEnabled = options.obstacleCollisionEnabled ?? false;
+    const obstacleProbeHeight = options.obstacleProbeHeight ?? 1.2;
+    const obstacleProbePadding = options.obstacleProbePadding ?? 0.35;
+    const obstacleMinMove = options.obstacleMinMove ?? 0.05;
+    const obstacleIgnoreTags = options.obstacleIgnoreTags ?? [];
     const npcGroundOffsets = new Map<npc, number>();
+    const npcLastValidPositions = new Map<npc, Vec3>();
+    const npcPreviousPositions = new Map<npc, Vec3>();
+    const battleStatus = options.battleStatus;
+    const outlineLayer = battleStatus
+        ? (app.scene.layers.getLayerById(LAYERID_IMMEDIATE) ?? app.scene.layers.getLayerByName("Immediate"))
+        : null;
+    const outlineRenderer = battleStatus && outlineLayer ? new OutlineRenderer(app, outlineLayer) : null;
+    const defaultOutlineColor = battleStatus?.outlineColor ?? new Color(0.94, 0.84, 0.24);
+    const initialTotal = Math.max(0, battleStatus?.initialTotal ?? npcs.filter((currentNpc) => currentNpc.getTeam() === "foe").length);
+    const outlineThreshold = battleStatus?.outlineThreshold ?? 0.25;
+    const alwaysOutline = battleStatus?.alwaysOutline ?? false;
+    const outlineTargets = battleStatus?.outlineTargets ?? "foe";
+    let outlinedNpcIds = new Set<number>();
+
+    const syncBattleStatus = (cameraEntity: Entity | null | undefined) => {
+        const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive());
+        battleStatus?.onRemainingCountChange?.(remainingFoes.length, initialTotal);
+
+        if (!outlineRenderer || initialTotal <= 0) {
+            return;
+        }
+
+        const outlineCandidates = outlineTargets === "all"
+            ? npcs.filter((currentNpc) => currentNpc.isAlive())
+            : remainingFoes;
+        const shouldOutline = alwaysOutline
+            ? outlineCandidates.length > 0
+            : (remainingFoes.length > 0 && (remainingFoes.length / initialTotal) < outlineThreshold);
+        if (!shouldOutline) {
+            if (outlinedNpcIds.size > 0) {
+                outlineRenderer.removeAllEntities();
+                outlinedNpcIds = new Set<number>();
+            }
+            return;
+        }
+
+        const nextOutlinedIds = new Set(outlineCandidates.map((currentNpc) => currentNpc.getId()));
+        let changed = nextOutlinedIds.size !== outlinedNpcIds.size;
+        if (!changed) {
+            for (const id of nextOutlinedIds) {
+                if (!outlinedNpcIds.has(id)) {
+                    changed = true;
+                    break;
+                }
+            }
+        }
+
+        if (changed) {
+            outlineRenderer.removeAllEntities();
+            outlinedNpcIds = new Set<number>();
+            for (const currentNpc of outlineCandidates) {
+                outlineRenderer.addEntity(currentNpc.getEntity(), defaultOutlineColor, true);
+                outlinedNpcIds.add(currentNpc.getId());
+            }
+        }
+
+        if (cameraEntity?.camera && outlineLayer) {
+            outlineRenderer.frameUpdate(cameraEntity, outlineLayer, false);
+        }
+    };
+
+    if (battleStatus) {
+        syncBattleStatus(battleStatus.getCameraEntity?.() ?? undefined);
+    }
 
     if (groundCollisionEnabled && rigidbodySystem) {
         for (const currentNpc of npcs) {
@@ -295,12 +407,28 @@ export function bindNpcCombatLoop(
             const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
             if (groundY === undefined) {
                 npcGroundOffsets.set(currentNpc, defaultGroundClearance);
+                npcLastValidPositions.set(currentNpc, position.clone());
                 continue;
             }
 
             npcGroundOffsets.set(currentNpc, Math.max(defaultGroundClearance, position.y - groundY));
+            npcLastValidPositions.set(currentNpc, new Vec3(position.x, groundY + (npcGroundOffsets.get(currentNpc) ?? defaultGroundClearance), position.z));
         }
     }
+
+    const shouldIgnoreObstacleHit = (entity: Entity | null | undefined): boolean => {
+        if (!entity || obstacleIgnoreTags.length === 0) {
+            return false;
+        }
+
+        for (const tag of obstacleIgnoreTags) {
+            if (hasTagInHierarchy(entity, tag)) {
+                return true;
+            }
+        }
+
+        return false;
+    };
 
     const updateHandler = (deltaTime: number) => {
         if (isDeathScreenVisible()) {
@@ -309,6 +437,16 @@ export function bindNpcCombatLoop(
 
         const nowSeconds = Date.now() / 1000;
         const playerEntity = getPlayerEntity();
+
+        npcPreviousPositions.clear();
+        for (const currentNpc of npcs) {
+            if (!currentNpc.isAlive()) {
+                continue;
+            }
+            npcPreviousPositions.set(currentNpc, currentNpc.getEntity().getPosition().clone());
+        }
+
+        syncBattleStatus(battleStatus?.getCameraEntity?.() ?? playerEntity);
 
         for (const currentNpc of npcs) {
             currentNpc.updateCombatAI(
@@ -323,7 +461,102 @@ export function bindNpcCombatLoop(
 
         npc.resolveHitboxCollisions(npcs);
 
-        if (Mongol.hasRetreatedOnce && !Mongol.hordeSpawned && Mongol.retreatPoint) {
+        if (obstacleCollisionEnabled && rigidbodySystem && typeof rigidbodySystem.raycastFirst === "function") {
+            for (const currentNpc of npcs) {
+                if (!currentNpc.isAlive()) {
+                    continue;
+                }
+
+                const prevPosition = npcPreviousPositions.get(currentNpc);
+                if (!prevPosition) {
+                    continue;
+                }
+
+                const currentPosition = currentNpc.getEntity().getPosition();
+                const dx = currentPosition.x - prevPosition.x;
+                const dz = currentPosition.z - prevPosition.z;
+                const moveDist = Math.sqrt((dx * dx) + (dz * dz));
+                if (moveDist < obstacleMinMove) {
+                    continue;
+                }
+
+                const selfPadding = Math.max(0.05, currentNpc.getHitboxRadius());
+                const groundOffset = npcGroundOffsets.get(currentNpc);
+                const probeBaseY = typeof groundOffset === "number"
+                    ? currentPosition.y - groundOffset
+                    : currentPosition.y;
+                const probeY = probeBaseY + obstacleProbeHeight;
+                const start = new Vec3(
+                    prevPosition.x,
+                    probeY,
+                    prevPosition.z
+                );
+                const end = new Vec3(
+                    currentPosition.x,
+                    probeY,
+                    currentPosition.z
+                );
+
+                // Prefer raycastAll so we can skip self hits while still catching nearby obstacles.
+                let blockingHit: RigidbodyRaycastHit | undefined;
+                if (typeof rigidbodySystem.raycastAll === "function") {
+                    const hits = rigidbodySystem.raycastAll(start, end);
+                    if (hits && hits.length > 0) {
+                        let bestFraction = Number.POSITIVE_INFINITY;
+                        let bestDist = Number.POSITIVE_INFINITY;
+                        for (const hit of hits) {
+                            if (!hit?.entity || !hit.point) {
+                                continue;
+                            }
+                            if (hasTagInHierarchy(hit.entity ?? null, "npc")) {
+                                continue;
+                            }
+                            if (shouldIgnoreObstacleHit(hit.entity ?? null)) {
+                                continue;
+                            }
+
+                            const hitFraction = hit.hitFraction;
+                            if (typeof hitFraction === "number" && Number.isFinite(hitFraction)) {
+                                if (hitFraction < bestFraction) {
+                                    bestFraction = hitFraction;
+                                    blockingHit = hit;
+                                }
+                                continue;
+                            }
+
+                            const hx = hit.point.x - start.x;
+                            const hz = hit.point.z - start.z;
+                            const hitDist = Math.sqrt((hx * hx) + (hz * hz));
+                            if (hitDist < bestDist) {
+                                bestDist = hitDist;
+                                blockingHit = hit;
+                            }
+                        }
+                    }
+                }
+
+                if (!blockingHit) {
+                    const hit = rigidbodySystem.raycastFirst(start, end);
+                    if (hit?.entity && hit.point && !hasTagInHierarchy(hit.entity ?? null, "npc") && !shouldIgnoreObstacleHit(hit.entity ?? null)) {
+                        blockingHit = hit;
+                    }
+                }
+
+                if (!blockingHit?.point) {
+                    continue;
+                }
+
+                const hx = blockingHit.point.x - start.x;
+                const hz = blockingHit.point.z - start.z;
+                const hitDist = Math.sqrt((hx * hx) + (hz * hz));
+                const blockDist = moveDist + selfPadding + obstacleProbePadding;
+                if (hitDist <= blockDist) {
+                    currentNpc.getEntity().setPosition(prevPosition);
+                }
+            }
+        }
+
+        if (!options.disableMongolHordeSpawn && Mongol.hasRetreatedOnce && !Mongol.hordeSpawned && Mongol.retreatPoint) {
             Mongol.hordeSpawned = true;
             const newPoints: NpcSpawnPoint[] = [];
             for (let i = 0; i < 6; i++) {
@@ -360,6 +593,10 @@ export function bindNpcCombatLoop(
                 const position = currentNpc.getEntity().getPosition();
                 const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
                 if (groundY === undefined) {
+                    const fallbackPosition = npcLastValidPositions.get(currentNpc);
+                    if (fallbackPosition) {
+                        currentNpc.getEntity().setPosition(fallbackPosition);
+                    }
                     continue;
                 }
 
@@ -371,7 +608,9 @@ export function bindNpcCombatLoop(
                 }
 
                 const groundOffset = npcGroundOffsets.get(currentNpc) ?? defaultGroundClearance;
-                currentNpc.getEntity().setPosition(position.x, groundY + groundOffset, position.z);
+                const groundedPosition = new Vec3(position.x, groundY + groundOffset, position.z);
+                currentNpc.getEntity().setPosition(groundedPosition);
+                npcLastValidPositions.set(currentNpc, groundedPosition.clone());
             }
         }
     };
@@ -379,10 +618,20 @@ export function bindNpcCombatLoop(
     keyedApp[updateKey] = updateHandler;
     app.on("update", updateHandler);
 
-    return () => {
+    const cleanup = () => {
         app.off("update", updateHandler);
         if (keyedApp[updateKey] === updateHandler) {
             delete keyedApp[updateKey];
         }
+
+        if (outlineRenderer) {
+            outlineRenderer.destroy();
+        }
+    };
+
+    registerSceneCleanup(app, cleanup);
+
+    return () => {
+        cleanup();
     };
 }

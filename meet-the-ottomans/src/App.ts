@@ -7,6 +7,27 @@ import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts"
 import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScreen.ts";
 import { unloadAll } from "./util/unloadall.ts";
 
+const SCENE_CLEANUP_HANDLERS_KEY = "__sceneCleanupHandlers";
+
+function runSceneCleanupHandlers(app: AppBase): void {
+  const keyedApp = app as AppBase & Record<string, unknown>;
+  const handlers = keyedApp[SCENE_CLEANUP_HANDLERS_KEY];
+  if (!Array.isArray(handlers)) {
+    return;
+  }
+
+  while (handlers.length > 0) {
+    const handler = handlers.pop();
+    if (typeof handler === 'function') {
+      try {
+        handler();
+      } catch (error) {
+        console.warn('[Scene] cleanup handler failed', error);
+      }
+    }
+  }
+}
+
 
 /**
  * Setup the PlayCanvas app
@@ -71,6 +92,7 @@ export async function changeScene(
   // Clear transient UI and runtime listeners so a scene switch starts clean.
   hideDeathScreen();
   hideVictoryScreen();
+  runSceneCleanupHandlers(app);
   const overlay = ensureOverlayRoot();
   overlay.replaceChildren();
   app.mouse?.off();

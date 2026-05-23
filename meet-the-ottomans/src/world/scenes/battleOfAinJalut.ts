@@ -24,7 +24,8 @@ import {
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
-  KEY_R,
+  KEY_NUMPAD_1,
+  KEY_NUMPAD_2,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -36,7 +37,7 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
-import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
 
@@ -228,6 +229,41 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
   return { minX, maxX, minZ, maxZ, maxY };
 }
 
+function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
+  const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
+  if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
+    return basePoints;
+  }
+
+  if (basePoints.length > 0) {
+    const first = basePoints[0];
+    const allSame = basePoints.every((spawn) =>
+      Math.abs(spawn.x - first.x) < 0.01 && Math.abs(spawn.z - first.z) < 0.01
+    );
+    if (!allSame) {
+      return basePoints;
+    }
+  }
+
+  const fallbackOffsets = [
+    { x: 12, z: 6 },
+    { x: -14, z: 4 },
+    { x: 8, z: -10 },
+    { x: -10, z: -8 },
+    { x: 16, z: -2 },
+    { x: -6, z: 12 }
+  ];
+
+  const spawnCount = Math.max(3, basePoints.length || 0);
+  return fallbackOffsets.slice(0, spawnCount).map((offset, index) => ({
+    id: 100 + index,
+    team: "foe",
+    x: anchor.x + offset.x,
+    z: anchor.z + offset.z,
+    type: "mongol"
+  }));
+}
+
 /**
  * Main scene initialization for the Battle of Ain Jalut.
  * Sets up the 3D environment, camera, ground physics, lighting, and handles player spawning.
@@ -352,6 +388,12 @@ export async function battleOfAinJalutScene(
 
   // Apply the loaded environment map to the scene for reflections
   app.scene.envAtlas = envAtlasAsset.resource as Texture;
+  app.scene.skyboxIntensity = 0.2;
+
+  const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
+  if (skyboxLayer) {
+    skyboxLayer.enabled = false;
+  }
 
   // Create the player with camera and first-person controls
   const playerSpawn = new Vec3(0, 8, 8);
@@ -366,7 +408,15 @@ export async function battleOfAinJalutScene(
     createBattleHUD();
     updateBattleHUD(player);
   });
+  // Show the battle HUD immediately so it is visible even if NPC loading is delayed.
+  createBattleHUD();
+  updateBattleHUD(player);
   const cameraController = player.getCameraController();
+  const cameraEntity = player.getCameraEntity();
+  if (cameraEntity.camera) {
+    cameraEntity.camera.clearColor = new Color(0.44, 0.72, 0.98);
+    cameraEntity.camera.clearColorBuffer = true;
+  }
 
   // Load and set up the battlefield ground model
   try {
@@ -413,6 +463,7 @@ export async function battleOfAinJalutScene(
     
     // If we got the bounds, spawn at the center of the ground surface
     if (bounds) {
+      cameraController?.setMovementBounds(bounds, 2.5);
       const spawnX = (bounds.minX + bounds.maxX) * 0.5;
       const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
       const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
@@ -504,42 +555,57 @@ export async function battleOfAinJalutScene(
   }
 
 
+  // Create a bright, open-sky look with light distance haze.
+  app.scene.fog.type = 'linear';
+  app.scene.fog.color = new Color(0.72, 0.84, 0.98);
+  app.scene.fog.start = 120;
+  app.scene.fog.end = 520;
+
   // Set up basic scene lighting
   // Ambient light provides a baseline light level everywhere
-  app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
+  app.scene.ambientLight = new Color(0.38, 0.46, 0.58);
 
   // Create a directional light (like the sun) to cast shadows
   if (app.systems.light) {
-    const light = new Entity('directional-light');
+    const light = new Entity('sun-light');
     light.addComponent('light', {
       type: 'directional',
-      color: new Color(1, 1, 1),  // White light
-      intensity: 1,
+      color: new Color(1, 0.96, 0.82),
+      intensity: 1.45,
       castShadows: true  // This light casts shadows for realism
     });
-    light.setLocalEulerAngles(45, 30, 0);  // Light coming from above and at an angle
+    light.setLocalEulerAngles(52, 35, 0);  // Midday sun from a high angle
     app.root.addChild(light);
   }
 
-  const npcs = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS);
+  const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
+  const npcSpawnOptions = {
+    ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+    groundYFallback: respawnGroundY
+  };
+  let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+  if (npcs.length === 0) {
+    console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
+    npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+  }
 
-  // Create battle HUD to display weapon, health, and ammo
-  createBattleHUD();
-  updateBattleHUD(player);
-
-  app.keyboard?.on('keydown', (event: { key: number | null }) => {
+  app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
     if (isDeathScreenVisible()) {
       return;
     }
 
-    if (event.key === KEY_1) {
+    const keyCode = typeof event.key === 'number' ? event.key : null;
+    const rawEvent = event.event ?? null;
+    const keyValue = rawEvent?.key ?? (typeof event.key === 'string' ? event.key : null);
+    const keyCodeValue = rawEvent?.code ?? null;
+
+    const isKey1 = keyCode === KEY_1 || keyCode === KEY_NUMPAD_1 || keyValue === '1' || keyCodeValue === 'Digit1' || keyCodeValue === 'Numpad1';
+    const isKey2 = keyCode === KEY_2 || keyCode === KEY_NUMPAD_2 || keyValue === '2' || keyCodeValue === 'Digit2' || keyCodeValue === 'Numpad2';
+    if (isKey1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
-    } else if (event.key === KEY_2) {
-      player.equipWeapon(2);
-      updateBattleHUD(player);
-    } else if (event.key === KEY_R) {
-      player.reloadEquippedWeapon();
+    } else if (isKey2) {
+      player.equipWeapon(3);
       updateBattleHUD(player);
     }
   });
@@ -553,7 +619,10 @@ export async function battleOfAinJalutScene(
       return;
     }
 
-    const hitNpc = cameraController?.getClickedNpcInRange(event.x, event.y, npcs, player.getAttackRange());
+    const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
+    const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
+    const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+    const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
     player.attack(hitNpc ?? null);
     updateBattleHUD(player);
     if (hitNpc) {
@@ -563,6 +632,11 @@ export async function battleOfAinJalutScene(
 
   bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
     updateKey: '__ainJalutNpcUpdate',
+    battleStatus: {
+      getCameraEntity: () => player.getCameraEntity(),
+      initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length,
+      onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
+    },
     onNpcAttack: (attacker, target, damage) => {
       target.takeDamage(damage);
       console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);

@@ -137,9 +137,7 @@ export class Player{
     }
 
     public reloadEquippedWeapon(amount: number = 12): void {
-        if (this.equippedWeapon instanceof Gun) {
-            this.equippedWeapon.reload(amount);
-        }
+        void amount;
     }
 
     public attack(target?: npc | null): void {
