@@ -924,7 +924,7 @@ export async function siegeOfConstantinopleScene(
 		}
 	});
 
-	new Smoke(new Vec3 (215, 46.49, -304), 1, app);
+	new Smoke(new Vec3 (215, 46.49, -304), new Vec3 (2, 2, 2), app);
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',
