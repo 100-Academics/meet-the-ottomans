@@ -186,7 +186,8 @@ async function defaultScene(
 
 unloadAll(app);
   // precision on location here is very arbitrary. Four decimals should be enough.
-  const battles = [new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
+  const battles = [
+                   new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
                    new Battle(1, [32.5486, 35.4161], "Battle of Ain Jalut", new Entity()),
                    new Battle(1, [41.0151, 28.9793], "Siege of Constantinople", new Entity()),
                    new Battle(2, [50.4637, 2.1389], "Battle of Agincourt", new Entity()),

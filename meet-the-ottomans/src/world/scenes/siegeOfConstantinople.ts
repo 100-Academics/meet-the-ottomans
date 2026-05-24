@@ -163,7 +163,7 @@ function addBattleSmokePlumes(
 ): void {
 	const smokeAnchors: Vec3[] = [];
 	if (groundEntity) {
-		const candidates: Array<{ x: number; y: number; z: number; score: number }> = [];
+		const candidates: Array<{ x: number; y: number; z: number; width: number; depth: number; score: number }> = [];
 		const visit = (node: Entity) => {
 			const meshInstances = node.render?.meshInstances;
 			if (meshInstances && meshInstances.length > 0) {
@@ -202,6 +202,8 @@ function addBattleSmokePlumes(
 						x: centerX,
 						y: max.y + 0.8,
 						z: centerZ,
+						width,
+						depth,
 						score: height + Math.min(35, footprint * 0.15)
 					});
 				}
@@ -215,7 +217,8 @@ function addBattleSmokePlumes(
 		visit(groundEntity);
 		candidates.sort((a, b) => b.score - a.score);
 
-		const minSpacing = 14;
+		const minSpacing = 10;
+		const maxAnchors = 24;
 		for (const candidate of candidates) {
 			const tooClose = smokeAnchors.some((anchor) => {
 				const dx = anchor.x - candidate.x;
@@ -227,8 +230,35 @@ function addBattleSmokePlumes(
 			}
 
 			smokeAnchors.push(new Vec3(candidate.x, candidate.y, candidate.z));
-			if (smokeAnchors.length >= 8) {
+			if (smokeAnchors.length >= maxAnchors) {
 				break;
+			}
+
+			const rooftopOffsets = [
+				[-0.22, -0.18],
+				[0.24, -0.12],
+				[-0.18, 0.2],
+				[0.18, 0.16]
+			];
+
+			for (const [offsetXFactor, offsetZFactor] of rooftopOffsets) {
+				if (smokeAnchors.length >= maxAnchors) {
+					break;
+				}
+
+				const offsetCandidate = new Vec3(
+					candidate.x + (candidate.width * offsetXFactor),
+					candidate.y,
+					candidate.z + (candidate.depth * offsetZFactor)
+				);
+				const offsetTooClose = smokeAnchors.some((anchor) => {
+					const dx = anchor.x - offsetCandidate.x;
+					const dz = anchor.z - offsetCandidate.z;
+					return Math.sqrt((dx * dx) + (dz * dz)) < minSpacing;
+				});
+				if (!offsetTooClose) {
+					smokeAnchors.push(offsetCandidate);
+				}
 			}
 		}
 	}
@@ -265,7 +295,7 @@ function addBattleSmokePlumes(
 		maxRise: number;
 	}> = [];
 	for (const anchor of smokeAnchors) {
-		for (let puffIndex = 0; puffIndex < 8; puffIndex += 1) {
+		for (let puffIndex = 0; puffIndex < 10; puffIndex += 1) {
 			const puff = new Entity(`smoke-puff-${puffIndex}`);
 			puff.addComponent('render', {
 				type: 'sphere',
@@ -926,6 +956,7 @@ export async function siegeOfConstantinopleScene(
 	});
 
 	new Smoke(new Vec3 (215, 46.49, -304), new Vec3 (2, 2, 2), app);
+	new Smoke(new Vec3 (-184, 47, -314), new Vec3 (2, 2, 2), app);
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',

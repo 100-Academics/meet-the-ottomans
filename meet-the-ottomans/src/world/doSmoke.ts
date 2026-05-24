@@ -146,13 +146,6 @@ export class Smoke {
             spawnPuff();
         }
 
-        const updateKey = '__smokeCloudUpdate';
-        const keyedApp = this.app as AppBase & Record<string, unknown>;
-        const existingUpdate = keyedApp[updateKey];
-        if (typeof existingUpdate === 'function') {
-            this.app.off('update', existingUpdate as (dt: number) => void);
-        }
-
         const updateSmoke = (deltaTime: number) => {
             const dt = Math.max(0, Math.min(deltaTime, 0.05));
             const camera = this.app.root.findByName('camera');
@@ -215,7 +208,6 @@ export class Smoke {
             }
         };
 
-        keyedApp[updateKey] = updateSmoke;
         this.app.on('update', updateSmoke);
 
         return smokeRoot;
