@@ -671,6 +671,7 @@ export async function battleOfAinJalutScene(
 
   bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
     updateKey: '__ainJalutNpcUpdate',
+    getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
     battleStatus: {
       getCameraEntity: () => player.getCameraEntity(),
       initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + AIN_JALUT_BOSS_SPAWN_POINT.length,

@@ -3,6 +3,7 @@ import { loadModel, type LoadModelOptions, type Model } from "../../util/loadMod
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
 import { Templar } from "./troops/templars";
+import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
 import { Christ } from "./bosses/jesus";
@@ -46,6 +47,7 @@ export interface NpcCombatLoopOptions {
     updateKey?: string;
     onNpcAttack?: (attacker: npc, target: npc, damage: number) => void;
     onPlayerAttack?: (attacker: npc, damage: number) => void;
+    getPlayerHealth?: () => { current: number; max: number } | undefined;
     rigidbodySystem?: RigidbodyRaycastSystem;
     groundCollisionEnabled?: boolean;
     groundTag?: string;
@@ -297,6 +299,7 @@ export async function spawnSceneNpcs(
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "kingGeser") {
                 console.log(`Spawning King Geser Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
@@ -304,6 +307,7 @@ export async function spawnSceneNpcs(
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "christ") {
                 console.log(`Spawning Christ Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
@@ -311,6 +315,7 @@ export async function spawnSceneNpcs(
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
@@ -453,6 +458,7 @@ export function bindNpcCombatLoop(
 
         const nowSeconds = Date.now() / 1000;
         const playerEntity = getPlayerEntity();
+        const playerHealth = options.getPlayerHealth?.();
 
         npcPreviousPositions.clear();
         for (const currentNpc of npcs) {
@@ -465,6 +471,9 @@ export function bindNpcCombatLoop(
         syncBattleStatus(battleStatus?.getCameraEntity?.() ?? playerEntity);
 
         for (const currentNpc of npcs) {
+            if (currentNpc instanceof Boss && playerHealth) {
+                currentNpc.setCombatContext(playerHealth.current, playerHealth.max);
+            }
             currentNpc.updateCombatAI(
                 deltaTime,
                 nowSeconds,

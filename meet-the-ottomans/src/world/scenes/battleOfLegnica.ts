@@ -708,6 +708,7 @@ export async function battleOfLegnicaScene(
 
   bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
     updateKey: '__legnicaNpcUpdate',
+    getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
     battleStatus: {
       getCameraEntity: () => player.getCameraEntity(),
       initialTotal: LEGNICA_NPC_SPAWN_POINTS.length + LEGNICA_BOSS_SPAWN_POINT.length,

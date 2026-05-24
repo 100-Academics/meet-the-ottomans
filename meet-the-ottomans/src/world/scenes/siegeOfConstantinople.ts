@@ -1002,6 +1002,7 @@ export async function siegeOfConstantinopleScene(
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',
+		getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
 		obstacleCollisionEnabled: true,
 		obstacleIgnoreTags: ['ground'],
 		disableMongolHordeSpawn: true,
