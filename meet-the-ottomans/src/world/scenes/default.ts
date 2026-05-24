@@ -206,7 +206,7 @@ unloadAll(app);
                    new Battle(6, [30.56, 32.32], "Operation Abirey-Halev", new Entity()),
                    new Battle(7, [33.6667, 69.1833], "Operation Anaconda", new Entity()),
                    new Battle(7, [50.450001, 30.523333], "Battle of Kyiv", new Entity()),
-                   //TODO ONE MORE BATTLE FOR PD 7, ISRAEL-PALESTINE
+                   new Battle(7, [31.285, 34.225], "Rafah Offensive", new Entity())
                   ];
   if (!canvas) {
     throw new Error('Canvas not found');
