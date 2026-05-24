@@ -82,15 +82,16 @@ function createNightSkyTexture(device: AppBase['graphicsDevice'], width = 2048, 
 	}
 
 	const moonX = width * 0.79;
-	const moonY = height * 0.21;
-	const moonRadius = height * 0.09;
+	const moonY = height * 0.28;
+	const moonRadius = height * 0.07;
+	const moonAspect = 1.35;
 	const moonGlow = ctx.createRadialGradient(moonX, moonY, moonRadius * 0.2, moonX, moonY, moonRadius * 2.4);
 	moonGlow.addColorStop(0, 'rgba(255, 245, 212, 0.52)');
 	moonGlow.addColorStop(0.4, 'rgba(203, 222, 255, 0.26)');
 	moonGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
 	ctx.fillStyle = moonGlow;
 	ctx.beginPath();
-	ctx.arc(moonX, moonY, moonRadius * 2.4, 0, Math.PI * 2);
+	ctx.ellipse(moonX, moonY, moonRadius * 2.4 * moonAspect, moonRadius * 2.4, 0, 0, Math.PI * 2);
 	ctx.fill();
 
 	const moonBody = ctx.createRadialGradient(moonX - moonRadius * 0.18, moonY - moonRadius * 0.22, moonRadius * 0.2, moonX, moonY, moonRadius);
@@ -98,7 +99,7 @@ function createNightSkyTexture(device: AppBase['graphicsDevice'], width = 2048, 
 	moonBody.addColorStop(1, 'rgba(208, 214, 226, 0.96)');
 	ctx.fillStyle = moonBody;
 	ctx.beginPath();
-	ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+	ctx.ellipse(moonX, moonY, moonRadius * moonAspect, moonRadius, 0, 0, Math.PI * 2);
 	ctx.fill();
 
 	ctx.fillStyle = 'rgba(175, 183, 198, 0.38)';
@@ -109,7 +110,7 @@ function createNightSkyTexture(device: AppBase['graphicsDevice'], width = 2048, 
 		const craterY = moonY + Math.sin(craterAngle) * craterDistance;
 		const craterRadius = moonRadius * (0.04 + Math.random() * 0.08);
 		ctx.beginPath();
-		ctx.arc(craterX, craterY, craterRadius, 0, Math.PI * 2);
+		ctx.ellipse(craterX, craterY, craterRadius * moonAspect, craterRadius, 0, 0, Math.PI * 2);
 		ctx.fill();
 	}
 
