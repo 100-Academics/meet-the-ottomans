@@ -194,7 +194,7 @@ unloadAll(app);
                    new Battle(2, [41.0151, 28.9793], "Fall of Constantinople", new Entity()),
                    new Battle(3, [30.0667, 31.2167], "Battle of Ridaniya", new Entity()),
                    new Battle(3, [45.183, 9.150], "Battle of Pavia (Italian Wars)", new Entity()),
-                   new Battle(3, [48.2017, 16.3350], "Siege of Vienna", new Entity()), // winged hussars my goat
+                   new Battle(3, [48.2017, 16.3350], "Siege of Vienna", new Entity()), // winged hussars my goat <- even though they decimated the Ottomans they're cool as fuck
                    new Battle(4, [37.2388, -76.5098], "Battle of Yorktown", new Entity()),
                    new Battle(4, [49.128, 16.763], "Battle of Three Emperors", new Entity()),
                    new Battle(4, [39.8309, -77.2333], "Battle of Gettysburg", new Entity()),
@@ -203,7 +203,10 @@ unloadAll(app);
                    new Battle(5, [48.8024, 44.6053], "Battle of Stalingrad", new Entity()),
                    new Battle(6, [40.4833, 127.2000], "Battle of Chosin Reservoir", new Entity()),
                    new Battle(6, [10.82310, 106.62966], "Fall of Saigon", new Entity()),
-                   new Battle(6, [30.56, 32.32], " Operation Abirey-Halev", new Entity())
+                   new Battle(6, [30.56, 32.32], "Operation Abirey-Halev", new Entity()),
+                   new Battle(7, [33.6667, 69.1833], "Operation Anaconda", new Entity()),
+                   new Battle(7, [50.450001, 30.523333], "Battle of Kyiv", new Entity()),
+                   //TODO ONE MORE BATTLE FOR PD 7, ISRAEL-PALESTINE
                   ];
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -291,7 +294,8 @@ unloadAll(app);
             <button id="period3-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1500-1650</button>
             <button id="period4-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1750-1900</button>
             <button id="period5-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1900-1945</button>
-            <button id="period6-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1945-2026</button>
+            <button id="period6-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1945-2000</button>
+            <button id="period7-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">2000-2026</button>
           </div>
         </div>
       </div>
@@ -322,6 +326,7 @@ unloadAll(app);
     document.getElementById('period4-btn') as HTMLButtonElement | null,
     document.getElementById('period5-btn') as HTMLButtonElement | null,
     document.getElementById('period6-btn') as HTMLButtonElement | null,
+    document.getElementById('period7-btn') as HTMLButtonElement | null,
   ];
   const timePeriodText = document.getElementById('time-period') as HTMLElement | null;
   let activeCorrectAnswer = '';
