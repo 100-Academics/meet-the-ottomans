@@ -263,4 +263,12 @@ export class Boss extends npc {
         }
         return didKill;
     }
+
+    protected override getCombatProfile() {
+        const baseProfile = super.getCombatProfile();
+        return {
+            ...baseProfile,
+            detectionRange: Number.POSITIVE_INFINITY
+        };
+    }
 }

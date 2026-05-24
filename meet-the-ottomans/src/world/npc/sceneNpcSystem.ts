@@ -4,6 +4,8 @@ import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
 import { Templar } from "./troops/templars";
 import { GenghisKhan } from "./bosses/genghisKhan";
+import { KingGeser } from "./bosses/kingGeser";
+import { Christ } from "./bosses/jesus";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -292,6 +294,20 @@ export async function spawnSceneNpcs(
             } else if (spawn.type === "genghisKhan") {
                 console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                npcs.push(boss);
+            } else if (spawn.type === "kingGeser") {
+                console.log(`Spawning King Geser Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new KingGeser(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                npcs.push(boss);
+            } else if (spawn.type === "christ") {
+                console.log(`Spawning Christ Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new Christ(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();

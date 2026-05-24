@@ -8,12 +8,4 @@ export class GenghisKhan extends Boss {
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.7;
     }
-
-    protected override getCombatProfile() {
-        const baseProfile = super.getCombatProfile();
-        return {
-            ...baseProfile,
-            detectionRange: Number.POSITIVE_INFINITY
-        };
-    }
 }

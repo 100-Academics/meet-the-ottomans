@@ -37,11 +37,15 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
+import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+import { AIN_JALUT_BOSS_SPAWN_POINT, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
+
+var isBossSpawned = false;
+var isBossSpawning = false;
 
 /**
  * Checks if an entity or any of its parents in the hierarchy has the specified tag.
@@ -264,6 +268,36 @@ function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
   }));
 }
 
+function resetAinJalutBattleState(): void {
+  isBossSpawned = false;
+  isBossSpawning = false;
+}
+
+async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: Array<Awaited<ReturnType<typeof spawnSceneNpcs>>[number]>, groundYFallback: number): Promise<void> {
+  if (isBossSpawned || isBossSpawning) return;
+
+  isBossSpawning = true;
+
+  try {
+    const bossSpawnOptions = {
+      ...DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS,
+      groundYFallback
+    };
+    const spawned = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_BOSS_SPAWN_POINT, bossSpawnOptions);
+    for (const spawnedNpc of spawned) {
+      npcs.push(spawnedNpc);
+      if (spawnedNpc instanceof Boss) {
+        spawnedNpc.drawHealthBar();
+      }
+    }
+    isBossSpawned = true;
+  } catch (error) {
+    console.error('Failed to spawn Ain Jalut boss:', error);
+  } finally {
+    isBossSpawning = false;
+  }
+}
+
 /**
  * Main scene initialization for the Battle of Ain Jalut.
  * Sets up the 3D environment, camera, ground physics, lighting, and handles player spawning.
@@ -278,6 +312,8 @@ export async function battleOfAinJalutScene(
   _onClick: (battle: Battle) => void,
   _sceneNum: number
 ) {
+  resetAinJalutBattleState();
+
   // Clean up any previous scene assets and input listeners
   unloadAll(app);
   app.mouse?.off();
@@ -624,6 +660,9 @@ export async function battleOfAinJalutScene(
     const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
     const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
     player.attack(hitNpc ?? null);
+    if (hitNpc instanceof Boss) {
+      hitNpc.updateHealthBar();
+    }
     updateBattleHUD(player);
     if (hitNpc) {
       console.log(`Hit NPC`);
@@ -634,11 +673,14 @@ export async function battleOfAinJalutScene(
     updateKey: '__ainJalutNpcUpdate',
     battleStatus: {
       getCameraEntity: () => player.getCameraEntity(),
-      initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length,
+      initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + AIN_JALUT_BOSS_SPAWN_POINT.length,
       onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
     },
     onNpcAttack: (attacker, target, damage) => {
       target.takeDamage(damage);
+      if (target instanceof Boss) {
+        target.updateHealthBar();
+      }
       console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
     },
     onPlayerAttack: (attacker, damage) => {
@@ -660,6 +702,11 @@ export async function battleOfAinJalutScene(
 
     const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
     if (remainingFoes.length === 0) {
+      if (!isBossSpawned) {
+        spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+        return;
+      }
+
       removeBattleHUD();
       victoryHandled = true;
       changeScene(canvas, app, 777);

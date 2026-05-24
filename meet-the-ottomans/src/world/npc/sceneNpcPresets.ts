@@ -19,6 +19,24 @@ export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     hitboxRadius: 2.4
 };
 
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    modelPath: "models/npc/boss/KingGeser.glb",
+    modelRotation: new Vec3(0, 0, 0),
+    modelScale: new Vec3(4, 4, 4),
+    modelHeightOffset: 11,
+    facingYawOffsetDegrees: 0,
+    hitboxRadius: 2.4
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    modelPath: "models/npc/boss/Jesus10K.glb",
+    modelRotation: new Vec3(0, 0, 0),
+    modelScale: new Vec3(4, 4, 4),
+    modelHeightOffset: 11,
+    facingYawOffsetDegrees: 0,
+    hitboxRadius: 2.4
+};
+
 export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
     { id: 2, team: "foe", x: 4, z: -2, type: "mongol" },
@@ -43,6 +61,8 @@ export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 ];
 
 export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeser" }];
 
 export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: -12, type: "templar" },
@@ -105,3 +125,5 @@ export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 5, team: "foe", x: 0, z: 0, type: "mongol" },
     // { id: 6, team: "friend", x: -6, z: -4 }
 ];
+
+export const CONSTANTINOPLE_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 12, z: 0, maxHealth: 500, type: "christ" }];
