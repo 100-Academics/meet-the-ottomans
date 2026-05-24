@@ -49,6 +49,7 @@ import { battleOfAinJalutScene } from "./battleOfAinJalut";
 import { siegeOfConstantinopleScene } from "./siegeOfConstantinople";
 import { battleOfAgincourtScene } from "./battleOfAgincourt.js";
 import { siegeOfOrleansScene } from "./siegeOfOrleans.js";
+import { battleOfRidaniyaScene } from "./battleOfRidaniya.js";
 
 const DEFAULT_COLOR = new Color(1, 1, 1);
 const BEAM_COLOR = new Color(0.2, 0.68, 1);
@@ -584,6 +585,9 @@ unloadAll(app);
       }
       else if (battle.getName() === 'Fall of Constantinople') {
         siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum);
+      }
+      else if (battle.getName() === 'Battle of Ridaniya') {
+        battleOfRidaniyaScene(canvas, app, onClickWithCounter, sceneNum);
       }
       onClickWithCounter(battle);
     });

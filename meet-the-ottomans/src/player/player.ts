@@ -125,6 +125,37 @@ export class Player{
         return this.equippedWeapon.getName();
     }
 
+    public getDebugState(): {
+        position: { x: number; y: number; z: number };
+        rotation: { x: number; y: number; z: number };
+        forward: { x: number; y: number; z: number };
+        velocity: { x: number; y: number; z: number };
+        groundHeight: number;
+        playerHeight: number;
+        health: number;
+        maxHealth: number;
+        weapon: string;
+    } {
+        const cameraController = this.cameraController;
+        const position = this.cameraEntity.getPosition();
+        const rotation = this.cameraEntity.getLocalEulerAngles();
+        const forward = this.cameraEntity.forward;
+
+        return {
+            position: { x: position.x, y: position.y, z: position.z },
+            rotation: { x: rotation.x, y: rotation.y, z: rotation.z },
+            forward: { x: forward.x, y: forward.y, z: forward.z },
+            velocity: cameraController
+                ? { x: cameraController.velocity.x, y: cameraController.velocity.y, z: cameraController.velocity.z }
+                : { x: 0, y: 0, z: 0 },
+            groundHeight: cameraController?.groundHeight ?? position.y - 2,
+            playerHeight: cameraController?.playerHeight ?? 2,
+            health: this.health,
+            maxHealth: this.maxHealth,
+            weapon: this.getEquippedWeaponName(),
+        };
+    }
+
     public equipWeapon(slot: 1 | 2 | 3): void {
         if (slot === 1) {
             this.equippedWeapon = this.swordWeapon;

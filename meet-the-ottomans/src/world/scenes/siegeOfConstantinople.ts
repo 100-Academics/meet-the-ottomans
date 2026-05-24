@@ -42,6 +42,7 @@ import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
+import { Smoke } from "../doSmoke";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
 
@@ -922,6 +923,8 @@ export async function siegeOfConstantinopleScene(
 			console.log(`Hit NPC`);
 		}
 	});
+
+	new Smoke(new Vec3 (215, 46.49, -304), 1, app);
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',
