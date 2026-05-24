@@ -22,12 +22,14 @@ export class KingGeser extends Boss {
                 "Only resolve remains."
             ],
             death: [
-                "The throne will remember your hand.",
-                "So be it. I yield this round."
+                "You were a fool for trying",
+                "Be gone."
             ],
             bossDeath: [
                 "A king has fallen.",
-                "The throne is empty for now."
+                "The throne is empty for now.",
+                "The throne will remember your hand.",
+                "So be it. I yield this round."
             ]
         });
     }

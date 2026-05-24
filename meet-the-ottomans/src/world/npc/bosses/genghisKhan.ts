@@ -26,8 +26,8 @@ export class GenghisKhan extends Boss {
                 "One of us falls here."
             ],
             death: [
-                "The Mongol Empire remembers this day.",
-                "My war is over... for now."
+                "Down with you, treacherous dog!",
+                "Stand no longer."
             ],
             bossDeath: [
                 "Genghis Khan falls, but the horde endures.",
