@@ -7,13 +7,32 @@ export class GenghisKhan extends Boss {
         super(id, maxHealth, entity, "Genghis Khan");
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.7;
-    }
-
-    protected override getCombatProfile() {
-        const baseProfile = super.getCombatProfile();
-        return {
-            ...baseProfile,
-            detectionRange: Number.POSITIVE_INFINITY
-        };
+        this.setTauntSet({
+            highHealth: [
+                "You cannot defeat the great Genghis Khan!",
+                "Stand down.",
+                "Kneel before me."
+            ],
+            bossLowPlayerHigh: [
+                "Foolishness, fighter, foolishness!",
+                "You have me bleeding, but not beaten."
+            ],
+            playerLowBossHigh: [
+                "You challenge the might of the Mongol Empire!?",
+                "I will show you no mercy!"
+            ],
+            bothLow: [
+                "Down!",
+                "One of us falls here."
+            ],
+            death: [
+                "Down with you, treacherous dog!",
+                "Stand no longer."
+            ],
+            bossDeath: [
+                "Genghis Khan falls, but the horde endures.",
+                "You have slain a king of war."
+            ]
+        });
     }
 }

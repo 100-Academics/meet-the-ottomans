@@ -5,6 +5,7 @@ import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
 import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts";
 import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScreen.ts";
+import { Boss } from "./world/npc/bosses/boss.ts";
 import { unloadAll } from "./util/unloadall.ts";
 
 const SCENE_CLEANUP_HANDLERS_KEY = "__sceneCleanupHandlers";
@@ -92,6 +93,7 @@ export async function changeScene(
   // Clear transient UI and runtime listeners so a scene switch starts clean.
   hideDeathScreen();
   hideVictoryScreen();
+  Boss.setActiveBoss(null);
   runSceneCleanupHandlers(app);
   const overlay = ensureOverlayRoot();
   overlay.replaceChildren();
@@ -112,10 +114,11 @@ export async function changeScene(
       message: "You have failed to bring glory to the Ottoman Empire. Game Over."
     });
   } else if (sceneNum === 777) {
+    const victoryMessage = Boss.consumeLastBossDeathTaunt() ?? "Victory! All enemies defeated.";
     return await showVictoryScreen({
       app,
       onMainMenu: () => changeScene(canvas, app, 0),
-      message: "Victory! All enemies defeated."
+      message: victoryMessage
     });
   }
 

@@ -39,12 +39,16 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
+import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-import { CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+import { CONSTANTINOPLE_BOSS_SPAWN_POINT, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
 import { Smoke } from "../doSmoke";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
+
+var isBossSpawned = false;
+var isBossSpawning = false;
 
 function createNightSkyTexture(device: AppBase['graphicsDevice'], width = 2048, height = 1024): Texture {
 	const canvas = document.createElement('canvas');
@@ -545,6 +549,11 @@ function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ
 	return { minX, maxX, minZ, maxZ, maxY };
 }
 
+function resetConstantinopleBattleState(): void {
+	isBossSpawned = false;
+	isBossSpawning = false;
+}
+
 /**
  * Main scene initialization for the Siege of Constantinople.
  * Sets up the 3D environment, camera, ground physics, lighting, and handles player spawning.
@@ -559,6 +568,8 @@ export async function siegeOfConstantinopleScene(
 	_onClick: (battle: Battle) => void,
 	_sceneNum: number
 ) {
+	resetConstantinopleBattleState();
+
 	// Clean up any previous scene assets and input listeners
 	unloadAll(app);
 	app.mouse?.off();
@@ -892,12 +903,40 @@ export async function siegeOfConstantinopleScene(
 		waveSpawnPoints.push(CONSTANTINOPLE_NPC_SPAWN_POINTS);
 	}
 
-	const totalWaveFoes = waveSpawnPoints.reduce((sum, wave) => sum + wave.length, 0);
+	const totalWaveFoes = waveSpawnPoints.reduce((sum, wave) => sum + wave.length, 0) + CONSTANTINOPLE_BOSS_SPAWN_POINT.length;
 	type SpawnedNpc = Awaited<ReturnType<typeof spawnSceneNpcs>>[number];
 	let npcs: SpawnedNpc[] = [];
 	let spawnedWaveFoes = 0;
 	let currentWaveIndex = 0;
 	let waveSpawnInProgress = false;
+
+	const spawnBoss = async (): Promise<void> => {
+		if (isBossSpawned || isBossSpawning) {
+			return;
+		}
+
+		isBossSpawning = true;
+
+		try {
+			const bossSpawnOptions = {
+				...DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS,
+				groundYFallback: respawnGroundY
+			};
+			const spawned = await spawnSceneNpcs(app, rigidbodySystem, CONSTANTINOPLE_BOSS_SPAWN_POINT, bossSpawnOptions);
+			for (const spawnedNpc of spawned) {
+				npcs.push(spawnedNpc);
+				if (spawnedNpc instanceof Boss) {
+					spawnedNpc.drawHealthBar();
+				}
+			}
+			spawnedWaveFoes += CONSTANTINOPLE_BOSS_SPAWN_POINT.length;
+			isBossSpawned = true;
+		} catch (error) {
+			console.error('[NPC] Failed to spawn Constantinople boss', error);
+		} finally {
+			isBossSpawning = false;
+		}
+	};
 
 	const spawnWave = async (waveIndex: number): Promise<SpawnedNpc[]> => {
 		const wavePoints = waveSpawnPoints[waveIndex] ?? [];
@@ -949,6 +988,9 @@ export async function siegeOfConstantinopleScene(
 		const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
 		const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
 		player.attack(hitNpc ?? null);
+		if (hitNpc instanceof Boss) {
+			hitNpc.updateHealthBar();
+		}
 		updateBattleHUD(player);
 		if (hitNpc) {
 			console.log(`Hit NPC`);
@@ -960,6 +1002,7 @@ export async function siegeOfConstantinopleScene(
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 		updateKey: '__constantinopleNpcUpdate',
+		getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
 		obstacleCollisionEnabled: true,
 		obstacleIgnoreTags: ['ground'],
 		disableMongolHordeSpawn: true,
@@ -976,6 +1019,9 @@ export async function siegeOfConstantinopleScene(
 		},
 		onNpcAttack: (attacker, target, damage) => {
 			target.takeDamage(damage);
+			if (target instanceof Boss) {
+				target.updateHealthBar();
+			}
 			console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
 		},
 		onPlayerAttack: (attacker, damage) => {
@@ -1022,6 +1068,11 @@ export async function siegeOfConstantinopleScene(
 		if (remainingFoes.length === 0) {
 			if (currentWaveIndex + 1 < waveSpawnPoints.length) {
 				spawnNextWave();
+				return;
+			}
+
+			if (!isBossSpawned) {
+				spawnBoss().catch((error) => console.error(error));
 				return;
 			}
 

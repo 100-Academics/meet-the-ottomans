@@ -7,6 +7,7 @@ import { Weapon } from './weapon/weapon';
 import { Gun } from './weapon/gun';
 import { Sword } from './weapon/sword';
 import { Bow } from './weapon/bow';
+import { Boss } from '../world/npc/bosses/boss';
 
 
 export class Player{
@@ -99,12 +100,13 @@ export class Player{
         if (!isAlive) {
             console.log("You have failed to bring glory to the Ottoman Empire. Game Over.");
             const canvas = this.app.graphicsDevice.canvas as HTMLCanvasElement | undefined;
+            const bossTaunt = Boss.getActivePlayerDeathTaunt();
             showDeathScreen({
                 app: this.app,
                 timePeriod: this.deathQuizTimePeriod,
                 onRestart: this.restartBattle,
                 onMainMenu: canvas ? () => void changeScene(canvas, this.app, 0) : undefined,
-                message: 'You have failed to bring glory to the Ottoman Empire. Game Over.'
+                message: bossTaunt ?? 'You have failed to bring glory to the Ottoman Empire. Game Over.'
             });
         }
     }
