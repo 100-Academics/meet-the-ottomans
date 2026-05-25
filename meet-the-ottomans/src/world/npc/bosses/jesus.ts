@@ -21,7 +21,7 @@ export class Christ extends Boss {
             bothLow: [
                 "We are both near the edge.",
                 "Endurance is all that remains.",
-                "If I fall here, I'll call my Father to finish the job."
+                "If I fall here, my Father will finish the job."
             ],
             death: [
                 "Forgive this moment.",

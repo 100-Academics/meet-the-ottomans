@@ -12,7 +12,8 @@ export class Templar extends npc {
         super(id, "foe", 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
-        this.aiConfig.detectionRange = 60;
+        this.aiConfig.detectionRange = Number.MAX_VALUE;
+        this.aiConfig.attackCooldown = 3;
     }
 
     protected override getCombatProfile() {
