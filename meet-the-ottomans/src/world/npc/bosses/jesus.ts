@@ -11,7 +11,8 @@ export class Christ extends Boss {
             ],
             bossLowPlayerHigh: [
                 "Suffering is not the same as defeat.",
-                "My path is not ended yet."
+                "My path is not ended yet.",
+                "I'll show you divine justice!"
             ],
             playerLowBossHigh: [
                 "Your burden grows heavier.",
@@ -19,7 +20,8 @@ export class Christ extends Boss {
             ],
             bothLow: [
                 "We are both near the edge.",
-                "Endurance is all that remains."
+                "Endurance is all that remains.",
+                "If I fall here, I'll call my Father to finish the job."
             ],
             death: [
                 "Forgive this moment.",
