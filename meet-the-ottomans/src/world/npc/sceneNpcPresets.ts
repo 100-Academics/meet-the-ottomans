@@ -1,8 +1,15 @@
 import { Vec3 } from "playcanvas";
-import type { NpcSceneSpawnOptions, NpcSpawnPoint } from "./sceneNpcSystem";
+import type { NpcSceneSpawnOptions, NpcSpawnOverrides, NpcSpawnPoint } from "./sceneNpcSystem";
 
-export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
-    modelPath: "test/armored_king.glb",
+const NPC_MODEL_PATHS = {
+    troop: "test/armored_king.glb",
+    genghisKhan: "models/npc/boss/genghis_khan.glb",
+    kingGeser: "models/npc/boss/KingGeser.glb",
+    christ: "models/npc/boss/Jesus10K.glb"
+} as const;
+
+const DEFAULT_TROOP_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelPath: NPC_MODEL_PATHS.troop,
     modelRotation: new Vec3(-90, 0, 0),
     modelScale: new Vec3(2, 2, 2),
     modelHeightOffset: 2,
@@ -10,8 +17,8 @@ export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     hitboxRadius: 1.2
 };
 
-export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
-    modelPath: "models/npc/boss/genghis_khan.glb",
+const KHAN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelPath: NPC_MODEL_PATHS.genghisKhan,
     modelRotation: new Vec3(-90, 0, 0),
     modelScale: new Vec3(4, 4, 4),
     modelHeightOffset: 11,
@@ -19,8 +26,8 @@ export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     hitboxRadius: 2.4
 };
 
-export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
-    modelPath: "models/npc/boss/KingGeser.glb",
+const KING_GESER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelPath: NPC_MODEL_PATHS.kingGeser,
     modelRotation: new Vec3(0, 0, 0),
     modelScale: new Vec3(4, 4, 4),
     modelHeightOffset: 11,
@@ -28,13 +35,41 @@ export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     hitboxRadius: 2.4
 };
 
-export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
-    modelPath: "models/npc/boss/Jesus10K.glb",
+const CHRIST_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelPath: NPC_MODEL_PATHS.christ,
     modelRotation: new Vec3(0, 0, 0),
     modelScale: new Vec3(4, 4, 4),
     modelHeightOffset: 11,
     facingYawOffsetDegrees: 0,
     hitboxRadius: 2.4
+};
+
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.troop,
+    templar: NPC_MODEL_PATHS.troop,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ
+};
+
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...DEFAULT_TROOP_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS
+};
+
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS
 };
 
 export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
