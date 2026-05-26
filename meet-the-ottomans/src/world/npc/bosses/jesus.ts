@@ -6,20 +6,19 @@ export class Christ extends Boss {
         super(id, maxHealth, entity, "Jesus Christ");
         this.setTauntSet({
             highHealth: [
-                "Peace is not your shield.",
-                "You have come far to fall here."
+                "You have come far to fall here.",
+                "I am the way, the truth, and the life. Stand down."
             ],
             bossLowPlayerHigh: [
-                "Suffering is not the same as defeat.",
-                "My path is not ended yet.",
-                "I'll show you divine justice!"
+                "I'll show you divine justice!",
+                "I have given my life for Man before, and I will not do it again."
             ],
             playerLowBossHigh: [
                 "Your burden grows heavier.",
                 "You walk a harder road now."
             ],
             bothLow: [
-                "We are both near the edge.",
+                "I have felled those stronger than you.",
                 "Endurance is all that remains.",
                 "If I fall here, my Father will finish the job."
             ],
@@ -28,7 +27,7 @@ export class Christ extends Boss {
             ],
             bossDeath: [
                 "The body falls, but the path remains.",
-                "A final breath, and then silence."
+                "Forgive me, my children."
             ]
         });
     }
