@@ -24,8 +24,7 @@ export class Christ extends Boss {
                 "If I fall here, my Father will finish the job."
             ],
             death: [
-                "Forgive this moment.",
-                "The lesson is finished."
+                "I forgive you."
             ],
             bossDeath: [
                 "The body falls, but the path remains.",
