@@ -495,7 +495,7 @@ export async function battleOfPaviaScene(
 			player.equipWeapon(1);
 			updateBattleHUD(player);
 		} else if (isKey2) {
-			player.equipWeapon(3);
+			player.equipWeapon(2);
 			updateBattleHUD(player);
 		}
 	});

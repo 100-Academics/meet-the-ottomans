@@ -674,7 +674,7 @@ export async function siegeOfViennaScene(
 			player.equipWeapon(1);
 			updateBattleHUD(player);
 		} else if (event.key === KEY_2) {
-			player.equipWeapon(3); // equip bow; too early of a time pd for gun
+			player.equipWeapon(2); // equip bow; too early of a time pd for gun
 			updateBattleHUD(player);
 		}
 	});
