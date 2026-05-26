@@ -33,7 +33,7 @@ export interface NpcSpawnPoint {
     type?: string; // Optional type field for different NPC classes (e.g., "mongol")
 }
 
-export interface NpcSceneSpawnOptions {
+export interface NpcSpawnOverrides {
     modelPath?: string;
     modelRotation?: Vec3;
     modelScale?: Vec3;
@@ -41,6 +41,11 @@ export interface NpcSceneSpawnOptions {
     facingYawOffsetDegrees?: number;
     hitboxRadius?: number;
     groundYFallback?: number;
+}
+
+export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
+    typeModelPaths?: Record<string, string>;
+    typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
 }
 
 export interface NpcCombatLoopOptions {
@@ -237,13 +242,15 @@ export async function spawnSceneNpcs(
     spawnPoints: NpcSpawnPoint[],
     options: NpcSceneSpawnOptions = {}
 ): Promise<npc[]> {
-    const modelPath = options.modelPath ?? "test/armored_king.glb";
-    const modelRotation = options.modelRotation ?? new Vec3(-90, 0, 0);
-    const modelScale = options.modelScale ?? new Vec3(2, 2, 2);
-    const modelHeightOffset = options.modelHeightOffset ?? 2;
-    const facingYawOffsetDegrees = options.facingYawOffsetDegrees ?? 180;
-    const hitboxRadius = options.hitboxRadius ?? 1.2;
-    const groundYFallback = options.groundYFallback;
+    const fallbackModelPath = options.modelPath ?? "test/armored_king.glb";
+    const fallbackModelRotation = options.modelRotation ?? new Vec3(-90, 0, 0);
+    const fallbackModelScale = options.modelScale ?? new Vec3(2, 2, 2);
+    const fallbackModelHeightOffset = options.modelHeightOffset ?? 2;
+    const fallbackFacingYawOffsetDegrees = options.facingYawOffsetDegrees ?? 180;
+    const fallbackHitboxRadius = options.hitboxRadius ?? 1.2;
+    const fallbackGroundY = options.groundYFallback;
+    const typeModelPaths = options.typeModelPaths ?? {};
+    const typeSpawnOverrides = options.typeSpawnOverrides ?? {};
     const groundTag = "ground";
     const groundProbeHeight = 300;
     const groundProbeDepth = 300;
@@ -253,6 +260,16 @@ export async function spawnSceneNpcs(
 
     for (const spawn of spawnPoints) {
         try {
+            const spawnOverrides = spawn.type ? typeSpawnOverrides[spawn.type] : undefined;
+            const modelPath = spawnOverrides?.modelPath
+                ?? (spawn.type ? typeModelPaths[spawn.type] : undefined)
+                ?? fallbackModelPath;
+            const modelRotation = spawnOverrides?.modelRotation ?? fallbackModelRotation;
+            const modelScale = spawnOverrides?.modelScale ?? fallbackModelScale;
+            const modelHeightOffset = spawnOverrides?.modelHeightOffset ?? fallbackModelHeightOffset;
+            const facingYawOffsetDegrees = spawnOverrides?.facingYawOffsetDegrees ?? fallbackFacingYawOffsetDegrees;
+            const hitboxRadius = spawnOverrides?.hitboxRadius ?? fallbackHitboxRadius;
+            const groundYFallback = spawnOverrides?.groundYFallback ?? fallbackGroundY;
             const npcSpawnY = getSpawnY(
                 rigidbodySystem,
                 spawn.x,
