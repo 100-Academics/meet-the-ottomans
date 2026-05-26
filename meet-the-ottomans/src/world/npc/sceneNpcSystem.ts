@@ -45,6 +45,7 @@ export interface NpcSpawnOverrides {
 
 export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
     typeModelPaths?: Record<string, string>;
+    typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
 }
 
 export interface NpcCombatLoopOptions {
@@ -249,6 +250,7 @@ export async function spawnSceneNpcs(
     const fallbackHitboxRadius = options.hitboxRadius ?? 1.2;
     const fallbackGroundY = options.groundYFallback;
     const typeModelPaths = options.typeModelPaths ?? {};
+    const typeSpawnOverrides = options.typeSpawnOverrides ?? {};
     const groundTag = "ground";
     const groundProbeHeight = 300;
     const groundProbeDepth = 300;
@@ -258,13 +260,16 @@ export async function spawnSceneNpcs(
 
     for (const spawn of spawnPoints) {
         try {
-            const modelPath = (spawn.type ? typeModelPaths[spawn.type] : undefined) ?? fallbackModelPath;
-            const modelRotation = fallbackModelRotation;
-            const modelScale = fallbackModelScale;
-            const modelHeightOffset = fallbackModelHeightOffset;
-            const facingYawOffsetDegrees = fallbackFacingYawOffsetDegrees;
-            const hitboxRadius = fallbackHitboxRadius;
-            const groundYFallback = fallbackGroundY;
+            const spawnOverrides = spawn.type ? typeSpawnOverrides[spawn.type] : undefined;
+            const modelPath = spawnOverrides?.modelPath
+                ?? (spawn.type ? typeModelPaths[spawn.type] : undefined)
+                ?? fallbackModelPath;
+            const modelRotation = spawnOverrides?.modelRotation ?? fallbackModelRotation;
+            const modelScale = spawnOverrides?.modelScale ?? fallbackModelScale;
+            const modelHeightOffset = spawnOverrides?.modelHeightOffset ?? fallbackModelHeightOffset;
+            const facingYawOffsetDegrees = spawnOverrides?.facingYawOffsetDegrees ?? fallbackFacingYawOffsetDegrees;
+            const hitboxRadius = spawnOverrides?.hitboxRadius ?? fallbackHitboxRadius;
+            const groundYFallback = spawnOverrides?.groundYFallback ?? fallbackGroundY;
             const npcSpawnY = getSpawnY(
                 rigidbodySystem,
                 spawn.x,

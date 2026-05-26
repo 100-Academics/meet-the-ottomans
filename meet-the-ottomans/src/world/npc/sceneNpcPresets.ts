@@ -1,22 +1,20 @@
 import { Vec3 } from "playcanvas";
 import type { NpcSceneSpawnOptions, NpcSpawnOverrides, NpcSpawnPoint } from "./sceneNpcSystem";
 
+// Central list of model asset paths used by NPC types.
+// How to add a new model:
+// 1) Put the .glb under src/assets (the loader resolves relative to that).
+// 2) Add the path here.
+// 3) Map your NPC type to it in NPC_TYPE_MODEL_PATHS below.
 const NPC_MODEL_PATHS = {
-    troop: "test/armored_king.glb",
+    mongolTroop: "test/armored_king.glb",
+    templarTroop: "models/npc/Crusader.glb",
     genghisKhan: "models/npc/boss/genghis_khan.glb",
     kingGeser: "models/npc/boss/KingGeser.glb",
     christ: "models/npc/boss/Jesus10K.glb"
 } as const;
 
-const DEFAULT_TROOP_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-    modelPath: NPC_MODEL_PATHS.troop,
-    modelRotation: new Vec3(-90, 0, 0),
-    modelScale: new Vec3(2, 2, 2),
-    modelHeightOffset: 2,
-    facingYawOffsetDegrees: 180,
-    hitboxRadius: 1.2
-};
-
+// Boss-specific defaults. These override size/rotation/offset for each boss model.
 const KHAN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     modelPath: NPC_MODEL_PATHS.genghisKhan,
     modelRotation: new Vec3(-90, 0, 0),
@@ -44,34 +42,55 @@ const CHRIST_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     hitboxRadius: 2.4
 };
 
+// Non-boss per-type overrides (used in typeSpawnOverrides below).
+const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
 export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
-    mongol: NPC_MODEL_PATHS.troop,
-    templar: NPC_MODEL_PATHS.troop,
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
     genghisKhan: NPC_MODEL_PATHS.genghisKhan,
     kingGeser: NPC_MODEL_PATHS.kingGeser,
     christ: NPC_MODEL_PATHS.christ
 };
 
-export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
-    ...DEFAULT_TROOP_SPAWN_OVERRIDES,
-    typeModelPaths: NPC_TYPE_MODEL_PATHS
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES
 };
 
+// Shared battle options applied in scenes. Intentionally no generic troop defaults.
+// How to customize per type: add type-specific overrides in scene code or extend
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
 export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     ...KHAN_BOSS_SPAWN_OVERRIDES,
-    typeModelPaths: NPC_TYPE_MODEL_PATHS
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
 
 export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     ...KING_GESER_BOSS_SPAWN_OVERRIDES,
-    typeModelPaths: NPC_TYPE_MODEL_PATHS
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
 
 export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     ...CHRIST_BOSS_SPAWN_OVERRIDES,
-    typeModelPaths: NPC_TYPE_MODEL_PATHS
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
 
+// Spawn points for each scene. Set `type` to pick a model and NPC class.
+// How to add a new spawn: add a new entry with id/team/x/z/type.
 export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
     // { id: 2, team: "foe", x: 4, z: -2, type: "mongol" },
@@ -95,10 +114,13 @@ export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     // { id: 20, team: "foe", x: 24, z: -4, type: "mongol" }
 ];
 
+// Boss spawn point for Legnica.
 export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
 
+// Boss spawn point for Ain Jalut.
 export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeser" }];
 
+// Constantinople battle NPC spawns (Templars).
 export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: -12, type: "templar" },
     // { id: 2, team: "foe", x: 9, z: -12, type: "templar" },
@@ -152,6 +174,7 @@ export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     // { id: 50, team: "foe", x: 18, z: 15, type: "templar" }
 ];
 
+// Ain Jalut battle NPC spawns (Mongols).
 export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 0, z: 0, type: "mongol" },
     // { id: 2, team: "friend", x: -8, z: 2 },
@@ -161,4 +184,5 @@ export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     // { id: 6, team: "friend", x: -6, z: -4 }
 ];
 
+// Boss spawn point for Constantinople.
 export const CONSTANTINOPLE_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 12, z: 0, maxHealth: 500, type: "christ" }];
