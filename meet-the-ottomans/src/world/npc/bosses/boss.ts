@@ -60,6 +60,7 @@ export class Boss extends npc {
         if (title && title.trim()) {
             this.title = title.trim();
         }
+        this.aiConfig.detectionRange = Number.MAX_VALUE;
     }
 
     public static setActiveBoss(boss: Boss | null): void {
@@ -447,7 +448,7 @@ export class Boss extends npc {
         const baseProfile = super.getCombatProfile();
         return {
             ...baseProfile,
-            detectionRange: Number.POSITIVE_INFINITY
+            detectionRange: Number.MAX_VALUE
         };
     }
 }
