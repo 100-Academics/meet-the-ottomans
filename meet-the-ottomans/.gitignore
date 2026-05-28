@@ -16,6 +16,12 @@ dist-ssr
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Generated assets from Tower_00001_.7z
+src/assets/models/npc/boss/Tower_00001_.glb
+src/assets/models/npc/boss/.tower_00001_extracted.json
+public/models/npc/boss/Tower_00001_.glb
+public/models/npc/boss/.tower_00001_extracted.json
 .DS_Store
 *.suo
 *.ntvs*
