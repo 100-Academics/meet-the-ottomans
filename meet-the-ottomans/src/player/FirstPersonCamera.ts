@@ -164,30 +164,66 @@ export class FirstPersonCamera extends ScriptType {
         }
     }
 
-    private tryMoveDash(position: Vec3, direction: Vec3, speed: number, dt: number, currentGroundHeight?: number): void {
+    private tryMoveDash(
+        position: Vec3,
+        direction: Vec3,
+        speed: number,
+        dt: number,
+        currentGroundHeight: number | undefined,
+        onGround: boolean
+    ): void {
         const movement = direction.clone().mulScalar(speed * dt);
-        const proposedPos = position.clone().add(movement);
-
-        if (!this.hasGroundSupport(proposedPos)) {
+        const distance = movement.length();
+        if (distance <= 0.0001) {
             return;
         }
 
-        if (this.isFiniteNumber(currentGroundHeight) && !this.canStepTo(currentGroundHeight, proposedPos)) {
-            return;
-        }
+        const maxDashStep = Math.max(0.75, this.groundSampleRadius * 4);
+        const steps = Math.max(1, Math.ceil(distance / maxDashStep));
+        const stepVector = movement.clone().mulScalar(1 / steps);
+        const allowGroundChecks = onGround;
+        let stepGroundHeight = allowGroundChecks && this.isFiniteNumber(currentGroundHeight)
+            ? currentGroundHeight
+            : undefined;
+        const allowGroundSnap = allowGroundChecks && direction.y <= 0.01;
 
-        // Check collision only for horizontal components to allow upward dashing
-        const horizontalCheck = new Vec3(proposedPos.x, position.y, proposedPos.z);
-        let blocked = this.isBlocked(position, horizontalCheck);
-        if (!blocked && Math.abs(proposedPos.y - position.y) > 0.001) {
-            const elevatedCurrent = position.clone();
-            elevatedCurrent.y = proposedPos.y;
-            const elevatedNext = proposedPos.clone();
-            elevatedNext.y = proposedPos.y;
-            blocked = this.isBlocked(elevatedCurrent, elevatedNext);
-        }
+        // Sub-step dash movement to keep ground checks stable on uneven terrain.
+        for (let step = 0; step < steps; step += 1) {
+            const currentStepGroundHeight = stepGroundHeight;
+            const proposedPos = position.clone().add(stepVector);
 
-        if (!blocked) {
+            if (allowGroundChecks && this.isFiniteNumber(stepGroundHeight)) {
+                const nextGroundHeight = this.getStepGroundHeight(stepGroundHeight, proposedPos);
+                if (!this.isFiniteNumber(nextGroundHeight)) {
+                    return;
+                }
+                stepGroundHeight = nextGroundHeight;
+                if (allowGroundSnap) {
+                    proposedPos.y = stepGroundHeight + this.playerHeight;
+                }
+            } else if (allowGroundChecks && !this.hasGroundSupport(proposedPos)) {
+                return;
+            }
+
+            // Check collision only for horizontal components to allow upward dashing
+            const currentCheck = position.clone();
+            if (allowGroundSnap && this.isFiniteNumber(currentStepGroundHeight)) {
+                currentCheck.y = currentStepGroundHeight + this.playerHeight;
+            }
+            const horizontalCheck = new Vec3(proposedPos.x, currentCheck.y, proposedPos.z);
+            let blocked = this.isBlocked(currentCheck, horizontalCheck);
+            if (!blocked && Math.abs(proposedPos.y - currentCheck.y) > 0.001) {
+                const elevatedCurrent = currentCheck.clone();
+                elevatedCurrent.y = proposedPos.y;
+                const elevatedNext = proposedPos.clone();
+                elevatedNext.y = proposedPos.y;
+                blocked = this.isBlocked(elevatedCurrent, elevatedNext);
+            }
+
+            if (blocked) {
+                return;
+            }
+
             position.copy(proposedPos);
         }
     }
@@ -542,18 +578,20 @@ export class FirstPersonCamera extends ScriptType {
         return bestHitY;
     }
 
+    private getStepGroundHeight(currentGroundHeight: number, nextPos: Vec3): number | undefined {
+        const maxAllowedY = this.maxStepHeight <= 0
+            ? Number.POSITIVE_INFINITY
+            : currentGroundHeight + this.maxStepHeight + this.groundedEpsilon;
+        return this.sampleGroundHeight(nextPos, maxAllowedY, currentGroundHeight);
+    }
+
     private canStepTo(currentGroundHeight: number, nextPos: Vec3): boolean {
         if (this.maxStepHeight <= 0) {
             return true;
         }
 
-        const highestNextGround = this.sampleGroundHeight(nextPos, Number.POSITIVE_INFINITY);
-        if (!this.isFiniteNumber(highestNextGround)) {
-            return false;
-        }
-
-        const maxStepY = currentGroundHeight + this.maxStepHeight + this.groundedEpsilon;
-        return highestNextGround <= maxStepY;
+        const nextGroundHeight = this.getStepGroundHeight(currentGroundHeight, nextPos);
+        return this.isFiniteNumber(nextGroundHeight);
     }
 
     private hasGroundSupport(position: Vec3): boolean {
@@ -840,7 +878,7 @@ export class FirstPersonCamera extends ScriptType {
 
         if (this.wallRunActive) {
             if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, safeGroundHeight);
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, safeGroundHeight, false);
                 this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
             } else {
                 const baseDir = walkForward;
@@ -882,7 +920,7 @@ export class FirstPersonCamera extends ScriptType {
             }
         } else {
             if (this.dashTimeRemaining > 0 && this.dashDirection.lengthSq() > 0) {
-                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, safeGroundHeight);
+                this.tryMoveDash(pos, this.dashDirection, this.dashSpeed, dt, safeGroundHeight, onGround);
                 this.dashTimeRemaining = Math.max(0, this.dashTimeRemaining - dt);
             } else if (this.slideActive && this.slideDirection.lengthSq() > 0) {
                 this.tryMoveHorizontally(
