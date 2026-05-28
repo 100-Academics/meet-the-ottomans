@@ -1,4 +1,4 @@
-import { Entity, Vec3 } from "playcanvas";
+    import { Entity, Vec3 } from "playcanvas";
 
 type NpcTeam = "friend" | "foe";
 type NpcState = "idle" | "chase" | "attack" | "dead";
