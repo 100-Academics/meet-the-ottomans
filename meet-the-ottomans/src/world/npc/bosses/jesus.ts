@@ -3,17 +3,27 @@ import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } 
 import type { npc } from "../npc";
 
 export class Christ extends Boss {
-    private readonly holyRayDamage = 28;
+    private readonly holySpireDamage = 28;
+    private readonly holySpireRange = 160;
+    private readonly holySpireCooldown = 4.0;
+    private readonly holySpireWindupMs = 500;
+    private readonly holySpireTravelMs = 600;
+    private readonly holySpireHitRadius = 6;
+    private readonly holySpireBeamRadius = 3.5;
+    private readonly holySpireOvershoot = 100;
+    private readonly holySpireMaterial = this.createHolySpireMaterial();
+    private nextHolySpireAtSeconds = 0;
+
     private readonly holyRayRange = 160;
-    private readonly holyRayCooldown = 4.0;
-    private readonly holyRayWindupMs = 500;
-    private readonly holyRayTravelMs = 600;
-    private readonly holyRayHitRadius = 6;
-    private readonly holyRayBeamRadius = 3.5;
-    private readonly holyRayOvershoot = 100;
+    private readonly holyRayCooldown = 5.5;
+    private readonly holyRayWindupMs = 450;
+    private readonly holyRayTravelMs = 850;
+    private readonly holyRayHitRadius = 6.5;
+    private readonly holyRayBeamRadius = 4.2;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
     private nextHolyRayAtSeconds = 0;
-    private activeHolyRays = new Set<{ beamRoot: Entity; hasHit: boolean }>();
+
+    private activeHolyBeams = new Set<{ beamRoot: Entity; hasHit: boolean }>();
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Christ")) {
         super(id, maxHealth, entity, "Jesus Christ");
@@ -43,17 +53,17 @@ export class Christ extends Boss {
                 "Forgive me, my children."
             ]
         });
-        this.aiConfig.attackRange = this.holyRayRange;
-        this.aiConfig.attackCooldown = this.holyRayCooldown;
+        this.aiConfig.attackRange = Math.max(this.holySpireRange, this.holyRayRange);
+        this.aiConfig.attackCooldown = Math.min(this.holySpireCooldown, this.holyRayCooldown);
     }
 
     protected override getCombatProfile() {
         const base = super.getCombatProfile();
         return {
             ...base,
-            attackDamage: this.holyRayDamage,
-            attackRange: this.holyRayRange,
-            attackCooldown: this.holyRayCooldown,
+            attackDamage: this.holySpireDamage,
+            attackRange: Math.max(this.holySpireRange, this.holyRayRange),
+            attackCooldown: Math.min(this.holySpireCooldown, this.holyRayCooldown),
             detectionRange: Number.MAX_VALUE
         };
     }
@@ -83,7 +93,7 @@ export class Christ extends Boss {
         const attackRange = Math.max(0.5, profile.attackRange);
         const clampedDeltaTime = Math.max(0, Math.min(deltaTime, 0.05));
 
-        if (this.activeHolyRays.size > 0) {
+        if (this.activeHolyBeams.size > 0) {
             super.updateAI(clampedDeltaTime, targetEntity, currentTimeSeconds, undefined, profile);
             return;
         }
@@ -104,32 +114,59 @@ export class Christ extends Boss {
             return;
         }
 
-        if (currentTimeSeconds < this.nextHolyRayAtSeconds) {
+        const spireReady = currentTimeSeconds >= this.nextHolySpireAtSeconds;
+        const rayReady = currentTimeSeconds >= this.nextHolyRayAtSeconds;
+
+        if (!spireReady && !rayReady) {
             return;
         }
 
-        this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
         const shotOrigin = myPos.clone();
         const shotTarget = targetPos.clone();
-        const rayEnd = this.calculateRayEnd(shotOrigin, shotTarget);
-        this.fireHolyRay(targetEntity, shotOrigin, rayEnd, onAttack);
+
+        const chooseRay = rayReady && (!spireReady || Math.random() < 0.5);
+
+        if (chooseRay) {
+            this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
+            const rayEnd = this.calculateHolyRayEnd(shotOrigin, shotTarget);
+            this.fireHolyRay(targetEntity, shotOrigin, rayEnd, onAttack);
+            return;
+        }
+
+        this.nextHolySpireAtSeconds = currentTimeSeconds + this.holySpireCooldown;
+        const spireEnd = this.calculateHolySpireEnd(shotOrigin, shotTarget);
+        this.fireHolySpire(targetEntity, shotOrigin, spireEnd, onAttack);
     }
 
     public override kill(): boolean {
-        this.activeHolyRays.forEach(ray => {
+        this.activeHolyBeams.forEach(ray => {
             try { ray.beamRoot.destroy(); } catch (e) { }
         });
-        this.activeHolyRays.clear();
+        this.activeHolyBeams.clear();
         return super.kill();
+    }
+
+    private createHolySpireMaterial(): StandardMaterial {
+        const material = new StandardMaterial();
+        material.useLighting = false;
+        material.diffuse = new Color(1, 0.92, 0.4);
+        material.emissive = new Color(1, 0.95, 0.5);
+        material.emissiveIntensity = 3.6;
+        material.opacity = 0.8;
+        material.blendType = BLEND_ADDITIVE;
+        material.depthWrite = false;
+        material.cull = CULLFACE_NONE;
+        material.update();
+        return material;
     }
 
     private createHolyRayMaterial(): StandardMaterial {
         const material = new StandardMaterial();
         material.useLighting = false;
-        material.diffuse = new Color(1, 0.85, 0.2);
-        material.emissive = new Color(1, 0.9, 0.3);
-        material.emissiveIntensity = 4.5;
-        material.opacity = 0.85;
+        material.diffuse = new Color(1, 0.96, 0.72);
+        material.emissive = new Color(1, 0.98, 0.85);
+        material.emissiveIntensity = 6.4;
+        material.opacity = 0.95;
         material.blendType = BLEND_ADDITIVE;
         material.depthWrite = false;
         material.cull = CULLFACE_NONE;
@@ -146,7 +183,7 @@ export class Christ extends Boss {
         return undefined;
     }
 
-    private calculateRayEnd(origin: Vec3, targetPos: Vec3): Vec3 {
+    private calculateHolySpireEnd(origin: Vec3, targetPos: Vec3): Vec3 {
         const direction = targetPos.clone().sub(origin);
         const length = direction.length();
         if (length <= 0.001) {
@@ -154,7 +191,7 @@ export class Christ extends Boss {
         }
 
         direction.normalize();
-        const totalLength = Math.max(this.holyRayRange, length) + this.holyRayOvershoot;
+        const totalLength = Math.max(this.holySpireRange, length) + this.holySpireOvershoot;
         const rayEnd = origin.clone().add(direction.mulScalar(totalLength));
 
         const app = this.getSceneApp();
@@ -178,34 +215,52 @@ export class Christ extends Boss {
         return rayEnd;
     }
 
-    private createCylinderBeam(origin: Vec3, end: Vec3, progress: number): Entity {
+    private calculateHolyRayEnd(origin: Vec3, targetPos: Vec3): Vec3 {
+        const direction = targetPos.clone().sub(origin);
+        const length = direction.length();
+        if (length <= 0.001) {
+            return targetPos.clone();
+        }
+
+        direction.normalize();
+        const totalLength = Math.min(this.holyRayRange, length);
+        return origin.clone().add(direction.mulScalar(totalLength));
+    }
+
+    private createCylinderBeam(
+        origin: Vec3,
+        end: Vec3,
+        progress: number,
+        radius: number,
+        material: StandardMaterial,
+        label: string,
+        alignAxis: "forward" | "up" = "forward"
+    ): Entity {
         const direction = end.clone().sub(origin);
         const fullDistance = direction.length();
 
         if (fullDistance <= 0.5) {
-            return new Entity("beam");
+            return new Entity(label);
         }
 
         const traveledDistance = fullDistance * Math.min(1, progress);
         if (traveledDistance <= 0.5) {
-            return new Entity("beam");
+            return new Entity(label);
         }
 
-        const beam = new Entity("holy ray cylinder");
+        const beam = new Entity(label);
         beam.addComponent("render", { type: "cylinder" } as any);
-
-        const radius = this.holyRayBeamRadius;
         beam.setLocalScale(radius, traveledDistance, radius);
 
         const dirNorm = direction.clone().mulScalar(1 / fullDistance);
         const midPoint = origin.clone().add(dirNorm.clone().mulScalar(traveledDistance * 0.5));
         beam.setPosition(midPoint.x, midPoint.y, midPoint.z);
 
-        const quat = this.directionToQuaternion(dirNorm);
+        const quat = alignAxis === "up" ? this.directionToQuaternionFromUp(dirNorm) : this.directionToQuaternion(dirNorm);
         beam.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
 
         if (beam.render?.meshInstances?.length) {
-            beam.render.meshInstances[0].material = this.holyRayMaterial;
+            beam.render.meshInstances[0].material = material;
         }
 
         return beam;
@@ -236,6 +291,19 @@ export class Christ extends Boss {
         newUp.normalize();
 
         return this.matrixToQuat(right, newUp, forward);
+    }
+
+    private directionToQuaternionFromUp(dir: Vec3): { x: number; y: number; z: number; w: number } {
+        const up = dir.clone().normalize();
+        const forwardSeed = Math.abs(up.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
+
+        const right = new Vec3();
+        forwardSeed.clone().cross(up, right).normalize();
+
+        const forward = new Vec3();
+        up.clone().cross(right, forward).normalize();
+
+        return this.matrixToQuat(right, up, forward);
     }
 
     private matrixToQuat(right: Vec3, up: Vec3, forward: Vec3): { x: number; y: number; z: number; w: number } {
@@ -275,21 +343,21 @@ export class Christ extends Boss {
         return { x, y, z, w };
     }
 
-    private fireHolyRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, onAttack?: (attacker: npc) => void): void {
+    private fireHolySpire(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, onAttack?: (attacker: npc) => void): void {
         const app = this.getSceneApp();
         if (!app?.root) return;
 
         let hasHit = false;
-        const rayData = { beamRoot: new Entity("holy ray root"), hasHit: false };
+        const rayData = { beamRoot: new Entity("holy spire root"), hasHit: false };
         app.root.addChild(rayData.beamRoot);
-        this.activeHolyRays.add(rayData);
+        this.activeHolyBeams.add(rayData);
 
         const windupStart = performance.now();
-        const travelStart = windupStart + this.holyRayWindupMs;
-        const travelEnd = travelStart + this.holyRayTravelMs;
+        const travelStart = windupStart + this.holySpireWindupMs;
+        const travelEnd = travelStart + this.holySpireTravelMs;
 
         const animate = () => {
-            if (!this.isAlive() || !this.activeHolyRays.has(rayData)) {
+            if (!this.isAlive() || !this.activeHolyBeams.has(rayData)) {
                 return;
             }
 
@@ -302,19 +370,26 @@ export class Christ extends Boss {
 
             if (now >= travelEnd) {
                 try { rayData.beamRoot.destroy(); } catch (e) { }
-                this.activeHolyRays.delete(rayData);
+                this.activeHolyBeams.delete(rayData);
                 return;
             }
 
-            const progress = (now - travelStart) / this.holyRayTravelMs;
-            const beam = this.createCylinderBeam(origin, rayEnd, progress);
+            const progress = (now - travelStart) / this.holySpireTravelMs;
+            const beam = this.createCylinderBeam(
+                origin,
+                rayEnd,
+                progress,
+                this.holySpireBeamRadius,
+                this.holySpireMaterial,
+                "holy spire cylinder"
+            );
 
             if (rayData.beamRoot.children.length > 0) {
                 rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
             }
             rayData.beamRoot.addChild(beam);
 
-            if (!hasHit && this.isHitByRay(targetEntity, origin, rayEnd)) {
+            if (!hasHit && this.isHitByRay(targetEntity, origin, rayEnd, this.holySpireHitRadius)) {
                 hasHit = true;
                 onAttack?.(this);
             }
@@ -325,7 +400,71 @@ export class Christ extends Boss {
         requestAnimationFrame(animate);
     }
 
-    private isHitByRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3): boolean {
+    private fireHolyRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, onAttack?: (attacker: npc) => void): void {
+        const app = this.getSceneApp();
+        if (!app?.root) return;
+
+        let hasHit = false;
+        const rayData = { beamRoot: new Entity("holy ray root"), hasHit: false };
+        app.root.addChild(rayData.beamRoot);
+        this.activeHolyBeams.add(rayData);
+
+        const windupStart = performance.now();
+        const travelStart = windupStart + this.holyRayWindupMs;
+        const travelEnd = travelStart + this.holyRayTravelMs;
+        const rayDirection = rayEnd.clone().sub(origin);
+        const totalLength = rayDirection.length();
+
+        const animate = () => {
+            if (!this.isAlive() || !this.activeHolyBeams.has(rayData)) {
+                return;
+            }
+
+            const now = performance.now();
+
+            if (now < travelStart) {
+                requestAnimationFrame(animate);
+                return;
+            }
+
+            if (now >= travelEnd) {
+                try { rayData.beamRoot.destroy(); } catch (e) { }
+                this.activeHolyBeams.delete(rayData);
+                return;
+            }
+
+            const progress = (now - travelStart) / this.holyRayTravelMs;
+            const beam = this.createCylinderBeam(
+                origin,
+                rayEnd,
+                progress,
+                this.holyRayBeamRadius,
+                this.holyRayMaterial,
+                "holy ray cylinder",
+                "up"
+            );
+
+            if (rayData.beamRoot.children.length > 0) {
+                rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
+            }
+            rayData.beamRoot.addChild(beam);
+
+            if (!hasHit && totalLength > 0.001) {
+                const currentLength = totalLength * progress;
+                const currentEnd = origin.clone().add(rayDirection.clone().mulScalar(currentLength / totalLength));
+                if (this.isHitByRay(targetEntity, origin, currentEnd, this.holyRayHitRadius)) {
+                    hasHit = true;
+                    onAttack?.(this);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
+    }
+
+    private isHitByRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, hitRadius: number): boolean {
         const targetPos = targetEntity.getPosition();
         const rayDir = rayEnd.clone().sub(origin);
         const rayLen = rayDir.length();
@@ -344,6 +483,6 @@ export class Christ extends Boss {
         const closest = origin.clone().add(rayDir.clone().mulScalar(t));
         const dist = targetPos.distance(closest);
 
-        return dist <= this.holyRayHitRadius;
+        return dist <= hitRadius;
     }
 }
