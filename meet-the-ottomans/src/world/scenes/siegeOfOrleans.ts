@@ -38,7 +38,7 @@ import {
 	import { Player } from '../../player/player';
 	import type { Battle } from "../Battle";
 	import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-	import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+	import { ORLEANS_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 	import { changeScene } from "../../App";
 
 	const groundModelPath = '/world/battlefields/Orleans.glb';
@@ -163,8 +163,8 @@ import {
 		return texture;
 	}
 
-	function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
-		const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
+	function resolveOrleansSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
+		const basePoints = ORLEANS_NPC_SPAWN_POINTS;
 		if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
 			return basePoints;
 		}
@@ -194,7 +194,7 @@ import {
 			team: "foe",
 			x: anchor.x + offset.x,
 			z: anchor.z + offset.z,
-			type: "mongol"
+			type: "french"
 		}));
 	}
 
@@ -429,9 +429,9 @@ import {
 			app.root.addChild(light);
 		}
 
-		const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
+		const orleansSpawnPoints = resolveOrleansSpawnPoints(respawnPosition);
 		const npcSpawnOptions = { ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
-		let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+		let npcs = await spawnSceneNpcs(app, rigidbodySystem, orleansSpawnPoints, npcSpawnOptions);
 		if (npcs.length === 0) {
 			console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
 			npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);

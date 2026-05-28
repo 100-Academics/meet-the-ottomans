@@ -9,6 +9,7 @@ import type { NpcSceneSpawnOptions, NpcSpawnOverrides, NpcSpawnPoint } from "./s
 const NPC_MODEL_PATHS = {
     mongolTroop: "test/armored_king.glb",
     templarTroop: "models/npc/Crusader.glb",
+    frenchSoldierOld: "models/npc/FrenchSoldierOld.glb",
     genghisKhan: "models/npc/boss/genghis_khan.glb",
     kingGeser: "models/npc/boss/KingGeser.glb",
     christ: "models/npc/boss/Jesus10K.glb"
@@ -53,6 +54,7 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
     mongol: NPC_MODEL_PATHS.mongolTroop,
     templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
     genghisKhan: NPC_MODEL_PATHS.genghisKhan,
     kingGeser: NPC_MODEL_PATHS.kingGeser,
     christ: NPC_MODEL_PATHS.christ
@@ -172,6 +174,15 @@ export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     // { id: 48, team: "foe", x: 12, z: 15, type: "templar" },
     // { id: 49, team: "foe", x: 15, z: 15, type: "templar" },
     // { id: 50, team: "foe", x: 18, z: 15, type: "templar" }
+];
+
+// Orléans battle NPC spawns (French soldiers).
+export const ORLEANS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: -6, type: "french" },
+    { id: 2, team: "foe", x: 9, z: -6, type: "french" },
+    { id: 3, team: "foe", x: 12, z: -6, type: "french" },
+    { id: 4, team: "foe", x: 15, z: -6, type: "french" },
+    { id: 5, team: "foe", x: 18, z: -6, type: "french" }
 ];
 
 // Ain Jalut battle NPC spawns (Mongols).
