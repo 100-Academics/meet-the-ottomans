@@ -85,6 +85,7 @@ export class FirstPersonCamera extends ScriptType {
     public movementBoundsMaxX = Number.POSITIVE_INFINITY;
     public movementBoundsMinZ = Number.NEGATIVE_INFINITY;
     public movementBoundsMaxZ = Number.POSITIVE_INFINITY;
+    public movementLocked = false;
     
     private keys: Record<string, boolean> = {};
     private airJumpsRemaining = PLAYER_MAX_AIR_JUMPS;
@@ -138,6 +139,17 @@ export class FirstPersonCamera extends ScriptType {
         this.movementBoundsMaxX = minX <= maxX ? maxX : (bounds.minX + bounds.maxX) * 0.5;
         this.movementBoundsMinZ = minZ <= maxZ ? minZ : (bounds.minZ + bounds.maxZ) * 0.5;
         this.movementBoundsMaxZ = minZ <= maxZ ? maxZ : (bounds.minZ + bounds.maxZ) * 0.5;
+    }
+
+    public setMovementLocked(locked: boolean): void {
+        this.movementLocked = locked;
+        if (locked) {
+            this.velocity.set(0, 0, 0);
+            this.dashTimeRemaining = 0;
+            this.slideActive = false;
+            this.wallRunActive = false;
+            this.slideCameraBlend = 0;
+        }
     }
 
     private clampToMovementBounds(position: Vec3): void {
@@ -709,13 +721,14 @@ export class FirstPersonCamera extends ScriptType {
         const moveDir = new Vec3();
 
         // Native DOM keys + PlayCanvas fallback
-        const isW = this.keys['KeyW'] || app.keyboard?.isPressed(KEY_W);
-        const isS = this.keys['KeyS'] || app.keyboard?.isPressed(KEY_S);
-        const isA = this.keys['KeyA'] || app.keyboard?.isPressed(KEY_A);
-        const isD = this.keys['KeyD'] || app.keyboard?.isPressed(KEY_D);
-        const isSpace = this.keys['Space'] || app.keyboard?.isPressed(KEY_SPACE);
-        const isShift = this.keys['ShiftLeft'] || this.keys['ShiftRight'] || app.keyboard?.isPressed(KEY_SHIFT);
-        const isSlideHeld = this.keys['KeyC'];
+        const movementAllowed = !this.movementLocked;
+        const isW = movementAllowed && (this.keys['KeyW'] || app.keyboard?.isPressed(KEY_W));
+        const isS = movementAllowed && (this.keys['KeyS'] || app.keyboard?.isPressed(KEY_S));
+        const isA = movementAllowed && (this.keys['KeyA'] || app.keyboard?.isPressed(KEY_A));
+        const isD = movementAllowed && (this.keys['KeyD'] || app.keyboard?.isPressed(KEY_D));
+        const isSpace = movementAllowed && (this.keys['Space'] || app.keyboard?.isPressed(KEY_SPACE));
+        const isShift = movementAllowed && (this.keys['ShiftLeft'] || this.keys['ShiftRight'] || app.keyboard?.isPressed(KEY_SHIFT));
+        const isSlideHeld = movementAllowed && this.keys['KeyC'];
         const jumpPressed = !!isSpace && !this.wasJumpHeld;
         const dashPressed = !!isShift && !this.wasDashHeld;
 
@@ -729,6 +742,13 @@ export class FirstPersonCamera extends ScriptType {
         }
         
         const entityPos = this.entity.getPosition();
+        if (this.movementLocked) {
+            this.velocity.set(0, 0, 0);
+            this.basePosition.copy(entityPos);
+            this.basePositionReady = true;
+            this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
+            return;
+        }
         const lastCommittedPos = entityPos.clone();
         if (!this.basePositionReady) {
             this.basePosition.copy(entityPos);
