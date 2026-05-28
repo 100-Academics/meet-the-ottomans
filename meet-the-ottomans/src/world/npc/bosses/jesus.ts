@@ -14,12 +14,14 @@ export class Christ extends Boss {
     private readonly holySpireMaterial = this.createHolySpireMaterial();
     private nextHolySpireAtSeconds = 0;
 
-    private readonly holyRayRange = 160;
+    private readonly holyRayRange = 240;
     private readonly holyRayCooldown = 5.5;
     private readonly holyRayWindupMs = 450;
-    private readonly holyRayTravelMs = 850;
+    private readonly holyRayTravelMs = 420;
     private readonly holyRayHitRadius = 6.5;
     private readonly holyRayBeamRadius = 4.2;
+    private readonly holyRayOvershoot = 160;
+    private readonly holyRayPitchDownDeg = 75;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
     private nextHolyRayAtSeconds = 0;
 
@@ -46,7 +48,8 @@ export class Christ extends Boss {
                 "If I fall here, my Father will finish the job."
             ],
             death: [
-                "I forgive you."
+                "I forgive you.",
+                "Your sins have been cleansed."
             ],
             bossDeath: [
                 "The body falls, but the path remains.",
@@ -173,6 +176,28 @@ export class Christ extends Boss {
         return material;
     }
 
+    private getAimedTargetPosition(targetEntity: Entity): Vec3 {
+        const targetPos = targetEntity.getPosition().clone();
+        const controller = (targetEntity as any)?.script?.FirstPersonCamera
+            ?? (targetEntity as any)?.script?.firstPersonCamera;
+        const rawGroundHeight = controller?.groundHeight;
+        const rawPlayerHeight = controller?.playerHeight;
+        const playerHeight = Number.isFinite(rawPlayerHeight) ? rawPlayerHeight : 2;
+        const cameraAimOffset = Math.max(1.2, playerHeight * 0.8);
+        let aimY = targetPos.y - cameraAimOffset;
+
+        if (Number.isFinite(rawGroundHeight)) {
+            const cameraToGround = Math.abs(targetPos.y - rawGroundHeight);
+            const maxGroundDelta = Math.max(3, playerHeight * 2.5);
+            if (cameraToGround <= maxGroundDelta) {
+                aimY = rawGroundHeight + (playerHeight * 0.45);
+            }
+        }
+
+        targetPos.y = aimY;
+        return targetPos;
+    }
+
     private getSceneApp(): any {
         const selfEntity = this.getEntity() as any;
         const selfApp = (selfEntity?.app ?? selfEntity?._app) as any;
@@ -221,9 +246,23 @@ export class Christ extends Boss {
             return targetPos.clone();
         }
 
-        direction.normalize();
-        const totalLength = Math.min(this.holyRayRange, length);
-        return origin.clone().add(direction.mulScalar(totalLength));
+        const dirNorm = direction.clone().mulScalar(1 / length);
+        if (Number.isFinite(this.holyRayPitchDownDeg) && Math.abs(this.holyRayPitchDownDeg) > 0.01) {
+            const pitchRad = this.holyRayPitchDownDeg * (Math.PI / 180);
+            const up = new Vec3(0, 1, 0);
+            const right = new Vec3().cross(up, dirNorm);
+            const rightLen = right.length();
+            if (rightLen > 0.0001) {
+                right.mulScalar(1 / rightLen);
+                const cross = new Vec3().cross(right, dirNorm);
+                const cos = Math.cos(pitchRad);
+                const sin = Math.sin(pitchRad);
+                const rotated = dirNorm.clone().mulScalar(cos).add(cross.mulScalar(sin));
+                dirNorm.copy(rotated).normalize();
+            }
+        }
+        const totalLength = Math.max(this.holyRayRange, length) + this.holyRayOvershoot;
+        return origin.clone().add(dirNorm.mulScalar(totalLength));
     }
 
     private createCylinderBeam(
@@ -419,12 +458,12 @@ export class Christ extends Boss {
 
         const fireRay = () => {
             origin = this.getEntity().getPosition().clone();
-            const targetPos = targetEntity.getPosition().clone();
+            const targetPos = this.getAimedTargetPosition(targetEntity);
             rayEnd = this.calculateHolyRayEnd(origin, targetPos);
             totalLength = rayEnd.clone().sub(origin).length();
             hasFired = true;
 
-            if (!hasHit && totalLength > 0.001 && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius)) {
+            if (!hasHit && totalLength > 0.001 && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius, targetPos)) {
                 hasHit = true;
                 onAttack?.(this);
             }
@@ -473,8 +512,14 @@ export class Christ extends Boss {
         requestAnimationFrame(animate);
     }
 
-    private isHitByRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, hitRadius: number): boolean {
-        const targetPos = targetEntity.getPosition();
+    private isHitByRay(
+        targetEntity: Entity,
+        origin: Vec3,
+        rayEnd: Vec3,
+        hitRadius: number,
+        targetPosOverride?: Vec3
+    ): boolean {
+        const targetPos = targetPosOverride ?? targetEntity.getPosition();
         const rayDir = rayEnd.clone().sub(origin);
         const rayLen = rayDir.length();
 
