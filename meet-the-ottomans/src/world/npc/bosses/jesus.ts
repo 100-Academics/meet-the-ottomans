@@ -209,6 +209,77 @@ export class Christ extends Boss {
         return undefined;
     }
 
+    private getWorldBoundsFromTarget(targetEntity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number } | null {
+        const controller = (targetEntity as any)?.script?.FirstPersonCamera
+            ?? (targetEntity as any)?.script?.firstPersonCamera;
+        const minX = controller?.movementBoundsMinX;
+        const maxX = controller?.movementBoundsMaxX;
+        const minZ = controller?.movementBoundsMinZ;
+        const maxZ = controller?.movementBoundsMaxZ;
+
+        if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minZ) || !Number.isFinite(maxZ)) {
+            return null;
+        }
+
+        if (minX > maxX || minZ > maxZ) {
+            return null;
+        }
+
+        return { minX, maxX, minZ, maxZ };
+    }
+
+    private getRayEndAtBounds(
+        origin: Vec3,
+        dirNorm: Vec3,
+        bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
+    ): Vec3 | null {
+        const epsilon = 0.0001;
+        const candidates: number[] = [];
+
+        if (Math.abs(dirNorm.x) > epsilon) {
+            const tMinX = (bounds.minX - origin.x) / dirNorm.x;
+            const zAtMinX = origin.z + (dirNorm.z * tMinX);
+            if (tMinX > 0 && Number.isFinite(zAtMinX)
+                && zAtMinX >= (bounds.minZ - epsilon) && zAtMinX <= (bounds.maxZ + epsilon)) {
+                candidates.push(tMinX);
+            }
+
+            const tMaxX = (bounds.maxX - origin.x) / dirNorm.x;
+            const zAtMaxX = origin.z + (dirNorm.z * tMaxX);
+            if (tMaxX > 0 && Number.isFinite(zAtMaxX)
+                && zAtMaxX >= (bounds.minZ - epsilon) && zAtMaxX <= (bounds.maxZ + epsilon)) {
+                candidates.push(tMaxX);
+            }
+        }
+
+        if (Math.abs(dirNorm.z) > epsilon) {
+            const tMinZ = (bounds.minZ - origin.z) / dirNorm.z;
+            const xAtMinZ = origin.x + (dirNorm.x * tMinZ);
+            if (tMinZ > 0 && Number.isFinite(xAtMinZ)
+                && xAtMinZ >= (bounds.minX - epsilon) && xAtMinZ <= (bounds.maxX + epsilon)) {
+                candidates.push(tMinZ);
+            }
+
+            const tMaxZ = (bounds.maxZ - origin.z) / dirNorm.z;
+            const xAtMaxZ = origin.x + (dirNorm.x * tMaxZ);
+            if (tMaxZ > 0 && Number.isFinite(xAtMaxZ)
+                && xAtMaxZ >= (bounds.minX - epsilon) && xAtMaxZ <= (bounds.maxX + epsilon)) {
+                candidates.push(tMaxZ);
+            }
+        }
+
+        if (candidates.length === 0) {
+            return null;
+        }
+
+        const t = Math.min(...candidates);
+        if (!Number.isFinite(t) || t <= 0) {
+            return null;
+        }
+
+        return origin.clone().add(dirNorm.clone().mulScalar(t));
+    }
+
     private calculateHolySpireEnd(origin: Vec3, targetPos: Vec3): Vec3 {
         const direction = targetPos.clone().sub(origin);
         const length = direction.length();
@@ -241,7 +312,7 @@ export class Christ extends Boss {
         return rayEnd;
     }
 
-    private calculateHolyRayEnd(origin: Vec3, targetPos: Vec3): Vec3 {
+    private calculateHolyRayEnd(origin: Vec3, targetPos: Vec3, targetEntity?: Entity): Vec3 {
         const direction = targetPos.clone().sub(origin);
         const length = direction.length();
         if (length <= 0.001) {
@@ -263,8 +334,23 @@ export class Christ extends Boss {
                 dirNorm.copy(rotated).normalize();
             }
         }
+        const bounds = targetEntity ? this.getWorldBoundsFromTarget(targetEntity) : null;
+        if (bounds) {
+            const boundedEnd = this.getRayEndAtBounds(origin, dirNorm, bounds);
+            if (boundedEnd) {
+                return boundedEnd;
+            }
+        }
+
         const totalLength = Math.max(this.holyRayRange, length) + this.holyRayOvershoot;
         return origin.clone().add(dirNorm.mulScalar(totalLength));
+    }
+
+    private getHolyRayBeamRadius(progress: number): number {
+        const clamped = Math.max(0, Math.min(1, progress));
+        const minScale = 0.6;
+        const maxScale = 1.4;
+        return this.holyRayBeamRadius * (minScale + ((maxScale - minScale) * clamped));
     }
 
     private createCylinderBeam(
@@ -462,7 +548,7 @@ export class Christ extends Boss {
         const fireRay = () => {
             origin = this.getEntity().getPosition().clone();
             const targetPos = this.getAimedTargetPosition(targetEntity);
-            rayEnd = this.calculateHolyRayEnd(origin, targetPos);
+            rayEnd = this.calculateHolyRayEnd(origin, targetPos, targetEntity);
             totalLength = rayEnd.clone().sub(origin).length();
             hasFired = true;
         };
@@ -500,7 +586,7 @@ export class Christ extends Boss {
                 origin,
                 rayEnd,
                 progress,
-                this.holyRayBeamRadius,
+                this.getHolyRayBeamRadius(progress),
                 this.holyRayMaterial,
                 "holy ray cylinder"
             );
