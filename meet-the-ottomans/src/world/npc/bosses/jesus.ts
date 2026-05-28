@@ -8,12 +8,12 @@ export class Christ extends Boss {
     private readonly holyRayCooldown = 4.0;
     private readonly holyRayWindupMs = 500;
     private readonly holyRayTravelMs = 600;
-    private readonly holyRayHitRadius = 5;
-    private readonly holyRaySegmentCount = 60;
+    private readonly holyRayHitRadius = 6;
+    private readonly holyRayBeamRadius = 3.5;
     private readonly holyRayOvershoot = 100;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
     private nextHolyRayAtSeconds = 0;
-    private activeHolyRays = new Set<{ id: string; beamRoot: Entity; hasHit: boolean }>();
+    private activeHolyRays = new Set<{ beamRoot: Entity; hasHit: boolean }>();
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Christ")) {
         super(id, maxHealth, entity, "Jesus Christ");
@@ -111,7 +111,7 @@ export class Christ extends Boss {
         this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
         const shotOrigin = myPos.clone();
         const shotTarget = targetPos.clone();
-        const rayEnd = this.getHolyRayEnd(shotOrigin, shotTarget, attackRange);
+        const rayEnd = this.calculateRayEnd(shotOrigin, shotTarget);
         this.fireHolyRay(targetEntity, shotOrigin, rayEnd, onAttack);
     }
 
@@ -126,10 +126,10 @@ export class Christ extends Boss {
     private createHolyRayMaterial(): StandardMaterial {
         const material = new StandardMaterial();
         material.useLighting = false;
-        material.diffuse = new Color(1, 0.92, 0.3);
-        material.emissive = new Color(1, 0.85, 0.1);
+        material.diffuse = new Color(1, 0.85, 0.2);
+        material.emissive = new Color(1, 0.9, 0.3);
         material.emissiveIntensity = 4.5;
-        material.opacity = 0.95;
+        material.opacity = 0.85;
         material.blendType = BLEND_ADDITIVE;
         material.depthWrite = false;
         material.cull = CULLFACE_NONE;
@@ -137,21 +137,16 @@ export class Christ extends Boss {
         return material;
     }
 
-    private resolveSceneApp(targetEntity?: Entity | null) {
+    private getSceneApp(): any {
         const selfEntity = this.getEntity() as any;
         const selfApp = (selfEntity?.app ?? selfEntity?._app) as any;
         if (selfApp?.root) return selfApp;
-        if (targetEntity) {
-            const targetAny = targetEntity as any;
-            const targetApp = (targetAny?.app ?? targetAny?._app) as any;
-            if (targetApp?.root) return targetApp;
-        }
         const globalApp = (globalThis as any)?.app as any;
         if (globalApp?.root) return globalApp;
         return undefined;
     }
 
-    private getHolyRayEnd(origin: Vec3, targetPos: Vec3, range: number): Vec3 {
+    private calculateRayEnd(origin: Vec3, targetPos: Vec3): Vec3 {
         const direction = targetPos.clone().sub(origin);
         const length = direction.length();
         if (length <= 0.001) {
@@ -159,76 +154,94 @@ export class Christ extends Boss {
         }
 
         direction.normalize();
-        const totalLength = Math.max(range, length) + this.holyRayOvershoot;
+        const totalLength = Math.max(this.holyRayRange, length) + this.holyRayOvershoot;
         const rayEnd = origin.clone().add(direction.mulScalar(totalLength));
 
-        const app = this.resolveSceneApp();
+        const app = this.getSceneApp();
         if (!app?.root) return rayEnd;
 
         const rigidbodySystem = (app.systems as any)?.rigidbody;
         if (!rigidbodySystem?.raycastFirst) return rayEnd;
 
-        const rayOrigin = origin.clone();
-        const rayTarget = rayEnd.clone();
-        const hitResult = rigidbodySystem.raycastFirst(rayOrigin, rayTarget);
-
-        if (hitResult?.entity && hitResult?.point) {
-            const hitPoint = hitResult.point as Vec3;
-            if (Number.isFinite(hitPoint.x) && Number.isFinite(hitPoint.y) && Number.isFinite(hitPoint.z)) {
-                return hitPoint;
+        try {
+            const hitResult = rigidbodySystem.raycastFirst(origin, rayEnd);
+            if (hitResult?.point) {
+                const hitPoint = hitResult.point as Vec3;
+                if (Number.isFinite(hitPoint.x) && Number.isFinite(hitPoint.y) && Number.isFinite(hitPoint.z)) {
+                    return hitPoint;
+                }
             }
+        } catch (e) {
+            // raycast failed, use default end
         }
 
         return rayEnd;
     }
 
-    private spawnHolyRay(origin: Vec3, rayEnd: Vec3, progress: number): Entity {
-        const rayVector = rayEnd.clone().sub(origin);
-        const fullDistance = Math.max(1, rayVector.length());
-        const currentDistance = fullDistance * Math.min(1, progress);
+    private createCylinderBeam(origin: Vec3, end: Vec3, progress: number): Entity {
+        const direction = end.clone().sub(origin);
+        const fullDistance = direction.length();
 
-        const beamRoot = new Entity("holy ray beam");
-
-        if (currentDistance <= 0.5) {
-            return beamRoot;
+        if (fullDistance <= 0.5) {
+            return new Entity("beam");
         }
 
-        const beam = new Entity("expanding cylinder");
+        const traveledDistance = fullDistance * Math.min(1, progress);
+        if (traveledDistance <= 0.5) {
+            return new Entity("beam");
+        }
+
+        const beam = new Entity("holy ray cylinder");
         beam.addComponent("render", { type: "cylinder" } as any);
 
-        const beamRadius = 4;
-        beam.setLocalScale(beamRadius, beamRadius, currentDistance);
+        const radius = this.holyRayBeamRadius;
+        beam.setLocalScale(radius, traveledDistance, radius);
 
-        const midPoint = origin.clone().add(rayVector.clone().mulScalar(0.5));
+        const dirNorm = direction.clone().mulScalar(1 / fullDistance);
+        const midPoint = origin.clone().add(dirNorm.clone().mulScalar(traveledDistance * 0.5));
         beam.setPosition(midPoint.x, midPoint.y, midPoint.z);
 
-        const direction = rayVector.clone().normalize();
-        const quat = this.getRotationTowardDirection(direction);
-        beam.setLocalRotation(quat);
+        const quat = this.directionToQuaternion(dirNorm);
+        beam.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
 
         if (beam.render?.meshInstances?.length) {
             beam.render.meshInstances[0].material = this.holyRayMaterial;
         }
 
-        beamRoot.addChild(beam);
-        return beamRoot;
+        return beam;
     }
 
-    private getRotationTowardDirection(direction: Vec3): any {
+    private directionToQuaternion(dir: Vec3): { x: number; y: number; z: number; w: number } {
+        const forward = dir.clone().normalize();
         const up = new Vec3(0, 1, 0);
-        const forward = direction.clone().normalize();
 
         const dot = forward.dot(up);
-        if (Math.abs(dot) > 0.9999) {
-            return dot > 0 ? { x: 0, y: 0, z: 0, w: 1 } : { x: 0, y: 0, z: 1, w: 0 };
+        if (Math.abs(dot) > 0.99) {
+            const right = Math.abs(dot) > 0 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
+            const newUp = new Vec3();
+            forward.clone().cross(right, newUp);
+            newUp.normalize();
+            const newRight = new Vec3();
+            newUp.clone().cross(forward, newRight);
+
+            return this.matrixToQuat(newRight, newUp, forward);
         }
 
-        const right = up.clone().cross(forward).normalize();
-        const newUp = forward.clone().cross(right).normalize();
+        const right = new Vec3();
+        up.clone().cross(forward, right);
+        right.normalize();
 
-        const m00 = right.x, m01 = newUp.x, m02 = forward.x;
-        const m10 = right.y, m11 = newUp.y, m12 = forward.y;
-        const m20 = right.z, m21 = newUp.z, m22 = forward.z;
+        const newUp = new Vec3();
+        forward.clone().cross(right, newUp);
+        newUp.normalize();
+
+        return this.matrixToQuat(right, newUp, forward);
+    }
+
+    private matrixToQuat(right: Vec3, up: Vec3, forward: Vec3): { x: number; y: number; z: number; w: number } {
+        const m00 = right.x, m01 = up.x, m02 = forward.x;
+        const m10 = right.y, m11 = up.y, m12 = forward.y;
+        const m20 = right.z, m21 = up.z, m22 = forward.z;
 
         const trace = m00 + m11 + m22;
         let w, x, y, z;
@@ -263,72 +276,74 @@ export class Christ extends Boss {
     }
 
     private fireHolyRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, onAttack?: (attacker: npc) => void): void {
-        const sceneApp = this.resolveSceneApp(targetEntity);
-        if (!sceneApp?.root) return;
+        const app = this.getSceneApp();
+        if (!app?.root) return;
 
-        const rayId = `holy_ray_${Math.random()}`;
         let hasHit = false;
-
-        const rayData = { id: rayId, beamRoot: new Entity("holy ray root"), hasHit: false };
-        sceneApp.root.addChild(rayData.beamRoot);
+        const rayData = { beamRoot: new Entity("holy ray root"), hasHit: false };
+        app.root.addChild(rayData.beamRoot);
         this.activeHolyRays.add(rayData);
 
-        const windupStartTime = performance.now();
-        const travelStartTime = windupStartTime + this.holyRayWindupMs;
-        const travelEndTime = travelStartTime + this.holyRayTravelMs;
+        const windupStart = performance.now();
+        const travelStart = windupStart + this.holyRayWindupMs;
+        const travelEnd = travelStart + this.holyRayTravelMs;
 
-        const updateRay = () => {
+        const animate = () => {
             if (!this.isAlive() || !this.activeHolyRays.has(rayData)) {
                 return;
             }
 
             const now = performance.now();
 
-            if (now < travelStartTime) {
-                requestAnimationFrame(updateRay);
+            if (now < travelStart) {
+                requestAnimationFrame(animate);
                 return;
             }
 
-            if (now >= travelEndTime) {
+            if (now >= travelEnd) {
                 try { rayData.beamRoot.destroy(); } catch (e) { }
                 this.activeHolyRays.delete(rayData);
                 return;
             }
 
-            const travelProgress = (now - travelStartTime) / this.holyRayTravelMs;
+            const progress = (now - travelStart) / this.holyRayTravelMs;
+            const beam = this.createCylinderBeam(origin, rayEnd, progress);
 
-            rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
-            const newBeam = this.spawnHolyRay(origin, rayEnd, travelProgress);
-            rayData.beamRoot.addChild(newBeam);
+            if (rayData.beamRoot.children.length > 0) {
+                rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
+            }
+            rayData.beamRoot.addChild(beam);
 
-            if (!hasHit && this.isTargetInHolyRay(targetEntity, origin, rayEnd)) {
+            if (!hasHit && this.isHitByRay(targetEntity, origin, rayEnd)) {
                 hasHit = true;
                 onAttack?.(this);
             }
 
-            requestAnimationFrame(updateRay);
+            requestAnimationFrame(animate);
         };
 
-        requestAnimationFrame(updateRay);
+        requestAnimationFrame(animate);
     }
 
-    private isTargetInHolyRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3): boolean {
-        const currentPos = targetEntity.getPosition();
-        const rayVector = rayEnd.clone().sub(origin);
-        const rayLength = rayVector.length();
-        if (rayLength <= 0.001) {
+    private isHitByRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3): boolean {
+        const targetPos = targetEntity.getPosition();
+        const rayDir = rayEnd.clone().sub(origin);
+        const rayLen = rayDir.length();
+
+        if (rayLen <= 0.001) {
             return false;
         }
 
-        const targetVector = currentPos.clone().sub(origin);
-        const t = targetVector.dot(rayVector) / (rayLength * rayLength);
+        const toTarget = targetPos.clone().sub(origin);
+        const t = toTarget.dot(rayDir) / (rayLen * rayLen);
+
         if (t < 0 || t > 1) {
             return false;
         }
 
-        const closestPoint = origin.clone().add(rayVector.clone().mulScalar(t));
-        const distanceFromRay = currentPos.distance(closestPoint);
+        const closest = origin.clone().add(rayDir.clone().mulScalar(t));
+        const dist = targetPos.distance(closest);
 
-        return distanceFromRay <= this.holyRayHitRadius;
+        return dist <= this.holyRayHitRadius;
     }
 }
