@@ -128,8 +128,7 @@ export class Christ extends Boss {
 
         if (chooseRay) {
             this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
-            const rayEnd = this.calculateHolyRayEnd(shotOrigin, shotTarget);
-            this.fireHolyRay(targetEntity, shotOrigin, rayEnd, onAttack);
+            this.fireHolyRay(targetEntity, onAttack);
             return;
         }
 
@@ -233,8 +232,7 @@ export class Christ extends Boss {
         progress: number,
         radius: number,
         material: StandardMaterial,
-        label: string,
-        alignAxis: "forward" | "up" = "forward"
+        label: string
     ): Entity {
         const direction = end.clone().sub(origin);
         const fullDistance = direction.length();
@@ -248,22 +246,24 @@ export class Christ extends Boss {
             return new Entity(label);
         }
 
-        const beam = new Entity(label);
+        const beamRoot = new Entity(label);
+        const beam = new Entity(`${label} mesh`);
         beam.addComponent("render", { type: "cylinder" } as any);
         beam.setLocalScale(radius, traveledDistance, radius);
-
-        const dirNorm = direction.clone().mulScalar(1 / fullDistance);
-        const midPoint = origin.clone().add(dirNorm.clone().mulScalar(traveledDistance * 0.5));
-        beam.setPosition(midPoint.x, midPoint.y, midPoint.z);
-
-        const quat = alignAxis === "up" ? this.directionToQuaternionFromUp(dirNorm) : this.directionToQuaternion(dirNorm);
-        beam.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
+        beam.setLocalPosition(0, traveledDistance * 0.5, 0);
 
         if (beam.render?.meshInstances?.length) {
             beam.render.meshInstances[0].material = material;
         }
 
-        return beam;
+        beamRoot.addChild(beam);
+        beamRoot.setPosition(origin.x, origin.y, origin.z);
+
+        const dirNorm = direction.clone().mulScalar(1 / fullDistance);
+        const quat = this.directionToQuaternionFromUp(dirNorm);
+        beamRoot.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
+
+        return beamRoot;
     }
 
     private directionToQuaternion(dir: Vec3): { x: number; y: number; z: number; w: number } {
@@ -400,7 +400,7 @@ export class Christ extends Boss {
         requestAnimationFrame(animate);
     }
 
-    private fireHolyRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, onAttack?: (attacker: npc) => void): void {
+    private fireHolyRay(targetEntity: Entity, onAttack?: (attacker: npc) => void): void {
         const app = this.getSceneApp();
         if (!app?.root) return;
 
@@ -412,8 +412,23 @@ export class Christ extends Boss {
         const windupStart = performance.now();
         const travelStart = windupStart + this.holyRayWindupMs;
         const travelEnd = travelStart + this.holyRayTravelMs;
-        const rayDirection = rayEnd.clone().sub(origin);
-        const totalLength = rayDirection.length();
+        let hasFired = false;
+        let origin = this.getEntity().getPosition().clone();
+        let rayEnd = origin.clone();
+        let totalLength = 0;
+
+        const fireRay = () => {
+            origin = this.getEntity().getPosition().clone();
+            const targetPos = targetEntity.getPosition().clone();
+            rayEnd = this.calculateHolyRayEnd(origin, targetPos);
+            totalLength = rayEnd.clone().sub(origin).length();
+            hasFired = true;
+
+            if (!hasHit && totalLength > 0.001 && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius)) {
+                hasHit = true;
+                onAttack?.(this);
+            }
+        };
 
         const animate = () => {
             if (!this.isAlive() || !this.activeHolyBeams.has(rayData)) {
@@ -433,6 +448,10 @@ export class Christ extends Boss {
                 return;
             }
 
+            if (!hasFired) {
+                fireRay();
+            }
+
             const progress = (now - travelStart) / this.holyRayTravelMs;
             const beam = this.createCylinderBeam(
                 origin,
@@ -440,23 +459,13 @@ export class Christ extends Boss {
                 progress,
                 this.holyRayBeamRadius,
                 this.holyRayMaterial,
-                "holy ray cylinder",
-                "up"
+                "holy ray cylinder"
             );
 
             if (rayData.beamRoot.children.length > 0) {
                 rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
             }
             rayData.beamRoot.addChild(beam);
-
-            if (!hasHit && totalLength > 0.001) {
-                const currentLength = totalLength * progress;
-                const currentEnd = origin.clone().add(rayDirection.clone().mulScalar(currentLength / totalLength));
-                if (this.isHitByRay(targetEntity, origin, currentEnd, this.holyRayHitRadius)) {
-                    hasHit = true;
-                    onAttack?.(this);
-                }
-            }
 
             requestAnimationFrame(animate);
         };
