@@ -22,6 +22,8 @@ export class Christ extends Boss {
     private readonly holyRayBeamRadius = 4.2;
     private readonly holyRayOvershoot = 160;
     private readonly holyRayPitchDownDeg = 75;
+    private readonly holyRayLingerMs = 900;
+    private readonly holyRayRehitCooldownMs = 350;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
     private nextHolyRayAtSeconds = 0;
 
@@ -443,7 +445,6 @@ export class Christ extends Boss {
         const app = this.getSceneApp();
         if (!app?.root) return;
 
-        let hasHit = false;
         const rayData = { beamRoot: new Entity("holy ray root"), hasHit: false };
         app.root.addChild(rayData.beamRoot);
         this.activeHolyBeams.add(rayData);
@@ -451,10 +452,12 @@ export class Christ extends Boss {
         const windupStart = performance.now();
         const travelStart = windupStart + this.holyRayWindupMs;
         const travelEnd = travelStart + this.holyRayTravelMs;
+        const lingerEnd = travelEnd + this.holyRayLingerMs;
         let hasFired = false;
         let origin = this.getEntity().getPosition().clone();
         let rayEnd = origin.clone();
         let totalLength = 0;
+        let lastHitTime = 0;
 
         const fireRay = () => {
             origin = this.getEntity().getPosition().clone();
@@ -462,11 +465,6 @@ export class Christ extends Boss {
             rayEnd = this.calculateHolyRayEnd(origin, targetPos);
             totalLength = rayEnd.clone().sub(origin).length();
             hasFired = true;
-
-            if (!hasHit && totalLength > 0.001 && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius, targetPos)) {
-                hasHit = true;
-                onAttack?.(this);
-            }
         };
 
         const animate = () => {
@@ -481,7 +479,7 @@ export class Christ extends Boss {
                 return;
             }
 
-            if (now >= travelEnd) {
+            if (now >= lingerEnd) {
                 try { rayData.beamRoot.destroy(); } catch (e) { }
                 this.activeHolyBeams.delete(rayData);
                 return;
@@ -491,7 +489,13 @@ export class Christ extends Boss {
                 fireRay();
             }
 
-            const progress = (now - travelStart) / this.holyRayTravelMs;
+            if (totalLength > 0.001 && (now - lastHitTime) >= this.holyRayRehitCooldownMs
+                && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius)) {
+                lastHitTime = now;
+                onAttack?.(this);
+            }
+
+            const progress = Math.min(1, (now - travelStart) / this.holyRayTravelMs);
             const beam = this.createCylinderBeam(
                 origin,
                 rayEnd,
