@@ -11,7 +11,7 @@ const NPC_MODEL_PATHS = {
     templarTroop: "models/npc/Crusader.glb",
     frenchSoldierOld: "models/npc/FrenchSoldierWWI.glb",
     huntingrifledude: "models/npc/WWISoldier.glb",
-    joanofarc: "models/npc/JoanOfArc.glb",
+    joanofarc: "models/npc/boss/JoanOfArc.glb",
     willieconquer: "models/npc/WillieConquer.glb",
     koreansldier: "models/npc/KoreanSoldier.glb",
     mamlukIthink: "models/npc/Mamluk.glb",
@@ -55,6 +55,16 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     facingYawOffsetDegrees: 0
 };
 
+const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
 // NPC type -> model path. The spawn system picks the model from this map
 // based on the `type` field in each spawn point.
 export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
@@ -73,7 +83,9 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
 };
 
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
-    templar: TEMPLAR_SPAWN_OVERRIDES
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES
 };
 
 // Shared battle options applied in scenes. Intentionally no generic troop defaults.

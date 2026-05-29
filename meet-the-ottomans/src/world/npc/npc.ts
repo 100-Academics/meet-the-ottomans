@@ -299,7 +299,7 @@ export class npc {
         };
     }
 
-    private findNearestHostileNpc(allNpcs: npc[], maxRange: number): npc | null {
+    protected findNearestHostileNpc(allNpcs: npc[], maxRange: number): npc | null {
         const myPos = this.entity.getPosition();
         let bestTarget: npc | null = null;
         let bestDistance = Number.POSITIVE_INFINITY;
