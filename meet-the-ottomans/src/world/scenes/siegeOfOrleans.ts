@@ -37,6 +37,7 @@ import {
 	import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 	import { Player } from '../../player/player';
 	import type { Battle } from "../Battle";
+	import { Boss } from "../npc/bosses/boss";
 	import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 	import { ORLEANS_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 	import { changeScene } from "../../App";
@@ -414,9 +415,9 @@ import {
 			},
 			{
 				name: 'JoanOfArc',
-				path: 'models/npc/JoanOfArc.glb',
+				path: 'models/npc/boss/JoanOfArc.glb',
 				offset: new Vec3(6, 0, 12),
-				rotation: new Vec3(-90, 0, 0),
+				rotation: new Vec3(0, 0, 0),
 				scale: new Vec3(2, 2, 2),
 				heightOffset: 2
 			},
@@ -511,6 +512,42 @@ import {
 			npcs = await spawnSceneNpcs(app, rigidbodySystem, orleansSpawnPoints, npcSpawnOptions);
 		}
 
+		let joanSpawned = false;
+		let joanSpawning = false;
+		const spawnJoanOfArc = async (): Promise<void> => {
+			if (joanSpawned || joanSpawning) {
+				return;
+			}
+
+			joanSpawning = true;
+			try {
+				const playerPosition = player.getPosition();
+				const spawnOffset = new Vec3(6, 0, -8);
+				const joanSpawnPoints: NpcSpawnPoint[] = [
+					{
+						id: 901,
+						team: 'foe',
+						x: playerPosition.x + spawnOffset.x,
+						z: playerPosition.z + spawnOffset.z,
+						maxHealth: 240,
+						type: 'joanofarc'
+					}
+				];
+
+				const spawnedJoan = await spawnSceneNpcs(app, rigidbodySystem, joanSpawnPoints, npcSpawnOptions);
+				npcs.push(...spawnedJoan);
+				joanSpawned = true;
+				if (spawnedJoan.length === 0) {
+					console.warn('[NPC] Joan of Arc spawn returned no NPCs.');
+				}
+			} catch (error) {
+				console.error('[NPC] Failed to spawn Joan of Arc', error);
+				joanSpawned = true;
+			} finally {
+				joanSpawning = false;
+			}
+		};
+
 		app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
 			if (isDeathScreenVisible()) {
 				return;
@@ -546,6 +583,9 @@ import {
 			const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
 			const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
 			player.attack(hitNpc ?? null);
+			if (hitNpc instanceof Boss) {
+				hitNpc.updateHealthBar();
+			}
 			updateBattleHUD(player);
 			if (hitNpc) {
 				console.log(`Hit NPC`);
@@ -554,13 +594,20 @@ import {
 
 		bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 			updateKey: '__orleansNpcUpdate',
+			getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
 			battleStatus: {
 				getCameraEntity: () => player.getCameraEntity(),
 				initialTotal: orleansSpawnPoints.length,
+				alwaysOutline: true,
+				outlineTargets: 'all',
+				outlineColor: new Color(1, 0.9, 0.2),
 				onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 			},
 			onNpcAttack: (attacker, target, damage) => {
 				target.takeDamage(damage);
+				if (target instanceof Boss) {
+					target.updateHealthBar();
+				}
 				console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
 			},
 			onPlayerAttack: (attacker, damage) => {
@@ -582,6 +629,10 @@ import {
 
 			const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
 			if (remainingFoes.length === 0) {
+				if (!joanSpawned) {
+					spawnJoanOfArc().catch((error) => console.error(error));
+					return;
+				}
 				removeBattleHUD();
 				victoryHandled = true;
 				changeScene(canvas, app, 777);

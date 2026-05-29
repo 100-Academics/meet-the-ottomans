@@ -3,10 +3,12 @@ import { loadModel, type LoadModelOptions, type Model } from "../../util/loadMod
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
 import { Templar } from "./troops/templars";
+import { FrenchSoldier } from "./troops/frenchSoldier";
 import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
 import { Christ } from "./bosses/jesus";
+import { JoanOfArc } from "./bosses/joanOfArc";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -310,6 +312,12 @@ export async function spawnSceneNpcs(
                 templar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 templar.setHitboxRadius(hitboxRadius);
                 npcs.push(templar);
+            } else if (spawn.type === "french") {
+                console.log(`Spawning French NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const frenchSoldier = new FrenchSoldier(spawn.id, npcModel.modelEntity);
+                frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                frenchSoldier.setHitboxRadius(hitboxRadius);
+                npcs.push(frenchSoldier);
             } else if (spawn.type === "genghisKhan") {
                 console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
@@ -329,6 +337,14 @@ export async function spawnSceneNpcs(
             } else if (spawn.type === "christ") {
                 console.log(`Spawning Christ Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new Christ(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
+                npcs.push(boss);
+            } else if (spawn.type === "joanofarc") {
+                console.log(`Spawning Joan of Arc Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new JoanOfArc(spawn.id, spawn.maxHealth ?? 260, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();
