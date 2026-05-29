@@ -44,6 +44,8 @@ import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js'
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
+
+//battles
 import { battleOfLegnicaScene } from "./battleOfLegnica";
 import { battleOfAinJalutScene } from "./battleOfAinJalut";
 import { siegeOfConstantinopleScene } from "./siegeOfConstantinople";

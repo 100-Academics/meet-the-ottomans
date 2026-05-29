@@ -403,14 +403,7 @@ import {
 
 		const previewAnchor = respawnPosition.clone();
 		const previewModels = [
-			{
-				name: 'tower',
-				path: 'models/npc/boss/Tower_00001_.glb',
-				offset: new Vec3(8, 0, 8),
-				rotation: new Vec3(0, 0, 0),
-				scale: new Vec3(1, 1, 1),
-				heightOffset: 4
-			},
+			// tower preview removed
 			{
 				name: 'WWISoldier',
 				path: 'models/npc/WWISoldier.glb',
@@ -514,8 +507,8 @@ import {
 		const npcSpawnOptions = { ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
 		let npcs = await spawnSceneNpcs(app, rigidbodySystem, orleansSpawnPoints, npcSpawnOptions);
 		if (npcs.length === 0) {
-			console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-			npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+			console.warn('[NPC] Orleans spawn returned no soldiers on the first pass, retrying once');
+			npcs = await spawnSceneNpcs(app, rigidbodySystem, orleansSpawnPoints, npcSpawnOptions);
 		}
 
 		app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
@@ -560,10 +553,10 @@ import {
 		});
 
 		bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
-			updateKey: '__ainJalutNpcUpdate',
+			updateKey: '__orleansNpcUpdate',
 			battleStatus: {
 				getCameraEntity: () => player.getCameraEntity(),
-				initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length,
+				initialTotal: orleansSpawnPoints.length,
 				onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 			},
 			onNpcAttack: (attacker, target, damage) => {
