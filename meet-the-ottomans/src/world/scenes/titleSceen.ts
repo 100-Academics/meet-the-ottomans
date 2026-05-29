@@ -35,7 +35,7 @@ const introSlides: IntroSlide[] = [
     title: 'Meet the Ottomans',
     lines: [
       'You are Bob Jefferson, the last descendant of Sultan Suleiman the Magnificent.',
-      `In the far future of ${month}/${day}/${year}, you are recruited by pro-Ottoman nationalists who want to return Turkey to its former glory.`,
+      `In the far future of ${month}/${day}/${year}, you are recruited by pro-Ottoman nationalists who want to return the Ottoman Empire (then Turkey) to its former glory.`,
     ]
   },
   {
@@ -57,7 +57,7 @@ const introSlides: IntroSlide[] = [
     lines: [
       'Fight your battles. Defeat your enemies. Make your mark on history.',
       'Your decisions decide which stories of the Ottoman era are remembered.',
-      'So, get to work, Bob Jefferson.'
+      'So get to work, Bob Jefferson.'
     ]
   }
 ];
