@@ -3,6 +3,7 @@ import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 import { Boss } from "./boss";
 import type { npc } from "../npc";
 
+// Combat behavior and VFX for the Genghis Khan boss.
 type KhanAttackState = "idle" | "charging" | "pounding" | "bowing" | "meleeWindup";
 type KhanAttackType = "charge" | "pound" | "bow";
 
@@ -40,6 +41,7 @@ interface GroundWaveState {
 }
 
 export class GenghisKhan extends Boss {
+    // Tunable attack parameters.
     private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.2;
     private readonly chargeDurationSeconds = 0.6;
     private readonly chargeCooldownSeconds = 5.5;
@@ -88,6 +90,7 @@ export class GenghisKhan extends Boss {
     private readonly meleeDelayMinSeconds = 0.5;
     private readonly meleeDelayMaxSeconds = 1.0;
 
+    // Runtime state used to sequence attacks and cooldowns.
     private attackState: KhanAttackState = "idle";
     private attackLockUntilSeconds = 0;
     private nextChargeAtSeconds = 0;
@@ -104,6 +107,7 @@ export class GenghisKhan extends Boss {
 
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
+    // Materials are created once and reused by VFX helpers.
     private readonly chargeTrailMaterial = this.createEffectMaterial(
         new Color(0.95, 0.65, 0.2),
         new Color(1, 0.6, 0.1),
@@ -147,8 +151,10 @@ export class GenghisKhan extends Boss {
         0.95
     );
 
+    // Track spawned entities so we can clean them up safely.
     private readonly activeEffects = new Set<Entity>();
 
+    // Initialize boss tuning, taunts, and display strings.
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("genghisKhan")) {
         super(id, maxHealth, entity, "Genghis Khan");
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
@@ -180,8 +186,8 @@ export class GenghisKhan extends Boss {
                 "You have slain a king of war."
             ]
         });
-        this.setIntroTaunt("Би бол агуу Хан.", "I am the Great Khan.");
-        this.setIntroNameTranslation("Чингис хаан", "Genghis Khan");
+        this.setIntroTaunt("ᠪᠢ ᠪᠣᠯ ᠶᠡᠬᠡ ᠬᠠᠭᠠᠨ ᠪᠤᠢ", "I am the Great Khan.");
+        this.setIntroNameTranslation("ᠴᠢᠩᠭᠢᠰ ᠬᠠᠭᠠᠨ", "Genghis Khan");
     }
 
     public override updateCombatAI(
@@ -192,10 +198,12 @@ export class GenghisKhan extends Boss {
         playerEntity?: Entity | null,
         onPlayerAttack?: (attacker: npc, damage: number) => void
     ): void {
+        // Cache the player damage hook for boss-specific attacks.
         this.onPlayerAttack = onPlayerAttack;
         super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
     }
 
+    // Main per-frame AI loop for the boss.
     public override updateAI(
         deltaTime: number,
         targetEntity: Entity | null,
@@ -287,6 +295,64 @@ export class GenghisKhan extends Boss {
         };
     }
 
+    // Choose the next attack based on range, cooldowns, and recent history.
+    private pickNextAttack(distance: number, nowSeconds: number): KhanAttackType | null {
+        const choices: Array<{ type: KhanAttackType; score: number }> = [];
+
+        const canPound = nowSeconds >= this.nextPoundAtSeconds && distance <= this.groundPoundRange;
+        if (canPound) {
+            const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.groundPoundRange));
+            choices.push({ type: "pound", score: 1.2 + closeness });
+        }
+
+        const canCharge = nowSeconds >= this.nextChargeAtSeconds
+            && distance >= this.chargeRangeMin
+            && distance <= this.chargeRangeMax;
+        if (canCharge) {
+            const mid = (this.chargeRangeMin + this.chargeRangeMax) * 0.5;
+            const halfSpan = Math.max(0.001, (this.chargeRangeMax - this.chargeRangeMin) * 0.5);
+            const centered = 1 - Math.min(1, Math.abs(distance - mid) / halfSpan);
+            choices.push({ type: "charge", score: 1 + centered });
+        }
+
+        const canBow = nowSeconds >= this.nextBowAtSeconds
+            && distance >= this.bowMinRange
+            && distance <= this.bowRange;
+        if (canBow) {
+            const span = Math.max(0.001, this.bowRange - this.bowMinRange);
+            const farBias = Math.min(1, Math.max(0, (distance - this.bowMinRange) / span));
+            choices.push({ type: "bow", score: 0.9 + farBias });
+        }
+
+        if (choices.length === 0) {
+            return null;
+        }
+
+        const recentWindowSeconds = 1.8;
+        if (this.lastAttackType && (nowSeconds - this.lastAttackAtSeconds) < recentWindowSeconds) {
+            for (const choice of choices) {
+                if (choice.type === this.lastAttackType) {
+                    choice.score *= 0.55;
+                }
+            }
+        }
+
+        let best = choices[0];
+        for (let i = 1; i < choices.length; i += 1) {
+            if (choices[i].score > best.score) {
+                best = choices[i];
+            }
+        }
+
+        const tied = choices.filter((choice) => Math.abs(choice.score - best.score) < 0.05);
+        if (tied.length > 1) {
+            return tied[Math.floor(Math.random() * tied.length)].type;
+        }
+
+        return best.type;
+    }
+
+    // Charge attack: short dash with a trailing hitbox.
     private startCharge(targetEntity: Entity, nowSeconds: number): void {
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
@@ -296,6 +362,8 @@ export class GenghisKhan extends Boss {
         }
 
         dir.normalize();
+        this.lastAttackType = "charge";
+        this.lastAttackAtSeconds = nowSeconds;
         this.attackState = "charging";
         this.chargeState = {
             endTimeSeconds: nowSeconds + this.chargeDurationSeconds,
@@ -335,7 +403,10 @@ export class GenghisKhan extends Boss {
         }
     }
 
+    // Ground pound: a close-range slam that spawns a wave.
     private startGroundPound(nowSeconds: number): void {
+        this.lastAttackType = "pound";
+        this.lastAttackAtSeconds = nowSeconds;
         this.attackState = "pounding";
         const impactTimeSeconds = nowSeconds + this.groundPoundWindupSeconds;
         this.poundState = {
@@ -616,7 +687,10 @@ export class GenghisKhan extends Boss {
         return { root: waveRoot, segments, haloSegments };
     }
 
+    // Bow attack: ranged hit that pulls the player in for a follow-up.
     private startBow(targetEntity: Entity, nowSeconds: number): void {
+        this.lastAttackType = "bow";
+        this.lastAttackAtSeconds = nowSeconds;
         this.attackState = "bowing";
         this.bowState = {
             releaseTimeSeconds: nowSeconds + this.bowWindupSeconds,
@@ -753,6 +827,7 @@ export class GenghisKhan extends Boss {
     }
 
     private startPullToBoss(targetEntity: Entity): void {
+        // Pull the player toward the boss while the tether effect updates each frame.
         const bossPos = this.getEntity().getPosition().clone();
         const startPos = targetEntity.getPosition().clone();
         const toBoss = bossPos.clone().sub(startPos);
@@ -850,12 +925,14 @@ export class GenghisKhan extends Boss {
     }
 
     private scheduleMeleeFollowup(): void {
+        // Randomize the melee follow-up so the pattern feels less robotic.
         const delay = this.meleeDelayMinSeconds
             + Math.random() * Math.max(0, this.meleeDelayMaxSeconds - this.meleeDelayMinSeconds);
         this.pendingMeleeAtSeconds = (Date.now() / 1000) + delay;
         this.attackState = "meleeWindup";
     }
 
+    // Melee arc is a short VFX sweep that checks damage at the end.
     private performMeleeArcAttack(
         targetEntity: Entity,
         damage: number,
@@ -917,6 +994,7 @@ export class GenghisKhan extends Boss {
         requestAnimationFrame(animate);
     }
 
+    // VFX helpers for the bow pull tether.
     private createPullTether(): { root: Entity; beam: Entity } | null {
         const sceneApp = this.resolveSceneApp();
         if (!sceneApp?.root) {
@@ -971,6 +1049,7 @@ export class GenghisKhan extends Boss {
     }
 
     private applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
+        // Prefer the player-specific damage callback when available.
         if (this.onPlayerAttack) {
             this.onPlayerAttack(this, damage);
             return;
@@ -980,6 +1059,7 @@ export class GenghisKhan extends Boss {
         }
     }
 
+    // Resolve a PlayCanvas app reference from the boss, target, or global.
     private resolveSceneApp(targetEntity?: Entity): AppBase | undefined {
         const selfEntity = this.getEntity() as any;
         const selfApp = (selfEntity?.app ?? selfEntity?._app) as AppBase | undefined;
@@ -992,6 +1072,7 @@ export class GenghisKhan extends Boss {
         return undefined;
     }
 
+    // Build a rotation quaternion that aligns the up axis with a direction vector.
     private directionToQuaternionFromUp(dir: Vec3): { x: number; y: number; z: number; w: number } {
         const up = dir.clone().normalize();
         const forwardSeed = Math.abs(up.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
@@ -1043,6 +1124,7 @@ export class GenghisKhan extends Boss {
     }
 
     private createEffectMaterial(diffuse: Color, emissive: Color, emissiveIntensity: number, opacity: number): StandardMaterial {
+        // Shared material setup for additive boss effects.
         const material = new StandardMaterial();
         material.useLighting = false;
         material.diffuse = diffuse;
@@ -1064,6 +1146,7 @@ export class GenghisKhan extends Boss {
         label: string,
         height: number
     ): void {
+        // Expanding ring used as a telegraph or shockwave.
         const sceneApp = this.resolveSceneApp();
         if (!sceneApp?.root) {
             return;
@@ -1104,6 +1187,7 @@ export class GenghisKhan extends Boss {
     }
 
     private createChargeTrail(): Entity | null {
+        // Trail box follows the boss during a charge.
         const sceneApp = this.resolveSceneApp();
         if (!sceneApp?.root) {
             return null;
@@ -1137,6 +1221,7 @@ export class GenghisKhan extends Boss {
     }
 
     private createBowGlow(): Entity | null {
+        // Bow glow is positioned in front of the boss while winding up.
         const sceneApp = this.resolveSceneApp();
         if (!sceneApp?.root) {
             return null;
@@ -1182,6 +1267,7 @@ export class GenghisKhan extends Boss {
     }
 
     private registerEffect(effect: Entity): void {
+        // Track spawned effects so cleanup is reliable.
         this.activeEffects.add(effect);
     }
 
@@ -1198,6 +1284,7 @@ export class GenghisKhan extends Boss {
     }
 
     private cleanupEffects(): void {
+        // Best-effort cleanup; effects may already be destroyed.
         for (const effect of this.activeEffects) {
             try {
                 effect.destroy();
