@@ -196,8 +196,8 @@ export class KingGeser extends Boss {
                 "So be it. I yield this round."
             ]
         });
-        this.setIntroTaunt("Bi Geser khaan.", "I am King Geser.");
-        this.setIntroNameTranslation("Gesar Khaan", "King Geser");
+        this.setIntroTaunt("ᠪᠢ ᠭᠡᠰᠡᠷ ᠬᠠᠭᠠᠨ ᠪᠤᠢ᠃", "I am King Geser.");
+        this.setIntroNameTranslation("ᠭᠡᠰᠡᠷ ᠬᠠᠭᠠᠨ", "King Geser");
     }
 
     public override updateCombatAI(
