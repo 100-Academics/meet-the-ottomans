@@ -49,7 +49,7 @@ const introSlides: IntroSlide[] = [
     title: 'Change the Future',
     lines: [
       'If all goes well, you will ensure the Ottoman Empire is stronger than ever before.',
-      'However, you may not be remembered. The history books may forget your name'
+      'You must return glory to your forgotten empire.'
     ]
   },
   {
@@ -57,7 +57,7 @@ const introSlides: IntroSlide[] = [
     lines: [
       'Fight your battles. Defeat your enemies. Make your mark on history.',
       'Your decisions decide which stories of the Ottoman era are remembered.',
-      'So get to work, Bob Jefferson.'
+      'So get to work: Bob Jefferson.'
     ]
   }
 ];
