@@ -406,10 +406,10 @@ import {
 			{
 				name: 'tower',
 				path: 'models/npc/boss/Tower_00001_.glb',
-				offset: new Vec3(22, 0, 6),
-				rotation: new Vec3(0, 0, 0),
-				scale: new Vec3(1, 1, 1),
-				heightOffset: 0
+				offset: new Vec3(8, 0, 8),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(4, 4, 4),
+				heightOffset: 4
 			},
 			{
 				name: 'huntingRifleDude',
