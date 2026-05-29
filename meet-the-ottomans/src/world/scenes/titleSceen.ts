@@ -46,17 +46,18 @@ const introSlides: IntroSlide[] = [
     ]
   },
   {
-    title: 'Enter the Field',
+    title: 'Change the Future',
     lines: [
-      'Fight through waves of foes with sword, bow, or gun.',
-      'Keep an eye on your HUD to survive and claim victory.'
+      'If all goes well, you will ensure the Ottoman Empire is stronger than ever before.',
+      'However, you may not be remembered. The history books may forget your name'
     ]
   },
   {
     title: 'Forge Your Legacy',
     lines: [
-      'Every victory advances the timeline and reveals the next campaign.',
-      'Your decisions decide which stories of the Ottoman era are remembered.'
+      'Fight your battles. Defeat your enemies. Make your mark on history.',
+      'Your decisions decide which stories of the Ottoman era are remembered.',
+      'So, get to work, Bob Jefferson.'
     ]
   }
 ];
