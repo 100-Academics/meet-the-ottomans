@@ -401,6 +401,87 @@ import {
 			console.error('[Ground] model load failed', error);
 		}
 
+		const previewAnchor = respawnPosition.clone();
+		const previewModels = [
+			{
+				name: 'tower',
+				path: 'models/npc/boss/Tower_00001_.glb',
+				offset: new Vec3(22, 0, 6),
+				rotation: new Vec3(0, 0, 0),
+				scale: new Vec3(1, 1, 1),
+				heightOffset: 0
+			},
+			{
+				name: 'huntingRifleDude',
+				path: 'models/npc/HuntingRifleDude.glb',
+				offset: new Vec3(10, 0, 10),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2),
+				heightOffset: 2
+			},
+			{
+				name: 'JoanOfArc',
+				path: 'models/npc/JoanOfArc.glb',
+				offset: new Vec3(6, 0, 12),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2),
+				heightOffset: 2
+			},
+			{
+				name: 'WillieConquer',
+				path: 'models/npc/WillieConquer.glb',
+				offset: new Vec3(2, 0, 14),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2),
+				heightOffset: 2
+			},
+			{
+				name: 'koreanSoldier',
+				path: 'models/npc/koreanSoldier.glb',
+				offset: new Vec3(-2, 0, 14),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2),
+				heightOffset: 2
+			},
+			{
+				name: 'mamlukIThink',
+				path: 'models/npc/mamlukIThink.glb',
+				offset: new Vec3(-6, 0, 12),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2),
+				heightOffset: 2
+			},
+			{
+				name: 'modernishsoldier',
+				path: 'models/npc/modernishsoldier.glb',
+				offset: new Vec3(-10, 0, 10),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2),
+				heightOffset: 2
+			}
+		];
+
+		await Promise.all(
+			previewModels.map(async (model) => {
+				const worldX = previewAnchor.x + model.offset.x;
+				const worldZ = previewAnchor.z + model.offset.z;
+				const groundY = getHighestGroundHitY(app, worldX, worldZ, 'ground') ?? respawnGroundY;
+				const worldY = (Number.isFinite(groundY) ? groundY : 0) + model.heightOffset;
+				try {
+					const preview = await loadModel(model.path, app, {
+						position: new Vec3(worldX, worldY, worldZ),
+						rotation: model.rotation,
+						scale: model.scale,
+						rigidbodyType: 'static',
+						autoCollision: false
+					});
+					preview.modelEntity.name = `preview-${model.name}`;
+				} catch (error) {
+					console.warn(`[Preview] Failed to load ${model.name}`, error);
+				}
+			})
+		);
+
 		const rigidbodySystem = (app.systems as any).rigidbody;
 		if (rigidbodySystem && typeof rigidbodySystem.on === 'function') {
 			rigidbodySystem.on('contact', (contactResult: any) => {
