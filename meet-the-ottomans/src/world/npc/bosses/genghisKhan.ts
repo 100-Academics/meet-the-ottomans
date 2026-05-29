@@ -83,12 +83,16 @@ export class GenghisKhan extends Boss {
     private readonly pullTetherPulse = 0.08;
     private readonly pullTetherStartHeight = 3.4;
     private readonly pullTetherEndHeight = 0.4;
+    private readonly pullMaxDurationSeconds = 2.4;
 
     private readonly meleeDamage = 24;
     private readonly meleeRange = 3.8;
     private readonly meleeArcDurationSeconds = 0.7;
     private readonly meleeDelayMinSeconds = 0.5;
     private readonly meleeDelayMaxSeconds = 1.0;
+    private readonly pullReleaseMeleeDelaySeconds = 0.6;
+    private readonly pullReleaseDamageDelaySeconds = 0.35;
+    private readonly pullReleaseDamageRange = 4.2;
 
     // Runtime state used to sequence attacks and cooldowns.
     private attackState: KhanAttackState = "idle";
@@ -97,8 +101,11 @@ export class GenghisKhan extends Boss {
     private nextPoundAtSeconds = 0;
     private nextBowAtSeconds = 0;
     private pendingMeleeAtSeconds: number | null = null;
+    private pendingPullDamage: number | null = null;
+    private pullDamageToken = 0;
     private lastAttackType: KhanAttackType | null = null;
     private lastAttackAtSeconds = -Infinity;
+    private isPullingPlayer = false;
 
     private chargeState: ChargeState | null = null;
     private poundState: PoundState | null = null;
@@ -243,6 +250,11 @@ export class GenghisKhan extends Boss {
 
         if (this.bowState) {
             this.updateBow(targetEntity, currentTimeSeconds);
+            return;
+        }
+
+        if (this.isPullingPlayer) {
+            this.faceTarget(targetEntity, clampedDeltaTime);
             return;
         }
 
@@ -734,7 +746,7 @@ export class GenghisKhan extends Boss {
     }
 
     private fireHookHitscan(targetEntity: Entity): void {
-        this.applyDamage(this.bowDamage);
+        this.pendingPullDamage = this.bowDamage;
         this.startPullToBoss(targetEntity);
         this.scheduleMeleeFollowup();
     }
@@ -808,7 +820,7 @@ export class GenghisKhan extends Boss {
             const hitRadius = Math.max(2.4, (targetEntity.collision?.radius as number) ?? 2.4);
 
             if (distToTarget <= hitRadius) {
-                this.applyDamage(this.bowDamage);
+                this.pendingPullDamage = this.bowDamage;
                 this.destroyEffect(projectile);
                 this.startPullToBoss(targetEntity);
                 this.scheduleMeleeFollowup();
@@ -836,6 +848,8 @@ export class GenghisKhan extends Boss {
             return;
         }
 
+        this.isPullingPlayer = true;
+
         const stopDistance = Math.max(this.bowPullStopDistance, this.getHitboxRadius() + 1.2);
 
         const controller = (targetEntity as any)?.script?.FirstPersonCamera
@@ -855,23 +869,66 @@ export class GenghisKhan extends Boss {
 
         const start = performance.now();
         let lastTime = start;
+        const pullStartSeconds = Date.now() / 1000;
+
+        const finishPull = (releaseTimeSeconds: number, cancelMelee: boolean): void => {
+            this.isPullingPlayer = false;
+            if (cancelMelee) {
+                this.pendingMeleeAtSeconds = null;
+                this.pendingPullDamage = null;
+            } else if (this.pendingMeleeAtSeconds !== null) {
+                this.pendingMeleeAtSeconds = Math.max(
+                    this.pendingMeleeAtSeconds,
+                    releaseTimeSeconds + this.pullReleaseMeleeDelaySeconds
+                );
+            }
+            this.attackLockUntilSeconds = Math.max(
+                this.attackLockUntilSeconds,
+                releaseTimeSeconds + this.pullReleaseMeleeDelaySeconds
+            );
+            if (typeof controllerAny?.setMovementLocked === "function") {
+                controllerAny.setMovementLocked(false);
+            } else if (controllerAny) {
+                controllerAny.movementLocked = false;
+            }
+            if (!cancelMelee && this.pendingPullDamage !== null) {
+                const damage = this.pendingPullDamage;
+                this.pendingPullDamage = null;
+                const token = ++this.pullDamageToken;
+                const delayMs = Math.max(0, this.pullReleaseDamageDelaySeconds * 1000);
+                setTimeout(() => {
+                    if (!this.isAlive() || this.pullDamageToken !== token) {
+                        return;
+                    }
+                    try {
+                        if (this.getFlatDistanceTo(targetEntity) <= this.pullReleaseDamageRange) {
+                            this.applyDamage(damage);
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+                }, delayMs);
+            }
+            if (tether) {
+                this.destroyEffect(tether.root);
+            }
+        };
 
         const animate = () => {
             if (!this.isAlive()) {
-                if (typeof controllerAny?.setMovementLocked === "function") {
-                    controllerAny.setMovementLocked(false);
-                } else if (controllerAny) {
-                    controllerAny.movementLocked = false;
-                }
-                if (tether) {
-                    this.destroyEffect(tether.root);
-                }
+                finishPull(Date.now() / 1000, true);
                 return;
             }
 
             const now = performance.now();
             const dt = Math.max(0, Math.min(0.05, (now - lastTime) / 1000));
             lastTime = now;
+            const nowSeconds = Date.now() / 1000;
+
+            if ((nowSeconds - pullStartSeconds) >= this.pullMaxDurationSeconds) {
+                finishPull(nowSeconds, false);
+                return;
+            }
 
             const bossNow = this.getEntity().getPosition().clone();
             const currentPos = targetEntity.getPosition().clone();
@@ -879,15 +936,13 @@ export class GenghisKhan extends Boss {
             toBossNow.y = 0;
             const distance = toBossNow.length();
 
+            if (!Number.isFinite(distance)) {
+                finishPull(nowSeconds, false);
+                return;
+            }
+
             if (distance <= stopDistance) {
-                if (typeof controllerAny?.setMovementLocked === "function") {
-                    controllerAny.setMovementLocked(false);
-                } else if (controllerAny) {
-                    controllerAny.movementLocked = false;
-                }
-                if (tether) {
-                    this.destroyEffect(tether.root);
-                }
+                finishPull(nowSeconds, false);
                 return;
             }
 
@@ -901,6 +956,10 @@ export class GenghisKhan extends Boss {
                 ? controllerAny.groundHeight
                 : (pulled.y - (controllerAny?.playerHeight ?? 2));
             pulled.y = groundHeight + (controllerAny?.playerHeight ?? 2);
+            if (!Number.isFinite(pulled.x) || !Number.isFinite(pulled.y) || !Number.isFinite(pulled.z)) {
+                finishPull(nowSeconds, false);
+                return;
+            }
             targetEntity.setPosition(pulled);
             if (controller?.velocity) {
                 controller.velocity.set(0, 0, 0);

@@ -2,7 +2,11 @@ import { Boss } from "./boss";
 import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
 import type { npc } from "../npc";
 
+// Combat behavior and VFX for the Jesus Christ boss.
+type ChristAttackType = "spire" | "ray";
+
 export class Christ extends Boss {
+    // Tunable attack parameters.
     private readonly holySpireDamage = 28;
     private readonly holySpireRange = 160;
     private readonly holySpireCooldown = 4.0;
@@ -26,6 +30,10 @@ export class Christ extends Boss {
     private readonly holyRayRehitCooldownMs = 350;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
     private nextHolyRayAtSeconds = 0;
+
+    // Runtime state used to sequence attacks and cooldowns.
+    private lastAttackType: ChristAttackType | null = null;
+    private lastAttackAtSeconds = -Infinity;
 
     private activeHolyBeams = new Set<{ beamRoot: Entity; hasHit: boolean }>();
 
@@ -75,6 +83,51 @@ export class Christ extends Boss {
         };
     }
 
+    // Choose the next attack based on range, cooldowns, and recent history.
+    private pickNextAttack(distance: number, nowSeconds: number): ChristAttackType | null {
+        const choices: Array<{ type: ChristAttackType; score: number }> = [];
+        const spireReady = nowSeconds >= this.nextHolySpireAtSeconds;
+        const rayReady = nowSeconds >= this.nextHolyRayAtSeconds;
+
+        if (spireReady) {
+            const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.holySpireRange));
+            choices.push({ type: "spire", score: 1.05 + closeness });
+        }
+
+        if (rayReady) {
+            const farBias = Math.min(1, distance / Math.max(0.001, this.holyRayRange));
+            choices.push({ type: "ray", score: 0.95 + farBias });
+        }
+
+        if (choices.length === 0) {
+            return null;
+        }
+
+        const recentWindowSeconds = 1.6;
+        if (this.lastAttackType && (nowSeconds - this.lastAttackAtSeconds) < recentWindowSeconds) {
+            for (const choice of choices) {
+                if (choice.type === this.lastAttackType) {
+                    choice.score *= 0.6;
+                }
+            }
+        }
+
+        let best = choices[0];
+        for (let i = 1; i < choices.length; i += 1) {
+            if (choices[i].score > best.score) {
+                best = choices[i];
+            }
+        }
+
+        const tied = choices.filter((choice) => Math.abs(choice.score - best.score) < 0.05);
+        if (tied.length > 1) {
+            return tied[Math.floor(Math.random() * tied.length)].type;
+        }
+
+        return best.type;
+    }
+
+    // Main per-frame AI loop for the boss.
     public override updateAI(
         deltaTime: number,
         targetEntity: Entity | null,
@@ -121,24 +174,24 @@ export class Christ extends Boss {
             return;
         }
 
-        const spireReady = currentTimeSeconds >= this.nextHolySpireAtSeconds;
-        const rayReady = currentTimeSeconds >= this.nextHolyRayAtSeconds;
-
-        if (!spireReady && !rayReady) {
+        const chosenAttack = this.pickNextAttack(distance, currentTimeSeconds);
+        if (!chosenAttack) {
             return;
         }
 
         const shotOrigin = myPos.clone();
         const shotTarget = targetPos.clone();
 
-        const chooseRay = rayReady && (!spireReady || Math.random() < 0.5);
-
-        if (chooseRay) {
+        if (chosenAttack === "ray") {
+            this.lastAttackType = "ray";
+            this.lastAttackAtSeconds = currentTimeSeconds;
             this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
             this.fireHolyRay(targetEntity, onAttack);
             return;
         }
 
+        this.lastAttackType = "spire";
+        this.lastAttackAtSeconds = currentTimeSeconds;
         this.nextHolySpireAtSeconds = currentTimeSeconds + this.holySpireCooldown;
         const spireEnd = this.calculateHolySpireEnd(shotOrigin, shotTarget);
         this.fireHolySpire(targetEntity, shotOrigin, spireEnd, onAttack);

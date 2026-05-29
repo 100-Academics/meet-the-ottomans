@@ -1,6 +1,7 @@
 import { Boss } from "./boss";
 import { Entity } from "playcanvas";
 
+// Simple boss that relies on base AI; taunts are configured here.
 export class JoanOfArc extends Boss {
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("Joan of Arc")) {
         super(id, maxHealth, entity, "Joan of Arc");

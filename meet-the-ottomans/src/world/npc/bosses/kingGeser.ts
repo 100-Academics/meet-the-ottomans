@@ -3,6 +3,7 @@ import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 import { Boss } from "./boss";
 import type { npc } from "../npc";
 
+// Combat behavior and VFX for the King Geser boss.
 type GeserAttackType = "dash" | "spear" | "lightning";
 
 interface DashState {
@@ -49,6 +50,7 @@ interface LightningState {
 }
 
 export class KingGeser extends Boss {
+    // Tunable attack parameters.
     private readonly dashSpeed = PLAYER_MOVE_SPEED * 2.45;
     private readonly dashDurationSeconds = 0.55;
     private readonly dashRecoverSeconds = 0.35;
@@ -100,6 +102,7 @@ export class KingGeser extends Boss {
     private readonly lightningScatterRadius = 3.5;
     private readonly lightningRecoverSeconds = 0.4;
 
+    // Runtime state used to sequence attacks and cooldowns.
     private attackLockUntilSeconds = 0;
     private nextDashAtSeconds = 0;
     private nextSpearAtSeconds = 0;
@@ -113,6 +116,7 @@ export class KingGeser extends Boss {
 
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
+    // Materials are created once and reused by VFX helpers.
     private readonly dashTrailMaterial = this.createEffectMaterial(
         new Color(0.2, 0.65, 1),
         new Color(0.4, 0.85, 1),
@@ -162,6 +166,7 @@ export class KingGeser extends Boss {
         0.85
     );
 
+    // Track spawned entities so cleanup is reliable.
     private readonly activeEffects = new Set<Entity>();
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("King Geser")) {
@@ -208,10 +213,12 @@ export class KingGeser extends Boss {
         playerEntity?: Entity | null,
         onPlayerAttack?: (attacker: npc, damage: number) => void
     ): void {
+        // Cache the player damage hook for boss-specific attacks.
         this.onPlayerAttack = onPlayerAttack;
         super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
     }
 
+    // Main per-frame AI loop for the boss.
     public override updateAI(
         deltaTime: number,
         targetEntity: Entity | null,
@@ -301,6 +308,7 @@ export class KingGeser extends Boss {
         };
     }
 
+    // Choose the next attack based on range, cooldowns, and recent history.
     private pickNextAttack(distance: number, nowSeconds: number): GeserAttackType | null {
         const options: Array<{ type: GeserAttackType; weight: number }> = [];
         const dashReady = nowSeconds >= this.nextDashAtSeconds
