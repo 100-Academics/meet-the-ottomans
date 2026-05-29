@@ -407,13 +407,13 @@ import {
 				name: 'tower',
 				path: 'models/npc/boss/Tower_00001_.glb',
 				offset: new Vec3(8, 0, 8),
-				rotation: new Vec3(-90, 0, 0),
-				scale: new Vec3(4, 4, 4),
+				rotation: new Vec3(0, 0, 0),
+				scale: new Vec3(1, 1, 1),
 				heightOffset: 4
 			},
 			{
-				name: 'huntingRifleDude',
-				path: 'models/npc/HuntingRifleDude.glb',
+				name: 'WWISoldier',
+				path: 'models/npc/WWISoldier.glb',
 				offset: new Vec3(10, 0, 10),
 				rotation: new Vec3(-90, 0, 0),
 				scale: new Vec3(2, 2, 2),
@@ -436,24 +436,24 @@ import {
 				heightOffset: 2
 			},
 			{
-				name: 'koreanSoldier',
-				path: 'models/npc/koreanSoldier.glb',
+				name: 'KoreanSoldier',
+				path: 'models/npc/KoreanSoldier.glb',
 				offset: new Vec3(-2, 0, 14),
 				rotation: new Vec3(-90, 0, 0),
 				scale: new Vec3(2, 2, 2),
 				heightOffset: 2
 			},
 			{
-				name: 'mamlukIThink',
-				path: 'models/npc/mamlukIThink.glb',
+				name: 'Mamluk',
+				path: 'models/npc/Mamluk.glb',
 				offset: new Vec3(-6, 0, 12),
 				rotation: new Vec3(-90, 0, 0),
 				scale: new Vec3(2, 2, 2),
 				heightOffset: 2
 			},
 			{
-				name: 'modernishsoldier',
-				path: 'models/npc/modernishsoldier.glb',
+				name: 'VietnamSoldier',
+				path: 'models/npc/VietnamSoldier.glb',
 				offset: new Vec3(-10, 0, 10),
 				rotation: new Vec3(-90, 0, 0),
 				scale: new Vec3(2, 2, 2),

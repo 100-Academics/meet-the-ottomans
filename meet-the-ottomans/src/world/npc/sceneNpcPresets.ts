@@ -9,13 +9,13 @@ import type { NpcSceneSpawnOptions, NpcSpawnOverrides, NpcSpawnPoint } from "./s
 const NPC_MODEL_PATHS = {
     mongolTroop: "test/armored_king.glb",
     templarTroop: "models/npc/Crusader.glb",
-    frenchSoldierOld: "models/npc/FrenchSoldierOld.glb",
-    huntingrifledude: "models/npc/HuntingRifleDude.glb",
+    frenchSoldierOld: "models/npc/FrenchSoldierWWI.glb",
+    huntingrifledude: "models/npc/WWISoldier.glb",
     joanofarc: "models/npc/JoanOfArc.glb",
     willieconquer: "models/npc/WillieConquer.glb",
-    koreansldier: "models/npc/koreanSoldier.glb",
-    mamlukIthink: "models/npc/mamlukIThink.glb",
-    modernishsoldier: "models/npc/modernishsoldier.glb",
+    koreansldier: "models/npc/KoreanSoldier.glb",
+    mamlukIthink: "models/npc/Mamluk.glb",
+    modernishsoldier: "models/npc/VietnamSoldier.glb",
     genghisKhan: "models/npc/boss/genghis_khan.glb",
     kingGeser: "models/npc/boss/KingGeser.glb",
     christ: "models/npc/boss/Jesus10K.glb"
