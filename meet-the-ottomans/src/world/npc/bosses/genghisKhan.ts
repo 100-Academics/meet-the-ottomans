@@ -180,6 +180,8 @@ export class GenghisKhan extends Boss {
                 "You have slain a king of war."
             ]
         });
+        this.setIntroTaunt("Bi ikh khaan.", "I am the Great Khan.");
+        this.setIntroNameTranslation("Chinggis Khaan", "Genghis Khan");
     }
 
     public override updateCombatAI(

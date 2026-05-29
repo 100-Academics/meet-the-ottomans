@@ -447,6 +447,9 @@ canvas#application-canvas {
   padding: 0.35rem 0.6rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.85);
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+  white-space: pre-line;
+  transition: opacity 0.35s ease;
+  opacity: 1;
 }
 
 /* Battle HUD */

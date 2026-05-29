@@ -32,5 +32,7 @@ export class KingGeser extends Boss {
                 "So be it. I yield this round."
             ]
         });
+        this.setIntroTaunt("Bi Geser khaan.", "I am King Geser.");
+        this.setIntroNameTranslation("Gesar Khaan", "King Geser");
     }
 }

@@ -26,6 +26,11 @@ export interface BossTauntSet {
     bossDeath?: string[];
 }
 
+interface BossIntroTaunt {
+    nonEnglish: string;
+    english: string;
+}
+
 export class Boss extends npc {
     private static activeBoss: Boss | null = null;
     private static lastBossDeathTaunt: string | null = null;
@@ -54,6 +59,20 @@ export class Boss extends npc {
     private bossLowHealthThreshold = 0.35;
     private playerLowHealthThreshold = 0.35;
     private bossDeathTauntDurationMs = 2800;
+    private introTaunt: BossIntroTaunt | null = null;
+    private introNameTranslation: BossIntroTaunt | null = null;
+    private introTauntState: "pending" | "playing" | "done" = "pending";
+    private introTauntTimeoutIds: number[] = [];
+    private introFadeCycles = 2;
+    private introFadeInMs = 260;
+    private introFadeOutMs = 260;
+    private introFadeHoldMs = 650;
+    private introFadeGapMs = 180;
+    private introScrambleFrames = 12;
+    private introScrambleFrameMs = 120;
+    private introFinalHoldMs = 1600;
+    private introNameDelayMs = 200;
+    private introNameHoldMs = 260;
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("boss"), title?: string) {
         super(id, "foe", maxHealth, entity);
@@ -148,6 +167,34 @@ export class Boss extends npc {
         if (tauntSet.bossDeath) {
             this.setBossDeathTaunts(tauntSet.bossDeath);
         }
+    }
+
+    public setIntroTaunt(nonEnglish: string, english: string): void {
+        const nonEnglishText = nonEnglish?.trim();
+        const englishText = english?.trim();
+        if (!nonEnglishText || !englishText) {
+            this.introTaunt = null;
+            this.introTauntState = "done";
+            this.clearIntroTauntTimers();
+            return;
+        }
+
+        this.introTaunt = { nonEnglish: nonEnglishText, english: englishText };
+        this.introTauntState = "pending";
+        this.clearIntroTauntTimers();
+    }
+
+    public setIntroNameTranslation(nonEnglish: string, english: string): void {
+        const nonEnglishText = nonEnglish?.trim();
+        const englishText = english?.trim();
+        if (!nonEnglishText || !englishText) {
+            this.introNameTranslation = null;
+            return;
+        }
+
+        this.introNameTranslation = { nonEnglish: nonEnglishText, english: englishText };
+        this.introTauntState = "pending";
+        this.clearIntroTauntTimers();
     }
 
     public setTauntIntervalSeconds(minSeconds: number, maxSeconds: number): void {
@@ -264,6 +311,13 @@ export class Boss extends npc {
             return;
         }
 
+        if ((this.introTaunt || this.introNameTranslation) && this.introTauntState !== "done") {
+            if (this.introTauntState !== "playing") {
+                this.startIntroTaunt();
+            }
+            return;
+        }
+
         const tauntPhase = this.getTauntPhase();
         const tauntPool = this.tauntPools[tauntPhase];
 
@@ -292,6 +346,245 @@ export class Boss extends npc {
         }
 
         this.scheduleNextTaunt(nowSeconds);
+    }
+
+    private clearStatusTimeout(): void {
+        if (this.statusTimeoutId !== undefined) {
+            window.clearTimeout(this.statusTimeoutId);
+            this.statusTimeoutId = undefined;
+        }
+    }
+
+    private clearIntroTauntTimers(): void {
+        for (const timeoutId of this.introTauntTimeoutIds) {
+            window.clearTimeout(timeoutId);
+        }
+        this.introTauntTimeoutIds = [];
+    }
+
+    private cancelIntroTaunt(): void {
+        if (!this.introTaunt && !this.introNameTranslation) {
+            return;
+        }
+        this.clearIntroTauntTimers();
+        this.introTauntState = "done";
+        if (this.titleEl) {
+            this.titleEl.textContent = this.title;
+        }
+    }
+
+    private scheduleIntroStep(callback: () => void, delayMs: number): void {
+        const timeoutId = window.setTimeout(callback, Math.max(0, delayMs));
+        this.introTauntTimeoutIds.push(timeoutId);
+    }
+
+    private ensureStatusElement(): HTMLElement | null {
+        if (!this.healthBarEl) {
+            this.drawHealthBar();
+        }
+
+        if (!this.healthBarEl) {
+            return null;
+        }
+
+        if (!this.statusEl) {
+            const status = document.createElement("div");
+            status.className = "boss-health-status";
+            status.style.display = "none";
+            status.style.opacity = "1";
+            this.healthBarEl.appendChild(status);
+            this.statusEl = status;
+        }
+
+        return this.statusEl;
+    }
+
+    private ensureTitleElement(): HTMLElement | null {
+        if (!this.healthBarEl) {
+            this.drawHealthBar();
+        }
+
+        if (!this.healthBarEl) {
+            return null;
+        }
+
+        if (!this.titleEl) {
+            this.drawHealthBar();
+        }
+
+        return this.titleEl;
+    }
+
+    private setStatusLines(lines: string[], opacity: number): void {
+        const status = this.ensureStatusElement();
+        if (!status) {
+            return;
+        }
+
+        const text = lines.filter(Boolean).join("\n");
+        status.textContent = text;
+        status.style.display = "block";
+        status.style.opacity = `${Math.max(0, Math.min(1, opacity))}`;
+    }
+
+    private scheduleTranslationSequence(
+        nonEnglish: string,
+        english: string,
+        startTimeMs: number,
+        showTranslating: (line: string, showLabel: boolean, opacity: number) => void
+    ): number {
+        let time = startTimeMs;
+        const fadeStartDelayMs = 20;
+
+        this.scheduleIntroStep(() => showTranslating(nonEnglish, true, 0), time);
+        time += fadeStartDelayMs;
+
+        for (let cycle = 0; cycle < this.introFadeCycles; cycle += 1) {
+            this.scheduleIntroStep(() => showTranslating(nonEnglish, true, 1), time);
+            time += this.introFadeInMs + this.introFadeHoldMs;
+            this.scheduleIntroStep(() => showTranslating(nonEnglish, true, 0), time);
+            time += this.introFadeOutMs + this.introFadeGapMs;
+        }
+
+        for (let frame = 0; frame < this.introScrambleFrames; frame += 1) {
+            const progress = this.introScrambleFrames <= 1
+                ? 1
+                : frame / (this.introScrambleFrames - 1);
+            this.scheduleIntroStep(() => {
+                const scrambled = this.buildScrambleText(english, progress);
+                showTranslating(scrambled, true, 1);
+            }, time + (frame * this.introScrambleFrameMs));
+        }
+
+        time += this.introScrambleFrames * this.introScrambleFrameMs;
+        this.scheduleIntroStep(() => showTranslating(english, false, 1), time);
+        time += this.introFinalHoldMs;
+
+        return time;
+    }
+
+    private scheduleNameTranslationSequence(
+        nonEnglish: string,
+        english: string,
+        startTimeMs: number
+    ): number {
+        const titleEl = this.ensureTitleElement();
+        if (!titleEl) {
+            return startTimeMs;
+        }
+
+        let time = startTimeMs;
+        this.scheduleIntroStep(() => {
+            if (this.titleEl) {
+                this.titleEl.textContent = nonEnglish;
+            }
+        }, time);
+        time += this.introNameHoldMs;
+
+        for (let frame = 0; frame < this.introScrambleFrames; frame += 1) {
+            const progress = this.introScrambleFrames <= 1
+                ? 1
+                : frame / (this.introScrambleFrames - 1);
+            this.scheduleIntroStep(() => {
+                if (this.titleEl) {
+                    this.titleEl.textContent = this.buildScrambleText(english, progress);
+                }
+            }, time + (frame * this.introScrambleFrameMs));
+        }
+
+        time += this.introScrambleFrames * this.introScrambleFrameMs;
+        this.scheduleIntroStep(() => {
+            if (this.titleEl) {
+                this.titleEl.textContent = english;
+            }
+        }, time);
+        time += this.introFinalHoldMs;
+
+        return time;
+    }
+
+    private startIntroTaunt(): void {
+        if (this.introTauntState === "playing" || (!this.introTaunt && !this.introNameTranslation)) {
+            return;
+        }
+
+        this.introTauntState = "playing";
+        this.nextTauntAtSeconds = null;
+        this.lastTauntPhase = null;
+        this.lastTauntIndex = null;
+        this.clearStatusTimeout();
+        this.clearIntroTauntTimers();
+
+        if (this.introNameTranslation) {
+            const titleEl = this.ensureTitleElement();
+            if (titleEl) {
+                titleEl.textContent = this.introNameTranslation.nonEnglish;
+            }
+        }
+
+        let time = 0;
+
+        if (this.introTaunt) {
+            const status = this.ensureStatusElement();
+            if (!status) {
+                this.introTauntState = "done";
+                return;
+            }
+
+            const nonEnglish = this.introTaunt.nonEnglish;
+            const english = this.introTaunt.english;
+            const translatingLabel = "Translating...";
+            const showTranslating = (line: string, showLabel: boolean, opacity: number) => {
+                const lines = showLabel ? [line, translatingLabel] : [line];
+                this.setStatusLines(lines, opacity);
+            };
+
+            time = this.scheduleTranslationSequence(nonEnglish, english, 0, showTranslating);
+        }
+
+        if (this.introNameTranslation) {
+            time += this.introNameDelayMs;
+            time = this.scheduleNameTranslationSequence(
+                this.introNameTranslation.nonEnglish,
+                this.introNameTranslation.english,
+                time
+            );
+        }
+
+        this.scheduleIntroStep(() => {
+            if (this.statusEl) {
+                this.statusEl.textContent = "";
+                this.statusEl.style.display = "none";
+                this.statusEl.style.opacity = "0";
+            }
+            this.introTauntState = "done";
+        }, time);
+    }
+
+    private buildScrambleText(target: string, progress: number): string {
+        const clamped = Math.max(0, Math.min(1, progress));
+        return target
+            .split("")
+            .map((char) => {
+                if (char === " " || char === "\n" || char === "\t") {
+                    return char;
+                }
+                if (!/[a-zA-Z]/.test(char)) {
+                    return char;
+                }
+                if (Math.random() < clamped) {
+                    return char;
+                }
+                return this.pickScrambleChar(char);
+            })
+            .join("");
+    }
+
+    private pickScrambleChar(sample: string): string {
+        const pool = "abcdefghijklmnopqrstuvwxyz";
+        const pick = pool.charAt(Math.floor(Math.random() * pool.length));
+        const isUpper = sample.toUpperCase() === sample && sample.toLowerCase() !== sample;
+        return isUpper ? pick.toUpperCase() : pick;
     }
 
     private buildHealthBar(bar: HTMLElement): void {
@@ -374,44 +667,31 @@ export class Boss extends npc {
             return;
         }
 
-        if (!this.healthBarEl) {
-            this.drawHealthBar();
-        }
-
-        if (!this.healthBarEl) {
+        this.cancelIntroTaunt();
+        const status = this.ensureStatusElement();
+        if (!status) {
             return;
         }
 
-        if (!this.statusEl) {
-            const status = document.createElement("div");
-            status.className = "boss-health-status";
-            status.style.display = "none";
-            this.healthBarEl.appendChild(status);
-            this.statusEl = status;
-        }
+        this.clearStatusTimeout();
 
-        this.statusEl.textContent = message.trim();
-        this.statusEl.style.display = "block";
-
-        if (this.statusTimeoutId !== undefined) {
-            window.clearTimeout(this.statusTimeoutId);
-            this.statusTimeoutId = undefined;
-        }
+        status.textContent = message.trim();
+        status.style.display = "block";
+        status.style.opacity = "1";
 
         this.statusTimeoutId = window.setTimeout(() => {
             if (this.statusEl) {
                 this.statusEl.textContent = "";
                 this.statusEl.style.display = "none";
+                this.statusEl.style.opacity = "0";
             }
             this.statusTimeoutId = undefined;
         }, Math.max(0, durationMs));
     }
 
     public removeHealthBar(): void {
-        if (this.statusTimeoutId !== undefined) {
-            window.clearTimeout(this.statusTimeoutId);
-            this.statusTimeoutId = undefined;
-        }
+        this.cancelIntroTaunt();
+        this.clearStatusTimeout();
         this.statusEl?.remove();
         this.statusEl = null;
         this.healthBarEl?.remove();
@@ -428,6 +708,7 @@ export class Boss extends npc {
                 Boss.activeBoss = null;
             }
             try {
+                this.cancelIntroTaunt();
                 this.resetTauntTimer();
                 const deathTaunt = this.getBossDeathTaunt();
                 Boss.lastBossDeathTaunt = deathTaunt;

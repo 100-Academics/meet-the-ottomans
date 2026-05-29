@@ -58,6 +58,8 @@ export class Christ extends Boss {
                 "Forgive me, my children."
             ]
         });
+        this.setIntroTaunt("Ego sum via.", "I am the way.");
+        this.setIntroNameTranslation("Iesus Christus", "Jesus Christ");
         this.aiConfig.attackRange = Math.max(this.holySpireRange, this.holyRayRange);
         this.aiConfig.attackCooldown = Math.min(this.holySpireCooldown, this.holyRayCooldown);
     }
