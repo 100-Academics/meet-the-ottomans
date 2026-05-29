@@ -34,7 +34,7 @@ const introSlides: IntroSlide[] = [
   {
     title: 'Meet the Ottomans',
     lines: [
-      'You are Bob Jefferson, the last descendant of Suleiman the Magnificent.',
+      'You are Bob Jefferson, the last descendant of Sultan Suleiman the Magnificent.',
       `In the far future of ${month}/${day}/${year}, you are recruited by pro-Ottoman nationalists who want to return Turkey to its former glory.`,
     ]
   },
