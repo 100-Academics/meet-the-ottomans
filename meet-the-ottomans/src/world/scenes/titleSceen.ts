@@ -13,19 +13,36 @@ type IntroSlide = {
   2) Each slide needs a title and a lines array (each item is one line).
   3) The progress dots and navigation update automatically.
 */
+let now = new Date();
+let year = now.getFullYear();
+let month = now.getMonth() + 1;
+let day = now.getDate() + 1;
+
+if (month === 2 && day > 28) {
+  day = 1;
+  month = 3;
+} else if ([4, 6, 9, 11].includes(month) && day > 30) {
+  day = 1;
+  month += 1;
+} else if (day > 31) {
+  day = 1;
+  month = 1;
+  year += 1;
+}
+
 const introSlides: IntroSlide[] = [
   {
     title: 'Meet the Ottomans',
     lines: [
-      'You are the strategist guiding an empire across centuries of conflict.',
-      'Travel the globe, uncover key battles, and shape history through skill and knowledge.'
+      'You are Bob Jefferson, the last descendant of Suleiman the Magnificent.',
+      `In the far future of ${month}/${day}/${year}, you are recruited by pro-Ottoman nationalists who want to return Turkey to its former glory.`,
     ]
   },
   {
-    title: 'Read the Globe',
+    title: 'Change the Past',
     lines: [
-      'Rotate the world to discover battle sites glowing on the map.',
-      'Choose a time period, then test your knowledge to unlock the battlefield.'
+      'The nationalists have developed a time machine.',
+      'They intend to send you back in time in order to change the course of battles fought across history.'
     ]
   },
   {
