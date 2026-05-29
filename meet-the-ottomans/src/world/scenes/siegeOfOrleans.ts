@@ -557,6 +557,9 @@ import {
 			battleStatus: {
 				getCameraEntity: () => player.getCameraEntity(),
 				initialTotal: orleansSpawnPoints.length,
+				alwaysOutline: true,
+				outlineTargets: 'all',
+				outlineColor: new Color(1, 0.9, 0.2),
 				onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 			},
 			onNpcAttack: (attacker, target, damage) => {
