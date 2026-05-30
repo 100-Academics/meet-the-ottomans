@@ -42,7 +42,8 @@ const introSlides: IntroSlide[] = [
     title: 'Change the Past',
     lines: [
       'The nationalists have developed a time machine.',
-      'They intend to send you back in time in order to change the course of battles fought across history.'
+      'They intend to send you back in time in order to change the course of battles fought across history.',
+      'Equipped with nothing more than your weapons and a translator unit, you are expected to win 21 battles.'
     ]
   },
   {
