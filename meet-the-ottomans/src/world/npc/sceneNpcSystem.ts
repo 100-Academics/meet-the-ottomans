@@ -9,6 +9,7 @@ import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
 import { Christ } from "./bosses/jesus";
 import { JoanOfArc } from "./bosses/joanOfArc";
+import { WilliamTheConquerer } from "./bosses/williamTheConquerer";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -345,6 +346,14 @@ export async function spawnSceneNpcs(
             } else if (spawn.type === "joanofarc") {
                 console.log(`Spawning Joan of Arc Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new JoanOfArc(spawn.id, spawn.maxHealth ?? 260, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
+                npcs.push(boss);
+            } else if (spawn.type === "williamTheConquerer") {
+                console.log(`Spawning William the Conquerer Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new WilliamTheConquerer(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();

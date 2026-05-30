@@ -18,8 +18,9 @@ export class Player{
     private health = this.maxHealth;
     private team = 'friend'; // Player is always on the 'friend' team
     private readonly swordWeapon = new Sword(4, 25);
-    private readonly gunWeapon = new Gun(100, 100, 12);
+    private readonly gunWeapon = new Gun(35, 100, 12);
     private readonly bowWeapon = new Bow(50, 100, 20, 250);
+    private readonly oldGunWeapon = new Gun(15, 60, 12, "Gun"); // Weaker gun for early time periods
     private equippedWeapon: Weapon = this.swordWeapon;
     private deathQuizTimePeriod = -1;
     private restartBattle: (() => void) | undefined;
@@ -158,13 +159,15 @@ export class Player{
         };
     }
 
-    public equipWeapon(slot: 1 | 2 | 3): void {
+    public equipWeapon(slot: 1 | 2 | 3 | 4): void {
         if (slot === 1) {
             this.equippedWeapon = this.swordWeapon;
         } else if (slot === 2) {
             this.equippedWeapon = this.gunWeapon;
-        } else {
+        } else if (slot === 3) {
             this.equippedWeapon = this.bowWeapon;
+        } else if (slot === 4) {
+            this.equippedWeapon = this.oldGunWeapon;
         }
         console.log(`Equipped ${this.equippedWeapon.getName()}`);
     }

@@ -49,6 +49,15 @@ const CHRIST_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     hitboxRadius: 2.4
 };
 
+const WILLIAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelPath: NPC_MODEL_PATHS.willieconquer,
+    modelRotation: new Vec3(0, 0, 0),
+    modelScale: new Vec3(4, 4, 4),
+    modelHeightOffset: 11,
+    facingYawOffsetDegrees: 0,
+    hitboxRadius: 2.4
+};
+
 // Non-boss per-type overrides (used in typeSpawnOverrides below).
 const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     modelRotation: new Vec3(0, 0, 0),
@@ -79,7 +88,8 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
     modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
     genghisKhan: NPC_MODEL_PATHS.genghisKhan,
     kingGeser: NPC_MODEL_PATHS.kingGeser,
-    christ: NPC_MODEL_PATHS.christ
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
 };
 
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
@@ -111,6 +121,12 @@ export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
 
 export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
     typeModelPaths: NPC_TYPE_MODEL_PATHS,
     typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
@@ -293,3 +309,29 @@ export const ARNON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
     { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
 export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Agincourt ──
+export const AGINCOURT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 8, z: 3, type: "french" },
+    { id: 2, team: "foe", x: -6, z: 5, type: "french" },
+    { id: 3, team: "foe", x: 4, z: -7, type: "french" },
+    { id: 4, team: "foe", x: -3, z: -4, type: "french" },
+    { id: 5, team: "foe", x: 10, z: -2, type: "french" },
+    { id: 6, team: "foe", x: -9, z: 1, type: "french" },
+    { id: 7, team: "foe", x: 2, z: 9, type: "french" },
+    { id: 8, team: "foe", x: -5, z: -9, type: "french" },
+    { id: 9, team: "foe", x: 7, z: 7, type: "french" },
+    { id: 10, team: "foe", x: -8, z: -6, type: "french" },
+    { id: 11, team: "foe", x: 12, z: 4, type: "french" },
+    { id: 12, team: "foe", x: -11, z: -3, type: "french" },
+    { id: 13, team: "foe", x: 5, z: -12, type: "french" },
+    { id: 14, team: "foe", x: -4, z: 11, type: "french" },
+    { id: 15, team: "foe", x: 14, z: -1, type: "french" },
+    { id: 16, team: "foe", x: -13, z: 8, type: "french" },
+    { id: 17, team: "foe", x: 1, z: -14, type: "french" },
+    { id: 18, team: "foe", x: -7, z: 13, type: "french" },
+    { id: 19, team: "foe", x: 9, z: -10, type: "french" },
+    { id: 20, team: "foe", x: -10, z: 6, type: "french" },
+];
+
+export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "williamTheConquerer" }];

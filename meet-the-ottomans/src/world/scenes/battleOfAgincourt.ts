@@ -38,7 +38,7 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+import { AGINCOURT_NPC_SPAWN_POINTS, AGINCOURT_BOSS_SPAWN_POINT, DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/Agincourt.glb';
@@ -163,8 +163,8 @@ export function createStarfieldTexture(device: AppBase['graphicsDevice'], width 
   return texture;
 }
 
-function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
-  const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
+function resolveAgincourtSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
+    const basePoints = AGINCOURT_NPC_SPAWN_POINTS;
   if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
     return basePoints;
   }
@@ -417,7 +417,7 @@ export async function battleOfAgincourtScene(
         }
         spawnResolved = true;
         console.log(
-          `[Spawn] camera placed at (${bestSpawnCandidate.x.toFixed(2)}, ${spawnY.toFixed(2)}, ${bestSpawnCandidate.z.toFixed(2)}) from ground Y ${bestSpawnGroundY.toFixed(2)}`
+          `[Spawn] camera placed at (${bestSpawnCandidate.x.toFixed(2)}, ${spawnY.toFixed(2)}, ${bestSpawnCandidate.z.toFixed(2)}) from ground Y ${bestSpawngroundY.toFixed(2)}`
         );
       }
     }
@@ -465,15 +465,13 @@ export async function battleOfAgincourtScene(
     app.root.addChild(light);
   }
 
-  const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
-  const npcSpawnOptions = {
-    ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
-    groundYFallback: respawnGroundY
-  };
-  let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+const agincourtSpawnPoints = resolveAgincourtSpawnPoints(respawnPosition);
+    const allSpawnPoints = [...agincourtSpawnPoints, ...AGINCOURT_BOSS_SPAWN_POINT];
+  const npcSpawnOptions = { ...DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
+  let npcs = await spawnSceneNpcs(app, rigidbodySystem, allSpawnPoints, npcSpawnOptions);
   if (npcs.length === 0) {
-    console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-    npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+    console.warn('[NPC] Agincourt spawn returned no soldiers on the first pass, retrying once');
+    npcs = await spawnSceneNpcs(app, rigidbodySystem, allSpawnPoints, npcSpawnOptions);
   }
 
   app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
@@ -492,7 +490,7 @@ export async function battleOfAgincourtScene(
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (isKey2) {
-      player.equipWeapon(2);
+      player.equipWeapon(4);
       updateBattleHUD(player);
     }
   });
@@ -518,10 +516,10 @@ export async function battleOfAgincourtScene(
   });
 
   bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
-    updateKey: '__ainJalutNpcUpdate',
+    updateKey: '__agincourtNpcUpdate',
     battleStatus: {
       getCameraEntity: () => player.getCameraEntity(),
-      initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length,
+      initialTotal: AGINCOURT_NPC_SPAWN_POINTS.length + AGINCOURT_BOSS_SPAWN_POINT.length,
       onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
     },
     onNpcAttack: (attacker, target, damage) => {

@@ -43,7 +43,7 @@ const introSlides: IntroSlide[] = [
     lines: [
       'The nationalists have developed a time machine.',
       'They intend to send you back in time in order to change the course of battles fought across history.',
-      'Equipped with nothing more than your weapons and a translator unit, you are expected to change the future.'
+      'Equipped with nothing more than weapons of the time period and a translator unit, you are expected to change the future.'
     ]
   },
   {

@@ -5,6 +5,17 @@ import { Entity } from "playcanvas";
 export class JoanOfArc extends Boss {
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("Joan of Arc")) {
         super(id, maxHealth, entity, "Joan of Arc");
+        this.setIntroTaunt(
+            "Tropa! Ralliez-vous à moi, car je suis Jeanne d'Arc!",
+            "Troops! Rally on me, for I am Joan Of Arc!"
+        );
+        this.setIntroNameTranslation(
+            "Jeanne d'Arc",
+            "Joan of Arc"
+
+        );
+
+
         this.setTauntSet({
             highHealth: [
                 "For France!",
