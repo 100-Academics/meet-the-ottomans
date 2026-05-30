@@ -211,7 +211,7 @@ unloadAll(app);
                    new Battle(6, [30.56, 32.32], "Operation Abirey-Halev", new Entity()),
                    new Battle(7, [33.6667, 69.1833], "Operation Anaconda", new Entity()),
                    new Battle(7, [50.450001, 30.523333], "Battle of Kyiv", new Entity()),
-                   new Battle(7, [31.285, 34.225], "Rafah Offensive", new Entity())
+                   new Battle(7, [31.4486, 34.3925], "Operation Arnon", new Entity())
                   ];
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -604,6 +604,42 @@ unloadAll(app);
       }
       else if (battle.getName() === 'Siege of Vienna') {
         siegeOfViennaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Yorktown') {
+        battleOfYorktownScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Three Emperors') {
+        battleOfThreeEmperorsScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Gettysburg') {
+        battleOfGettysburgScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Verdun') {
+        battleOfVerdunScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Gallipoli') {
+        battleOfGallipoliScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Stalingrad') {
+        battleOfStalingradScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Chosin Reservoir') {
+        battleOfChosinReservoirScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Fall of Saigon') {
+        fallOfSaigonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Operation Abirey-Halev') {
+        operationAbireyHalevScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Operation Anaconda') {
+        operationAnacondaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Battle of Kyiv') {
+        battleOfKyivScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Operation Arnon') {
+        operationArnonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       onClickWithCounter(battle);
     });
