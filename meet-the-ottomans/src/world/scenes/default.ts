@@ -578,32 +578,32 @@ unloadAll(app);
       // @ChaosMaster8673: implement scene switching here
       console.log('Clicked on battle:', battle.getName());
       if (battle.getName() === 'Battle of Legnica') {
-        battleOfLegnicaScene(canvas, app, onClickWithCounter, sceneNum);
+        battleOfLegnicaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
         // ^^^ scene functions should always be defined as HTMLCanvasElement, AppBase, onClick callback, sceneNum
       }
       else if (battle.getName() === 'Battle of Ain Jalut') {
-        battleOfAinJalutScene(canvas, app, onClickWithCounter, sceneNum);  
+        battleOfAinJalutScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());  
       }
       else if (battle.getName() === 'Siege of Constantinople') {
-        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum);
+        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       else if (battle.getName() === 'Battle of Agincourt') {
-        battleOfAgincourtScene(canvas, app, onClickWithCounter, sceneNum);
+        battleOfAgincourtScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       else if (battle.getName() === 'Siege of Orléans') {
-        siegeOfOrleansScene(canvas, app, onClickWithCounter, sceneNum);
+        siegeOfOrleansScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       else if (battle.getName() === 'Fall of Constantinople') {
-        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum);
+        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       else if (battle.getName() === 'Battle of Ridaniya') {
-        battleOfRidaniyaScene(canvas, app, onClickWithCounter, sceneNum);
+        battleOfRidaniyaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       else if (battle.getName() === 'Battle of Pavia (Italian Wars)') {
-        battleOfPaviaScene(canvas, app, onClickWithCounter, sceneNum);
+        battleOfPaviaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       else if (battle.getName() === 'Siege of Vienna') {
-        siegeOfViennaScene(canvas, app, onClickWithCounter, sceneNum);
+        siegeOfViennaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       onClickWithCounter(battle);
     });

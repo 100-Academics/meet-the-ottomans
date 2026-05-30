@@ -347,7 +347,8 @@ export async function siegeOfViennaScene(
 	canvas: HTMLCanvasElement,
 	app: AppBase,
 	_onClick: (battle: Battle) => void,
-	_sceneNum: number
+	_sceneNum: number,
+	spawnPoint?: [number, number, number]
 ) {
 	resetLegnicaBattleState();
 	// Clean up any previous scene assets and input listeners
@@ -462,7 +463,7 @@ export async function siegeOfViennaScene(
 	app.scene.envAtlas = envAtlasAsset.resource as Texture;
 
 	// Create the player with camera and first-person controls
-	const playerSpawn = new Vec3(0, 8, 8);
+	const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
 	const player = new Player(app, playerSpawn);
 	let respawnPosition = playerSpawn.clone();
 	let respawnGroundY = 0;

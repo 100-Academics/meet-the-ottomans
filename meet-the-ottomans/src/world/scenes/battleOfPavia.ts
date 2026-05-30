@@ -202,7 +202,8 @@ export async function battleOfPaviaScene(
 	canvas: HTMLCanvasElement,
 	app: AppBase,
 	_onClick: (battle: Battle) => void,
-	_sceneNum: number
+	_sceneNum: number,
+	spawnPoint?: [number, number, number]
 ) {
 	unloadAll(app);
 	app.mouse?.off();
@@ -301,7 +302,7 @@ export async function battleOfPaviaScene(
 	}
 
 	// Create the player with camera and first-person controls
-	const playerSpawn = new Vec3(0, 8, 8);
+	const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
 	const player = new Player(app, playerSpawn);
 	let respawnPosition = playerSpawn.clone();
 	let respawnGroundY = 0;

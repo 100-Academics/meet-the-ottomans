@@ -203,7 +203,8 @@ import {
 		canvas: HTMLCanvasElement,
 		app: AppBase,
 		_onClick: (battle: Battle) => void,
-		_sceneNum: number
+		_sceneNum: number,
+		spawnPoint?: [number, number, number]
 	) {
 		unloadAll(app);
 		app.mouse?.off();
@@ -301,7 +302,7 @@ import {
 			skyboxLayer.enabled = false;
 		}
 
-		const playerSpawn = new Vec3(0, 8, 8);
+		const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
 		const player = new Player(app, playerSpawn);
 		let respawnPosition = playerSpawn.clone();
 		let respawnGroundY = 0;
