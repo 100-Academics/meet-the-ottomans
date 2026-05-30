@@ -95,7 +95,10 @@ export class GenghisKhan extends Boss {
     private readonly pullReleaseDamageRange = 4.2;
 
     // Runtime state used to sequence attacks and cooldowns.
-    private attackState: KhanAttackState = "idle";
+    private _attackState: KhanAttackState = "idle";
+    /** Current attack state (read-only externally). */
+    public get attackState(): KhanAttackState { return this._attackState; }
+    private set attackState(v: KhanAttackState) { this._attackState = v; }
     private attackLockUntilSeconds = 0;
     private nextChargeAtSeconds = 0;
     private nextPoundAtSeconds = 0;
@@ -143,12 +146,6 @@ export class GenghisKhan extends Boss {
         new Color(0.9, 0.8, 0.4),
         new Color(1, 0.9, 0.5),
         3.4,
-        0.9
-    );
-    private readonly arrowMaterial = this.createEffectMaterial(
-        new Color(0.8, 0.65, 0.35),
-        new Color(0.95, 0.75, 0.4),
-        1.4,
         0.9
     );
     private readonly pullTetherMaterial = this.createEffectMaterial(
@@ -449,7 +446,7 @@ export class GenghisKhan extends Boss {
         deltaTime: number,
         targetEntity: Entity,
         nowSeconds: number,
-        onAttack?: (attacker: npc) => void
+        _onAttack?: (attacker: npc) => void
     ): void {
         const state = this.poundState;
         if (!state) {
@@ -749,93 +746,6 @@ export class GenghisKhan extends Boss {
         this.pendingPullDamage = this.bowDamage;
         this.startPullToBoss(targetEntity);
         this.scheduleMeleeFollowup();
-    }
-
-    private fireHookArrow(targetEntity: Entity): void {
-        const sceneApp = this.resolveSceneApp(targetEntity);
-        if (!sceneApp?.root) {
-            return;
-        }
-
-        const origin = this.getEntity().getPosition().clone();
-        const targetPos = targetEntity.getPosition().clone();
-        const dir = targetPos.clone().sub(origin);
-        const distance = dir.length();
-        if (distance <= 0.001) {
-            return;
-        }
-
-        dir.normalize();
-
-        const projectile = new Entity("khan arrow");
-        projectile.setPosition(origin);
-        projectile.lookAt(origin.clone().add(dir));
-
-        const tracer = new Entity("khan arrow tracer");
-        tracer.addComponent("render", { type: "cylinder" } as any);
-        tracer.setLocalScale(0.06, 0.06, 1.2);
-        if (tracer.render?.meshInstances?.length) {
-            tracer.render.meshInstances[0].material = this.arrowMaterial;
-        }
-        projectile.addChild(tracer);
-        sceneApp.root.addChild(projectile);
-        this.registerEffect(projectile);
-
-        const speed = 34;
-        const start = performance.now();
-        let lastTime = start;
-        const maxLifeMs = Math.max(2000, (distance / speed) * 1000 + 700);
-        let currentPos = origin.clone();
-        const turnRate = 0.22;
-
-        const animate = () => {
-            if (!this.isAlive() || !projectile.parent) {
-                this.destroyEffect(projectile);
-                return;
-            }
-
-            const now = performance.now();
-            const elapsedMs = now - start;
-            const dt = Math.max(0, Math.min(0.05, (now - lastTime) / 1000));
-            lastTime = now;
-
-            const currentTargetPos = targetEntity.getPosition();
-            const desiredDir = currentTargetPos.clone().sub(currentPos);
-            if (desiredDir.lengthSq() > 0.0001) {
-                desiredDir.normalize();
-                dir.lerp(dir, desiredDir, turnRate);
-                if (dir.lengthSq() > 0.0001) {
-                    dir.normalize();
-                }
-            }
-
-            currentPos = currentPos.clone().add(dir.clone().mulScalar(speed * dt));
-            projectile.setPosition(currentPos);
-            projectile.lookAt(currentPos.clone().add(dir));
-
-            const dx = currentTargetPos.x - currentPos.x;
-            const dy = currentTargetPos.y - currentPos.y;
-            const dz = currentTargetPos.z - currentPos.z;
-            const distToTarget = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
-            const hitRadius = Math.max(2.4, (targetEntity.collision?.radius as number) ?? 2.4);
-
-            if (distToTarget <= hitRadius) {
-                this.pendingPullDamage = this.bowDamage;
-                this.destroyEffect(projectile);
-                this.startPullToBoss(targetEntity);
-                this.scheduleMeleeFollowup();
-                return;
-            }
-
-            if (elapsedMs >= maxLifeMs) {
-                this.destroyEffect(projectile);
-                return;
-            }
-
-            requestAnimationFrame(animate);
-        };
-
-        requestAnimationFrame(animate);
     }
 
     private startPullToBoss(targetEntity: Entity): void {

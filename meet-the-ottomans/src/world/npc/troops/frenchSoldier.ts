@@ -1,4 +1,4 @@
-import { AppBase, Entity, Vec3 } from "playcanvas";
+import { AppBase, Entity } from "playcanvas";
 import { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 

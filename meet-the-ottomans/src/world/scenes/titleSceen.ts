@@ -43,7 +43,7 @@ const introSlides: IntroSlide[] = [
     lines: [
       'The nationalists have developed a time machine.',
       'They intend to send you back in time in order to change the course of battles fought across history.',
-      'Equipped with nothing more than your weapons and a translator unit, you are expected to win 21 battles.'
+      'Equipped with nothing more than your weapons and a translator unit, you are expected to change the future.'
     ]
   },
   {
@@ -58,7 +58,7 @@ const introSlides: IntroSlide[] = [
     lines: [
       'Fight your battles. Defeat your enemies. Make your mark on history.',
       'Your decisions decide which stories of the Ottoman era are remembered.',
-      'So get to work: Bob Jefferson.'
+      'So get to work, Bob Jefferson.'
     ]
   }
 ];

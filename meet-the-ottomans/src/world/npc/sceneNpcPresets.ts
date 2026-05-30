@@ -221,3 +221,75 @@ export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 
 // Boss spawn point for Constantinople.
 export const CONSTANTINOPLE_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 12, z: 0, maxHealth: 500, type: "christ" }];
+
+// ── Chosin Reservoir ──
+export const CHOSIN_RESERVOIR_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Gallipoli ──
+export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Gettysburg ──
+export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Kyiv ──
+export const KYIV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const KYIV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Stalingrad ──
+export const STALINGRAD_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const STALINGRAD_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Three Emperors ──
+export const THREE_EMPERORS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const THREE_EMPERORS_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Verdun ──
+export const VERDUN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Yorktown ──
+export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Saigon ──
+export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Abirey Halev ──
+export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Anaconda ──
+export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
+// ── Arnon ──
+export const ARNON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];

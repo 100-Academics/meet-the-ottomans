@@ -54,6 +54,19 @@ import { siegeOfOrleansScene } from "./siegeOfOrleans.js";
 import { battleOfRidaniyaScene } from "./battleOfRidaniya.js";
 import { battleOfPaviaScene } from "./battleOfPavia.js";
 import { siegeOfViennaScene } from "./siegeOfVienna.js";
+import { battleOfYorktownScene } from "./battleOfYorktown.js";
+import { battleOfThreeEmperorsScene } from "./battleOfThreeEmperors.js";
+import { battleOfGettysburgScene } from "./battleOfGettysburg.js";
+import { battleOfVerdunScene } from "./battleOfVerdun.js";
+import { battleOfGallipoliScene } from "./battleOfGallipoli.js";
+import { battleOfStalingradScene } from "./battleOfStalingrad.js";
+import { battleOfChosinReservoirScene } from "./battleOfChosinReservoir.js";
+import { fallOfSaigonScene } from "./fallOfSaigon.js";
+import { operationAbireyHalevScene } from "./operationAbireyHalev.js";
+import { operationAnacondaScene } from "./operationAnaconda.js";
+import { battleOfKyivScene } from "./battleOfKyiv.js";
+import { operationArnonScene } from "./operationArnon.js";
+// battles
 
 const DEFAULT_COLOR = new Color(1, 1, 1);
 const BEAM_COLOR = new Color(0.2, 0.68, 1);

@@ -61,7 +61,7 @@ export function showDeathScreen(options?: {
   desc.style.margin = '0 0 1rem 0';
 
   const quizIntro = document.createElement('p');
-  quizIntro.textContent = 'Answer 3 questions correctly to unlock your escape.';
+  quizIntro.textContent = 'Answer 3 questions correctly to continue.';
   quizIntro.style.color = '#f3d59b';
   quizIntro.style.margin = '0 0 0.5rem 0';
 

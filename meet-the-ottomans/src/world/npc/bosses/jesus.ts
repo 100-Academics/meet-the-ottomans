@@ -448,33 +448,6 @@ export class Christ extends Boss {
         return beamRoot;
     }
 
-    private directionToQuaternion(dir: Vec3): { x: number; y: number; z: number; w: number } {
-        const forward = dir.clone().normalize();
-        const up = new Vec3(0, 1, 0);
-
-        const dot = forward.dot(up);
-        if (Math.abs(dot) > 0.99) {
-            const right = Math.abs(dot) > 0 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
-            const newUp = new Vec3();
-            forward.clone().cross(right, newUp);
-            newUp.normalize();
-            const newRight = new Vec3();
-            newUp.clone().cross(forward, newRight);
-
-            return this.matrixToQuat(newRight, newUp, forward);
-        }
-
-        const right = new Vec3();
-        up.clone().cross(forward, right);
-        right.normalize();
-
-        const newUp = new Vec3();
-        forward.clone().cross(right, newUp);
-        newUp.normalize();
-
-        return this.matrixToQuat(right, newUp, forward);
-    }
-
     private directionToQuaternionFromUp(dir: Vec3): { x: number; y: number; z: number; w: number } {
         const up = dir.clone().normalize();
         const forwardSeed = Math.abs(up.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
