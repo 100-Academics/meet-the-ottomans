@@ -87,7 +87,7 @@ const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     modelRotation: new Vec3(0, 0, 0),
-    facingYawOffsetDegrees: 180
+    facingYawOffsetDegrees: 0
 };
 
 // NPC type -> model path. The spawn system picks the model from this map
