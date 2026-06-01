@@ -4,12 +4,14 @@ import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
 import { Templar } from "./troops/templars";
 import { FrenchSoldier } from "./troops/frenchSoldier";
+import { AmericanRevolutionist } from "./troops/americanRevolutionist";
 import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
 import { Christ } from "./bosses/jesus";
 import { JoanOfArc } from "./bosses/joanOfArc";
 import { WilliamTheConquerer } from "./bosses/williamTheConquerer";
+import { GeorgeWashington } from "./bosses/georgeWashington";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -319,6 +321,12 @@ export async function spawnSceneNpcs(
                 frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 frenchSoldier.setHitboxRadius(hitboxRadius);
                 npcs.push(frenchSoldier);
+            } else if (spawn.type === "americanRevolutionist") {
+                console.log(`Spawning American Revolutionist NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const rev = new AmericanRevolutionist(spawn.id, npcModel.modelEntity);
+                rev.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                rev.setHitboxRadius(hitboxRadius);
+                npcs.push(rev);
             } else if (spawn.type === "genghisKhan") {
                 console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
@@ -354,6 +362,14 @@ export async function spawnSceneNpcs(
             } else if (spawn.type === "williamTheConquerer") {
                 console.log(`Spawning William the Conquerer Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new WilliamTheConquerer(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
+                npcs.push(boss);
+            } else if (spawn.type === "georgeWashington") {
+                console.log(`Spawning George Washington Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new GeorgeWashington(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
                 boss.drawHealthBar();

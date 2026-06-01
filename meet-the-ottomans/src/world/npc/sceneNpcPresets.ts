@@ -19,6 +19,8 @@ const NPC_MODEL_PATHS = {
     genghisKhan: "models/npc/boss/genghis_khan.glb",
     kingGeser: "models/npc/boss/KingGeser.glb",
     christ: "models/npc/boss/Jesus10K.glb"
+    ,georgeWashington: "models/npc/boss/GeorgeWashington.glb"
+    ,americanRevolutionist: "models/npc/americanRevolutionist.glb"
 } as const;
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -58,6 +60,15 @@ const WILLIAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     hitboxRadius: 2.4
 };
 
+const GEORGE_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelPath: NPC_MODEL_PATHS.georgeWashington,
+    modelRotation: new Vec3(0, 0, 0),
+    modelScale: new Vec3(4, 4, 4),
+    modelHeightOffset: 11,
+    facingYawOffsetDegrees: 0,
+    hitboxRadius: 2.4
+};
+
 // Non-boss per-type overrides (used in typeSpawnOverrides below).
 const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     modelRotation: new Vec3(0, 0, 0),
@@ -72,6 +83,11 @@ const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     modelRotation: new Vec3(0, 0, 0),
     facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 180
 };
 
 // NPC type -> model path. The spawn system picks the model from this map
@@ -90,12 +106,15 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
     kingGeser: NPC_MODEL_PATHS.kingGeser,
     christ: NPC_MODEL_PATHS.christ,
     williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
 };
 
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
     templar: TEMPLAR_SPAWN_OVERRIDES,
     french: FRENCH_SPAWN_OVERRIDES,
-    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+    americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES
 };
 
 // Shared battle options applied in scenes. Intentionally no generic troop defaults.
@@ -127,6 +146,12 @@ export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
 
 export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
     typeModelPaths: NPC_TYPE_MODEL_PATHS,
     typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
@@ -282,9 +307,13 @@ export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", 
 
 // ── Yorktown ──
 export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+    { id: 1, team: "foe", x: 6, z: -6, type: "americanRevolutionist" },
+    { id: 2, team: "foe", x: 9, z: -6, type: "americanRevolutionist" },
+    { id: 3, team: "foe", x: 12, z: -6, type: "americanRevolutionist" },
+    { id: 4, team: "foe", x: 15, z: -6, type: "americanRevolutionist" },
+    { id: 5, team: "foe", x: 18, z: -6, type: "americanRevolutionist" }
 ];
-export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "georgeWashington" }];
 
 // ── Saigon ──
 export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
