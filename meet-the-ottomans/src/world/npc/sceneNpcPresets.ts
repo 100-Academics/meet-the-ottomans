@@ -11,9 +11,6 @@ const NPC_MODEL_PATHS = {
     templarTroop: "models/npc/Crusader.glb",
     frenchSoldierOld: "models/npc/FrenchSoldierWWI.glb",
     huntingrifledude: "models/npc/WWISoldier.glb",
-    americanRevolutionist: "models/npc/americanRevolutionist.glb",
-    germanLookingSoldier: "models/npc/GermanLookingSoldier.glb",
-    horseWomen: "models/npc/horseWomen.glb",
     joanofarc: "models/npc/boss/JoanOfArc.glb",
     willieconquer: "models/npc/WillieConquer.glb",
     koreansldier: "models/npc/KoreanSoldier.glb",
@@ -21,12 +18,7 @@ const NPC_MODEL_PATHS = {
     modernishsoldier: "models/npc/VietnamSoldier.glb",
     genghisKhan: "models/npc/boss/genghis_khan.glb",
     kingGeser: "models/npc/boss/KingGeser.glb",
-    christ: "models/npc/boss/Jesus10K.glb",
-    anotherOldDude: "models/npc/boss/AnotherOldDude.glb",
-    caeser: "models/npc/boss/caeser.glb",
-    abel: "models/npc/boss/Abel.glb",
-    probablyASultan: "models/npc/boss/probablyASultan.glb",
-    sickMamlukBoss: "models/npc/boss/SickMamlukBoss.glb"
+    christ: "models/npc/boss/Jesus10K.glb"
 } as const;
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -89,9 +81,6 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
     templar: NPC_MODEL_PATHS.templarTroop,
     french: NPC_MODEL_PATHS.frenchSoldierOld,
     huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
-    americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist,
-    germanLookingSoldier: NPC_MODEL_PATHS.germanLookingSoldier,
-    horseWomen: NPC_MODEL_PATHS.horseWomen,
     joanofarc: NPC_MODEL_PATHS.joanofarc,
     willieconquer: NPC_MODEL_PATHS.willieconquer,
     koreansldier: NPC_MODEL_PATHS.koreansldier,
@@ -100,12 +89,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
     genghisKhan: NPC_MODEL_PATHS.genghisKhan,
     kingGeser: NPC_MODEL_PATHS.kingGeser,
     christ: NPC_MODEL_PATHS.christ,
-    williamTheConquerer: NPC_MODEL_PATHS.willieconquer,
-    anotherOldDude: NPC_MODEL_PATHS.anotherOldDude,
-    caeser: NPC_MODEL_PATHS.caeser,
-    abel: NPC_MODEL_PATHS.abel,
-    probablyASultan: NPC_MODEL_PATHS.probablyASultan,
-    sickMamlukBoss: NPC_MODEL_PATHS.sickMamlukBoss
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
 };
 
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
@@ -309,18 +293,8 @@ export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
 
 // ── Abirey Halev ──
-export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-    { id: 2, team: "foe", x: 10, z: -2, type: "americanRevolutionist" },
-    { id: 3, team: "foe", x: 8, z: 6, type: "germanLookingSoldier" },
-    { id: 4, team: "foe", x: -6, z: 4, type: "horseWomen" },
-    { id: 5, team: "foe", x: -8, z: -3, type: "anotherOldDude" },
-    { id: 6, team: "foe", x: 2, z: -8, type: "caeser" },
-    { id: 7, team: "foe", x: -2, z: 9, type: "abel" },
-    { id: 8, team: "foe", x: 12, z: 4, type: "probablyASultan" },
-    { id: 9, team: "foe", x: -12, z: 0, type: "sickMamlukBoss" }
-];
-export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [];
+export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [];
 
 // ── Anaconda ──
 export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
