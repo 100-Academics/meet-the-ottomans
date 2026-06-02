@@ -59,9 +59,6 @@ export class Napoleon extends Boss {
     private readonly cannonMaterial = this.createEffectMaterial(
         new Color(0.9, 0.4, 0.1), new Color(1, 0.5, 0.15), 4.0, 0.85
     );
-    private readonly cavalierTrailMaterial = this.createEffectMaterial(
-        new Color(0.5, 0.3, 0.8), new Color(0.7, 0.4, 1), 3.0, 0.7
-    );
     private readonly wineMaterial = this.createEffectMaterial(
         new Color(0.7, 0.05, 0.05), new Color(0.9, 0.1, 0.1), 2.5, 0.75
     );
@@ -181,7 +178,7 @@ export class Napoleon extends Boss {
     }
 
     // ── Cannon ──
-    private startCannon(target: Entity, now: number): void {
+    private startCannon(_target: Entity, now: number): void {
         this.lastAttackType = "cannon"; this.lastAttackAtSeconds = now;
         // Create glow telegraph
         const glow = new Entity("napoleon-cannon-glow");

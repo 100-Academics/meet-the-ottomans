@@ -1,5 +1,5 @@
 import { Boss } from "./boss";
-import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color, ParticleSystem } from "playcanvas";
+import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
@@ -16,26 +16,6 @@ interface ShieldBashState {
     impactTimeSeconds: number;
     endTimeSeconds: number;
     hasHit: boolean;
-}
-
-interface RoyalDashState {
-    endTimeSeconds: number;
-    direction: Vec3;
-    hasHit: boolean;
-    trail?: Entity | null;
-    freezeEndTime?: number;
-}
-
-interface ShockwaveState {
-    startTimeSeconds: number;
-    endTimeSeconds: number;
-    hasHit: boolean;
-    particles?: Entity | null;
-}
-
-interface ArmorOfConquestState {
-    endTimeSeconds: number;
-    particles?: Entity | null;
 }
 
 export class WilliamTheConquerer extends Boss {

@@ -38,7 +38,8 @@ import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
+import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
+import { Boss } from "../npc/bosses/boss";
 import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
@@ -480,6 +481,13 @@ export async function battleOfPaviaScene(
 		npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
 	}
 
+	const bossSpawnOptions = { ...DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
+	const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, PAVIA_BOSS_SPAWN_POINT, bossSpawnOptions);
+	for (const boss of bossNpcs) {
+		npcs.push(boss);
+		if (boss instanceof Boss) boss.drawHealthBar();
+	}
+
 	app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
 		if (isDeathScreenVisible()) {
 			return;
@@ -525,7 +533,7 @@ export async function battleOfPaviaScene(
 		updateKey: '__ainJalutNpcUpdate',
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
-			initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length,
+			initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + PAVIA_BOSS_SPAWN_POINT.length,
 			onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 		},
 		onNpcAttack: (attacker, target, damage) => {

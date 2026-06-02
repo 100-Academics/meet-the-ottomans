@@ -26,6 +26,7 @@ const NPC_MODEL_PATHS = {
   napoleon: "models/npc/boss/Napoleon.glb",
   uncleSam: "models/npc/boss/UncleSam.glb",
   vietnamDragonKing: "models/npc/boss/VietnamDragonKing.glb",
+  binLadin: "models/npc/boss/AnotherOldDude.glb",
   cainAndAbel: "models/npc/boss/CainAndAbel.glb",
   kingGeorgeIII: "models/npc/boss/KingGeorgeIII.glb",
   lenin: "models/npc/boss/Lenin.glb",
@@ -123,6 +124,15 @@ const VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   hitboxRadius: 2.4
 };
 
+const BIN_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.binLadin,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+
 const CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.cainAndAbel,
   modelRotation: new Vec3(0, 0, 0),
@@ -203,6 +213,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   napoleon: NPC_MODEL_PATHS.napoleon,
   uncleSam: NPC_MODEL_PATHS.uncleSam,
   vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing,
+  binLadin: NPC_MODEL_PATHS.binLadin,
   cainAndAbel: NPC_MODEL_PATHS.cainAndAbel,
   kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII,
   lenin: NPC_MODEL_PATHS.lenin,
@@ -220,6 +231,7 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
   uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
   vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  binLadin: BIN_LADIN_BOSS_SPAWN_OVERRIDES,
   cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
   kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
   lenin: LENIN_BOSS_SPAWN_OVERRIDES,
@@ -293,6 +305,12 @@ export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOption
   typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
 
+export const DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BIN_LADIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
 export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
   ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
   typeModelPaths: NPC_TYPE_MODEL_PATHS,
@@ -360,31 +378,34 @@ export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, tea
 export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeorgeIII" }];
+
+// Ridaniya
+export const RIDANIYA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "baybars" }];
 
 // Gettysburg
 export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "uncleSam" }];
 
 // Kyiv
 export const KYIV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const KYIV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const KYIV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "stalin" }];
 
 // Stalingrad
 export const STALINGRAD_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const STALINGRAD_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const STALINGRAD_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "lenin" }];
 
 // Three Emperors
 export const THREE_EMPERORS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+  { id: 1, team: "foe", x: 6, z: 1, type: "french" },
 ];
-export const THREE_EMPERORS_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const THREE_EMPERORS_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "napoleon" }];
 
 // Verdun
 export const VERDUN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -406,17 +427,17 @@ export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe"
 export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "vietnamDragonKing" }];
 
-// Abirey Halev
+// ginbirey Halev
 export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [];
-export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [];
+export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "cainAndAbel" }];
 
 // Anaconda
 export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "binLadin" }];
 
 // Arnon
 export const ARNON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -428,4 +449,8 @@ export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x
 export const AGINCOURT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 8, z: 3, type: "french" },
 ];
-export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+// Change boss spawn type for Agincourt to William the Conquerer
+export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "williamTheConquerer" }];
+
+// Pavia
+export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];

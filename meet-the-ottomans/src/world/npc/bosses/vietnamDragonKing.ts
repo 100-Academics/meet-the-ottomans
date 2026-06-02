@@ -64,9 +64,6 @@ export class VietnamDragonKing extends Boss {
     private readonly waterMaterial = this.createEffectMaterial(
         new Color(0.1, 0.4, 0.9), new Color(0.2, 0.6, 1), 4.0, 0.8
     );
-    private readonly dashTrailMaterial = this.createEffectMaterial(
-        new Color(0.05, 0.3, 0.7), new Color(0.1, 0.5, 0.9), 3.0, 0.7
-    );
     private readonly thunderMaterial = this.createEffectMaterial(
         new Color(0.9, 0.9, 1), new Color(1, 1, 1), 6.0, 0.95
     );
@@ -143,7 +140,7 @@ export class VietnamDragonKing extends Boss {
         const chosen = this.pickNextAttack(distance, currentTimeSeconds);
         if (chosen === "waterBeam") { this.startWaterBeam(targetEntity, currentTimeSeconds); return; }
         if (chosen === "dash") { this.startDash(targetEntity, currentTimeSeconds); return; }
-        if (chosen === "thunder") { this.startThunder(targetEntity, currentTimeSeconds); return; }
+        if (chosen === "thunder") { this.startThunder(currentTimeSeconds); return; }
 
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
@@ -263,7 +260,7 @@ export class VietnamDragonKing extends Boss {
     }
 
     // ── Thunder ──
-    private startThunder(target: Entity, now: number): void {
+    private startThunder(now: number): void {
         this.lastAttackType = "thunder"; this.lastAttackAtSeconds = now;
         this.thunderState = { endTimeSeconds: now + this.thunderCount * this.thunderIntervalSeconds + 0.3, nextStrikeAtSeconds: now, strikesFired: 0 };
         this.attackLockUntilSeconds = this.thunderState.endTimeSeconds;

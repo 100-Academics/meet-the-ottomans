@@ -358,7 +358,6 @@ export class JoanOfArc extends Boss {
         dir.normalize();
 
         this.lastAttackType = "fireDash";
-        this.lastAttackAtSeconds = nowSeconds;
         this.lastFirePatchTimeSeconds = nowSeconds;
 
         this.fireDashState = {
@@ -548,7 +547,6 @@ export class JoanOfArc extends Boss {
         dir.normalize();
 
         this.lastAttackType = "fireStrike";
-        this.lastAttackAtSeconds = nowSeconds;
 
         this.fireStrikeState = {
             windupStartSeconds: nowSeconds,
@@ -737,7 +735,6 @@ export class JoanOfArc extends Boss {
         this.fireRainState = { drops, endTimeSeconds };
         this.attackLockUntilSeconds = endTimeSeconds;
         this.lastAttackType = "fireRain";
-        this.lastAttackAtSeconds = nowSeconds;
         this.faceTarget(targetEntity, 0);
     }
 
