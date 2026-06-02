@@ -414,6 +414,14 @@ export async function spawnSceneNpcs(
                 boss.drawHealthBar();
                 Boss.setActiveBoss(boss);
                 npcs.push(boss);
+            } else if (spawn.type === "caesar") {
+                console.log(`Spawning Caesar Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new Caesar(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
+                npcs.push(boss);
             } else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
