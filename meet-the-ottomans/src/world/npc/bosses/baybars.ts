@@ -266,7 +266,7 @@ export class Baybars extends Boss {
         const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
         arrow.setLocalEulerAngles(-90, yaw, 0);
         arrow.setPosition(myPos.x + dir.x * 2, myPos.y + 1.5, myPos.z + dir.z * 2);
-        this.getEntity().getParent()?.addChild(arrow) ?? this.getEntity().addChild(arrow);
+        this.getEntity().parent?.addChild(arrow) ?? this.getEntity().addChild(arrow);
         this.activeEffects.add(arrow);
         const startPos = arrow.getPosition().clone();
         const speed = 40; const startMs = Date.now(); const maxMs = 1500;
@@ -331,7 +331,7 @@ export class Baybars extends Boss {
             const spike = new Entity("baybars-spike");
             spike.addComponent("render", { type: "box", material: this.spikeMaterial });
             spike.setLocalScale(0.5, 0.1, 0.5); spike.setPosition(pos.x, pos.y, pos.z);
-            this.getEntity().getParent()?.addChild(spike) ?? this.getEntity().addChild(spike);
+            this.getEntity().parent?.addChild(spike) ?? this.getEntity().addChild(spike);
             this.activeEffects.add(spike);
             const startMs = Date.now(); const riseMs = 300; const holdMs = 600; const totalMs = riseMs + holdMs;
             const tick = () => {
@@ -380,7 +380,7 @@ export class Baybars extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {

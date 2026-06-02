@@ -288,7 +288,7 @@ export class VietnamDragonKing extends Boss {
             bolt.addComponent("render", { type: "cylinder", material: this.thunderMaterial });
             bolt.setLocalScale(0.4, 15, 0.4);
             bolt.setPosition(strikePos.x, strikePos.y + 8, strikePos.z);
-            this.getEntity().getParent()?.addChild(bolt) ?? this.getEntity().addChild(bolt);
+            this.getEntity().parent?.addChild(bolt) ?? this.getEntity().addChild(bolt);
             this.activeEffects.add(bolt);
             const startMs = Date.now(); const durationMs = 400;
             const tick = () => {
@@ -344,7 +344,7 @@ export class VietnamDragonKing extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {

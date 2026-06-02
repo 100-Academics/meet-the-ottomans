@@ -230,7 +230,7 @@ export class Stalin extends Boss {
                 soldier.addComponent("render", { type: "capsule", material: this.soldierMaterial });
                 soldier.setLocalScale(0.7, 1.8, 0.7);
                 soldier.setPosition(soldierStartPos.x, soldierStartPos.y + 0.9, soldierStartPos.z);
-                this.getEntity().getParent()?.addChild(soldier) ?? this.getEntity().addChild(soldier);
+                this.getEntity().parent?.addChild(soldier) ?? this.getEntity().addChild(soldier);
                 this.activeEffects.add(soldier);
 
                 // Animate toward target
@@ -298,7 +298,7 @@ export class Stalin extends Boss {
                 panel.setPosition(panelPos.x, panelPos.y + 2.5, panelPos.z);
                 const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
                 panel.setLocalEulerAngles(0, yaw, 0);
-                this.getEntity().getParent()?.addChild(panel) ?? this.getEntity().addChild(panel);
+                this.getEntity().parent?.addChild(panel) ?? this.getEntity().addChild(panel);
                 this.activeEffects.add(panel);
 
                 // Rising animation
@@ -414,7 +414,7 @@ export class Stalin extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {

@@ -242,7 +242,7 @@ export class CainAndAbel extends Boss {
             arc.addComponent("render", { type: "torus", material: this.cleaveMaterial });
             arc.setLocalScale(this.cleaveRange, this.cleaveRange * 0.2, this.cleaveRange);
             arc.setPosition(myPos.x, myPos.y + 0.5, myPos.z);
-            this.getEntity().getParent()?.addChild(arc) ?? this.getEntity().addChild(arc);
+            this.getEntity().parent?.addChild(arc) ?? this.getEntity().addChild(arc);
             this.activeEffects.add(arc);
             const startMs = Date.now(); const durationMs = 350;
             const tick = () => {
@@ -307,7 +307,7 @@ export class CainAndAbel extends Boss {
             trail.addComponent("render", { type: "sphere", material: this.shadowMaterial });
             trail.setLocalScale(1.5, 1.5, 1.5);
             trail.setPosition(myPos.x, myPos.y + 0.5, myPos.z);
-            this.getEntity().getParent()?.addChild(trail) ?? this.getEntity().addChild(trail);
+            this.getEntity().parent?.addChild(trail) ?? this.getEntity().addChild(trail);
             this.activeEffects.add(trail);
             const startMs = Date.now(); const durationMs = 300;
             const tick = () => {
@@ -375,7 +375,7 @@ export class CainAndAbel extends Boss {
             bolt.addComponent("render", { type: "cylinder", material: this.lightningMaterial });
             bolt.setLocalScale(0.5, 20, 0.5);
             bolt.setPosition(targetPos.x, targetPos.y + 10, targetPos.z);
-            this.getEntity().getParent()?.addChild(bolt) ?? this.getEntity().addChild(bolt);
+            this.getEntity().parent?.addChild(bolt) ?? this.getEntity().addChild(bolt);
             this.activeEffects.add(bolt);
             const startMs = Date.now(); const durationMs = 350;
             const tick = () => {
@@ -448,7 +448,7 @@ export class CainAndAbel extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {

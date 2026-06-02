@@ -228,7 +228,7 @@ export class Napoleon extends Boss {
         ball.setLocalScale(1.5, 1.5, 1.5);
         const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
         ball.setPosition(myPos.x + dir.x * 2, myPos.y + 1, myPos.z + dir.z * 2);
-        this.getEntity().getParent()?.addChild(ball) ?? this.getEntity().addChild(ball);
+        this.getEntity().parent?.addChild(ball) ?? this.getEntity().addChild(ball);
         this.activeEffects.add(ball);
         const startPos = ball.getPosition().clone();
         const speed = 30; const startMs = Date.now(); const maxMs = 2000;
@@ -299,7 +299,7 @@ export class Napoleon extends Boss {
         splash.addComponent("render", { type: "sphere", material: this.wineMaterial });
         splash.setLocalScale(1.2, 1.2, 1.2);
         splash.setPosition(myPos.x + dir.x * 2, myPos.y + 1.5, myPos.z + dir.z * 2);
-        this.getEntity().getParent()?.addChild(splash) ?? this.getEntity().addChild(splash);
+        this.getEntity().parent?.addChild(splash) ?? this.getEntity().addChild(splash);
         this.activeEffects.add(splash);
         const startPos = splash.getPosition().clone();
         const speed = 25; const startMs = Date.now(); const maxMs = 1000;

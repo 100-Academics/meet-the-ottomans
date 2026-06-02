@@ -213,7 +213,7 @@ export class KingGeorgeIII extends Boss {
                 guard.setPosition(guardPos.x, guardPos.y + 1.75, guardPos.z);
                 const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
                 guard.setLocalEulerAngles(0, yaw, 0);
-                this.getEntity().getParent()?.addChild(guard) ?? this.getEntity().addChild(guard);
+                this.getEntity().parent?.addChild(guard) ?? this.getEntity().addChild(guard);
                 this.activeEffects.add(guard);
 
                 // Telegraph ring
@@ -247,7 +247,7 @@ export class KingGeorgeIII extends Boss {
         crown.addComponent("render", { type: "torus", material: this.crownMaterial });
         crown.setLocalScale(1.5, 1.5 * 0.3, 1.5);
         crown.setPosition(myPos.x, myPos.y + 1.5, myPos.z);
-        this.getEntity().getParent()?.addChild(crown) ?? this.getEntity().addChild(crown);
+        this.getEntity().parent?.addChild(crown) ?? this.getEntity().addChild(crown);
         this.activeEffects.add(crown);
 
         this.crownState = {
@@ -342,7 +342,7 @@ export class KingGeorgeIII extends Boss {
         trail.addComponent("render", { type: "sphere", material: this.dashTrailMaterial });
         trail.setLocalScale(1.2, 1.2, 1.2);
         trail.setPosition(myPos.x, myPos.y + 0.5, myPos.z);
-        this.getEntity().getParent()?.addChild(trail) ?? this.getEntity().addChild(trail);
+        this.getEntity().parent?.addChild(trail) ?? this.getEntity().addChild(trail);
         this.activeEffects.add(trail);
         const startMs = Date.now(); const durationMs = 250;
         const tick = () => {
@@ -395,7 +395,7 @@ export class KingGeorgeIII extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {

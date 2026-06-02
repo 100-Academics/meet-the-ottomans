@@ -210,7 +210,7 @@ export class UncleSam extends Boss {
         coin.addComponent("render", { type: "cylinder", material: this.moneyMaterial });
         coin.setLocalScale(0.5, 0.1, 0.5);
         coin.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1.5, myPos.z + dir.z * 1.5);
-        this.getEntity().getParent()?.addChild(coin) ?? this.getEntity().addChild(coin);
+        this.getEntity().parent?.addChild(coin) ?? this.getEntity().addChild(coin);
         this.activeEffects.add(coin);
         const startPos = coin.getPosition().clone();
         const speed = 28; const startMs = Date.now(); const maxMs = 1200;
@@ -256,7 +256,7 @@ export class UncleSam extends Boss {
         const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
         rocket.setLocalEulerAngles(-90, yaw, 0);
         rocket.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1, myPos.z + dir.z * 1.5);
-        this.getEntity().getParent()?.addChild(rocket) ?? this.getEntity().addChild(rocket);
+        this.getEntity().parent?.addChild(rocket) ?? this.getEntity().addChild(rocket);
         this.activeEffects.add(rocket);
         const startPos = rocket.getPosition().clone();
         const speed = 50; const startMs = Date.now(); const maxMs = 800;
@@ -302,7 +302,7 @@ export class UncleSam extends Boss {
             bomb.addComponent("render", { type: "sphere", material: this.airstrikeMaterial });
             bomb.setLocalScale(0.8, 0.8, 0.8);
             bomb.setPosition(pos.x, pos.y, pos.z);
-            this.getEntity().getParent()?.addChild(bomb) ?? this.getEntity().addChild(bomb);
+            this.getEntity().parent?.addChild(bomb) ?? this.getEntity().addChild(bomb);
             this.activeEffects.add(bomb);
             const startMs = Date.now(); const fallMs = 500;
             const tick = () => {
@@ -361,7 +361,7 @@ export class UncleSam extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {

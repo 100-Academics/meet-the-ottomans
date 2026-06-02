@@ -216,7 +216,7 @@ export class Lenin extends Boss {
             hammer.setPosition(myPos.x + dir.x * 3, myPos.y + 1.2, myPos.z + dir.z * 3);
             const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
             hammer.setLocalEulerAngles(0, yaw, 0);
-            this.getEntity().getParent()?.addChild(hammer) ?? this.getEntity().addChild(hammer);
+            this.getEntity().parent?.addChild(hammer) ?? this.getEntity().addChild(hammer);
             this.activeEffects.add(hammer);
 
             // Animate hammer forward
@@ -352,7 +352,7 @@ export class Lenin extends Boss {
                 soldier.addComponent("render", { type: "capsule", material: this.redSoldierMaterial });
                 soldier.setLocalScale(0.8, 2.0, 0.8);
                 soldier.setPosition(soldierPos.x, soldierPos.y + 1, soldierPos.z);
-                this.getEntity().getParent()?.addChild(soldier) ?? this.getEntity().addChild(soldier);
+                this.getEntity().parent?.addChild(soldier) ?? this.getEntity().addChild(soldier);
                 this.activeEffects.add(soldier);
 
                 // Animate soldier toward target
@@ -415,7 +415,7 @@ export class Lenin extends Boss {
         ring.addComponent("render", { type: "torus", material });
         ring.setPosition(origin.x, origin.y + 0.1, origin.z);
         ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().getParent()?.addChild(ring) ?? this.getEntity().addChild(ring);
+        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
         this.activeEffects.add(ring);
         const startMs = Date.now();
         const tick = () => {
