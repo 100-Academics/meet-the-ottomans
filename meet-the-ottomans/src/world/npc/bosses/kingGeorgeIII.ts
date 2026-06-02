@@ -184,7 +184,7 @@ export class KingGeorgeIII extends Boss {
     }
 
     // ── Royal guard wall ──
-    private startGuardWall(target: Entity, now: number): void {
+    private startGuardWall(_target: Entity, now: number): void {
         this.lastAttackType = "royalGuardWall"; this.lastAttackAtSeconds = now;
         this.guardWallState = { endTimeSeconds: now + 1.0, hasSpawned: false };
         this.attackLockUntilSeconds = this.guardWallState.endTimeSeconds;

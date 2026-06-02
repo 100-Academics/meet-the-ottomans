@@ -395,7 +395,7 @@ export class CainAndAbel extends Boss {
     }
 
     // ── Abel: Aerial position ──
-    private startAerial(target: Entity, now: number): void {
+    private startAerial(_target: Entity, now: number): void {
         this.lastAttackType = "aerialPosition"; this.lastAttackAtSeconds = now;
         this.aerialState = { endTimeSeconds: now + 0.8, hasRepositioned: false };
         this.attackLockUntilSeconds = this.aerialState.endTimeSeconds;

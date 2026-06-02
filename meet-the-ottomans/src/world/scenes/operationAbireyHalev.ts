@@ -30,7 +30,6 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
-import { isDeathScreenVisible } from "./deathScreen";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 
