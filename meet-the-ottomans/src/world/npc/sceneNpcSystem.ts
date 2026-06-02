@@ -333,8 +333,6 @@ export async function spawnSceneNpcs(
                 const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
-                boss.drawHealthBar();
-                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "binLadin") {
                 console.log(`Spawning Bin Ladin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
@@ -379,40 +377,30 @@ export async function spawnSceneNpcs(
                 const boss = new KingGeser(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
-                boss.drawHealthBar();
-                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "christ") {
                 console.log(`Spawning Christ Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new Christ(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
-                boss.drawHealthBar();
-                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "joanofarc") {
                 console.log(`Spawning Joan of Arc Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new JoanOfArc(spawn.id, spawn.maxHealth ?? 260, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
-                boss.drawHealthBar();
-                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "williamTheConquerer") {
                 console.log(`Spawning William the Conquerer Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new WilliamTheConquerer(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
-                boss.drawHealthBar();
-                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "georgeWashington") {
                 console.log(`Spawning George Washington Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const boss = new GeorgeWashington(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
-                boss.drawHealthBar();
-                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "caesar") {
                 console.log(`Spawning Caesar Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);

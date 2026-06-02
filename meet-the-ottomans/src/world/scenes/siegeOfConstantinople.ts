@@ -928,6 +928,7 @@ export async function siegeOfConstantinopleScene(
 				npcs.push(spawnedNpc);
 				if (spawnedNpc instanceof Boss) {
 					spawnedNpc.drawHealthBar();
+					Boss.setActiveBoss(spawnedNpc);
 				}
 			}
 			spawnedWaveFoes += CONSTANTINOPLE_BOSS_SPAWN_POINT.length;
