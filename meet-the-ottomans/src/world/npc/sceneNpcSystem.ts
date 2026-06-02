@@ -12,6 +12,7 @@ import { Christ } from "./bosses/jesus";
 import { JoanOfArc } from "./bosses/joanOfArc";
 import { WilliamTheConquerer } from "./bosses/williamTheConquerer";
 import { GeorgeWashington } from "./bosses/georgeWashington";
+import { Caesar } from "./bosses/caesar";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
