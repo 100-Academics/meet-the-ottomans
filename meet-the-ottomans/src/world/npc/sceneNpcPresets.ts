@@ -21,8 +21,15 @@ const NPC_MODEL_PATHS = {
     christ: "models/npc/boss/Jesus10K.glb"
     ,georgeWashington: "models/npc/boss/GeorgeWashington.glb"
     ,americanRevolutionist: "models/npc/americanRevolutionist.glb"
-} as const;
-
+ ,baybars: "models/npc/boss/Baybars.glb"
+ ,caesar: "models/npc/boss/Caesar.glb"
+ ,napoleon: "models/npc/boss/Napoleon.glb"
+ ,uncleSam: "models/npc/boss/UncleSam.glb"
+ ,vietnamDragonKing: "models/npc/boss/VietnamDragonKing.glb"
+ ,cainAndAbel: "models/npc/boss/CainAndAbel.glb"
+ ,kingGeorgeIII: "models/npc/boss/KingGeorgeIII.glb"
+ ,lenin: "models/npc/boss/Lenin.glb"
+ ,stalin: "models/npc/boss/Stalin.glb"
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
 const KHAN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     modelPath: NPC_MODEL_PATHS.genghisKhan,
@@ -68,14 +75,78 @@ const GEORGE_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
     facingYawOffsetDegrees: 0,
     hitboxRadius: 2.4
 };
-
-// Non-boss per-type overrides (used in typeSpawnOverrides below).
-const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-    modelRotation: new Vec3(0, 0, 0),
-    facingYawOffsetDegrees: 0
+const BAYBARS_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.baybars,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
 };
-
-const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+const CAESAR_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.caesar,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const NAPOLEON_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.napoleon,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const UNCLE_SAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.uncleSam,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.vietnamDragonKing,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.cainAndAbel,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const KING_GEORGE_III_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.kingGeorgeIII,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const LENIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.lenin,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+const STALIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.stalin,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
     modelRotation: new Vec3(0, 0, 0),
     facingYawOffsetDegrees: 0
 };
@@ -108,17 +179,30 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
     williamTheConquerer: NPC_MODEL_PATHS.willieconquer
     ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
     ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
-};
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
 
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
     templar: TEMPLAR_SPAWN_OVERRIDES,
     french: FRENCH_SPAWN_OVERRIDES,
     joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
-    americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES
-};
-
-// Shared battle options applied in scenes. Intentionally no generic troop defaults.
-// How to customize per type: add type-specific overrides in scene code or extend
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
 // the spawn system to accept a type->overrides map.
 export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     typeModelPaths: NPC_TYPE_MODEL_PATHS,
@@ -155,210 +239,1743 @@ export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
     typeModelPaths: NPC_TYPE_MODEL_PATHS,
     typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// Spawn points for each scene. Set `type` to pick a model and NPC class.
-// How to add a new spawn: add a new entry with id/team/x/z/type.
-export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-    // { id: 2, team: "foe", x: 4, z: -2, type: "mongol" },
-    // { id: 3, team: "foe", x: 9, z: 2, type: "mongol" },
-    // { id: 4, team: "foe", x: 5, z: 4, type: "mongol" },
-    // { id: 5, team: "foe", x: 11, z: -1, type: "mongol" },
-    // { id: 6, team: "foe", x: 3, z: 0, type: "mongol" },
-    // { id: 7, team: "foe", x: 8, z: -3, type: "mongol" },
-    // { id: 8, team: "foe", x: 13, z: 3, type: "mongol" },
-    // { id: 9, team: "foe", x: 7, z: 5, type: "mongol" },
-    // { id: 10, team: "foe", x: 14, z: -4, type: "mongol" },
-    // { id: 11, team: "foe", x: 10, z: 1, type: "mongol" },
-    // { id: 12, team: "foe", x: 16, z: -2, type: "mongol" },
-    // { id: 13, team: "foe", x: 12, z: 4, type: "mongol" },
-    // { id: 14, team: "foe", x: 18, z: 0, type: "mongol" },
-    // { id: 15, team: "foe", x: 15, z: -3, type: "mongol" },
-    // { id: 16, team: "foe", x: 20, z: 2, type: "mongol" },
-    // { id: 17, team: "foe", x: 17, z: 5, type: "mongol" },
-    // { id: 18, team: "foe", x: 22, z: -1, type: "mongol" },
-    // { id: 19, team: "foe", x: 19, z: 3, type: "mongol" },
-    // { id: 20, team: "foe", x: 24, z: -4, type: "mongol" }
-];
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// Boss spawn point for Legnica.
-export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// Boss spawn point for Ain Jalut.
-export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeser" }];
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
 
-// Constantinople battle NPC spawns (Templars).
-export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: -12, type: "templar" },
-    // { id: 2, team: "foe", x: 9, z: -12, type: "templar" },
-    // { id: 3, team: "foe", x: 12, z: -12, type: "templar" },
-    // { id: 4, team: "foe", x: 15, z: -12, type: "templar" },
-    // { id: 5, team: "foe", x: 18, z: -12, type: "templar" },
-    // { id: 6, team: "foe", x: 6, z: -9, type: "templar" },
-    // { id: 7, team: "foe", x: 9, z: -9, type: "templar" },
-    // { id: 8, team: "foe", x: 12, z: -9, type: "templar" },
-    // { id: 9, team: "foe", x: 15, z: -9, type: "templar" },
-    // { id: 10, team: "foe", x: 18, z: -9, type: "templar" },
-    // { id: 11, team: "foe", x: 6, z: -6, type: "templar" },
-    // { id: 12, team: "foe", x: 9, z: -6, type: "templar" },
-    // { id: 13, team: "foe", x: 12, z: -6, type: "templar" },
-    // { id: 14, team: "foe", x: 15, z: -6, type: "templar" },
-    // { id: 15, team: "foe", x: 18, z: -6, type: "templar" },
-    // { id: 16, team: "foe", x: 6, z: -3, type: "templar" },
-    // { id: 17, team: "foe", x: 9, z: -3, type: "templar" },
-    // { id: 18, team: "foe", x: 12, z: -3, type: "templar" },
-    // { id: 19, team: "foe", x: 15, z: -3, type: "templar" },
-    // { id: 20, team: "foe", x: 18, z: -3, type: "templar" },
-    // { id: 21, team: "foe", x: 6, z: 0, type: "templar" },
-    // { id: 22, team: "foe", x: 9, z: 0, type: "templar" },
-    // { id: 23, team: "foe", x: 12, z: 0, type: "templar" },
-    // { id: 24, team: "foe", x: 15, z: 0, type: "templar" },
-    // { id: 25, team: "foe", x: 18, z: 0, type: "templar" },
-    // { id: 26, team: "foe", x: 6, z: 3, type: "templar" },
-    // { id: 27, team: "foe", x: 9, z: 3, type: "templar" },
-    // { id: 28, team: "foe", x: 12, z: 3, type: "templar" },
-    // { id: 29, team: "foe", x: 15, z: 3, type: "templar" },
-    // { id: 30, team: "foe", x: 18, z: 3, type: "templar" },
-    // { id: 31, team: "foe", x: 6, z: 6, type: "templar" },
-    // { id: 32, team: "foe", x: 9, z: 6, type: "templar" },
-    // { id: 33, team: "foe", x: 12, z: 6, type: "templar" },
-    // { id: 34, team: "foe", x: 15, z: 6, type: "templar" },
-    // { id: 35, team: "foe", x: 18, z: 6, type: "templar" },
-    // { id: 36, team: "foe", x: 6, z: 9, type: "templar" },
-    // { id: 37, team: "foe", x: 9, z: 9, type: "templar" },
-    // { id: 38, team: "foe", x: 12, z: 9, type: "templar" },
-    // { id: 39, team: "foe", x: 15, z: 9, type: "templar" },
-    // { id: 40, team: "foe", x: 18, z: 9, type: "templar" },
-    // { id: 41, team: "foe", x: 6, z: 12, type: "templar" },
-    // { id: 42, team: "foe", x: 9, z: 12, type: "templar" },
-    // { id: 43, team: "foe", x: 12, z: 12, type: "templar" },
-    // { id: 44, team: "foe", x: 15, z: 12, type: "templar" },
-    // { id: 45, team: "foe", x: 18, z: 12, type: "templar" },
-    // { id: 46, team: "foe", x: 6, z: 15, type: "templar" },
-    // { id: 47, team: "foe", x: 9, z: 15, type: "templar" },
-    // { id: 48, team: "foe", x: 12, z: 15, type: "templar" },
-    // { id: 49, team: "foe", x: 15, z: 15, type: "templar" },
-    // { id: 50, team: "foe", x: 18, z: 15, type: "templar" }
-];
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// Orléans battle NPC spawns (French soldiers).
-export const ORLEANS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: -6, type: "french" },
-    { id: 2, team: "foe", x: 9, z: -6, type: "french" },
-    { id: 3, team: "foe", x: 12, z: -6, type: "french" },
-    { id: 4, team: "foe", x: 15, z: -6, type: "french" },
-    { id: 5, team: "foe", x: 18, z: -6, type: "french" }
-];
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// Ain Jalut battle NPC spawns (Mongols).
-export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 0, z: 0, type: "mongol" },
-    // { id: 2, team: "friend", x: -8, z: 2 },
-    { id: 3, team: "foe", x: 0, z: 0, type: "mongol" },
-    // { id: 4, team: "friend", x: -10, z: -2 },
-    { id: 5, team: "foe", x: 0, z: 0, type: "mongol" },
-    // { id: 6, team: "friend", x: -6, z: -4 }
-];
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// Boss spawn point for Constantinople.
-export const CONSTANTINOPLE_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 12, z: 0, maxHealth: 500, type: "christ" }];
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Chosin Reservoir ──
-export const CHOSIN_RESERVOIR_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Gallipoli ──
-export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// ── Gettysburg ──
-export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// ── Kyiv ──
-export const KYIV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const KYIV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// ── Stalingrad ──
-export const STALINGRAD_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const STALINGRAD_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
 
-// ── Three Emperors ──
-export const THREE_EMPERORS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const THREE_EMPERORS_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Verdun ──
-export const VERDUN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Yorktown ──
-export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: -6, type: "americanRevolutionist" },
-    { id: 2, team: "foe", x: 9, z: -6, type: "americanRevolutionist" },
-    { id: 3, team: "foe", x: 12, z: -6, type: "americanRevolutionist" },
-    { id: 4, team: "foe", x: 15, z: -6, type: "americanRevolutionist" },
-    { id: 5, team: "foe", x: 18, z: -6, type: "americanRevolutionist" }
-];
-export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "georgeWashington" }];
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Saigon ──
-export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Abirey Halev ──
-export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [];
-export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [];
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
 
-// ── Anaconda ──
-export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// ── Arnon ──
-export const ARNON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-];
-export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-// ── Agincourt ──
-export const AGINCOURT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-    { id: 1, team: "foe", x: 8, z: 3, type: "french" },
-    // { id: 2, team: "foe", x: -6, z: 5, type: "french" },
-    // { id: 3, team: "foe", x: 4, z: -7, type: "french" },
-    // { id: 4, team: "foe", x: -3, z: -4, type: "french" },
-    // { id: 5, team: "foe", x: 10, z: -2, type: "french" },
-    // { id: 6, team: "foe", x: -9, z: 1, type: "french" },
-    // { id: 7, team: "foe", x: 2, z: 9, type: "french" },
-    // { id: 8, team: "foe", x: -5, z: -9, type: "french" },
-    // { id: 9, team: "foe", x: 7, z: 7, type: "french" },
-    // { id: 10, team: "foe", x: -8, z: -6, type: "french" },
-    // { id: 11, team: "foe", x: 12, z: 4, type: "french" },
-    // { id: 12, team: "foe", x: -11, z: -3, type: "french" },
-    // { id: 13, team: "foe", x: 5, z: -12, type: "french" },
-    // { id: 14, team: "foe", x: -4, z: 11, type: "french" },
-    // { id: 15, team: "foe", x: 14, z: -1, type: "french" },
-    // { id: 16, team: "foe", x: -13, z: 8, type: "french" },
-    // { id: 17, team: "foe", x: 1, z: -14, type: "french" },
-    // { id: 18, team: "foe", x: -7, z: 13, type: "french" },
-    // { id: 19, team: "foe", x: 9, z: -10, type: "french" },
-    // { id: 20, team: "foe", x: -10, z: 6, type: "french" },
-];
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
 
-export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "williamTheConquerer" }];
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  lenin: LENIN_BOSS_SPAWN_OVERRIDES,
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+// the spawn system to accept a type->overrides map.
+export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+// Boss spawn options used by scenes that include the named boss.
+export const DEFAULT_KHAN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KHAN_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...KING_GESER_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...CHRIST_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...WILLIAM_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+    ...GEORGE_BOSS_SPAWN_OVERRIDES,
+    typeModelPaths: NPC_TYPE_MODEL_PATHS,
+    typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...BAYBARS_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAESAR_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_VIETNAM_DRAGON_KING_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_KING_GEORGE_III_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...LENIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+// NPC type -> model path. The spawn system picks the model from this map
+// based on the `type` field in each spawn point.
+export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
+    mongol: NPC_MODEL_PATHS.mongolTroop,
+    templar: NPC_MODEL_PATHS.templarTroop,
+    french: NPC_MODEL_PATHS.frenchSoldierOld,
+    huntingrifledude: NPC_MODEL_PATHS.huntingrifledude,
+    joanofarc: NPC_MODEL_PATHS.joanofarc,
+    willieconquer: NPC_MODEL_PATHS.willieconquer,
+    koreansldier: NPC_MODEL_PATHS.koreansldier,
+    mamlukIthink: NPC_MODEL_PATHS.mamlukIthink,
+    modernishsoldier: NPC_MODEL_PATHS.modernishsoldier,
+    genghisKhan: NPC_MODEL_PATHS.genghisKhan,
+    kingGeser: NPC_MODEL_PATHS.kingGeser,
+    christ: NPC_MODEL_PATHS.christ,
+    williamTheConquerer: NPC_MODEL_PATHS.willieconquer
+    ,georgeWashington: NPC_MODEL_PATHS.georgeWashington
+    ,americanRevolutionist: NPC_MODEL_PATHS.americanRevolutionist
+ ,baybars: NPC_MODEL_PATHS.baybars
+ ,caesar: NPC_MODEL_PATHS.caesar
+ ,napoleon: NPC_MODEL_PATHS.napoleon
+ ,uncleSam: NPC_MODEL_PATHS.uncleSam
+ ,vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing
+ ,cainAndAbel: NPC_MODEL_PATHS.cainAndAbel
+ ,kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII
+ ,lenin: NPC_MODEL_PATHS.lenin
+ ,stalin: NPC_MODEL_PATHS.stalin
+
+export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+    templar: TEMPLAR_SPAWN_OVERRIDES,
+    french: FRENCH_SPAWN_OVERRIDES,
+    joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
+  americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
+  caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
+  napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
+  uncleSam: UNCLE_S
