@@ -289,7 +289,7 @@ export class Baybars extends Boss {
         this.attackLockUntilSeconds = this.dustStormState.endTimeSeconds + 0.3;
     }
 
-    private updateDustStorm(_dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+    private updateDustStorm(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
         const state = this.dustStormState; if (!state) return;
         if (state.cloud) { const pos = this.getEntity().getPosition(); state.cloud.setPosition(pos.x, pos.y + 1, pos.z); }
         if (!state.hasBlinded && this.getFlatDistanceTo(target) <= this.dustStormRange) {

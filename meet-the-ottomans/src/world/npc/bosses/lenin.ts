@@ -36,6 +36,7 @@ export class Lenin extends Boss {
     private readonly winterDurationSeconds = 5.0;
     private readonly winterCooldownSeconds = 10.0;
     private readonly winterRange = 30;
+    private readonly winterPlayerSpeedMultiplier = 0.6;
     private readonly winterBossSpeedMultiplier = 1.4;
     private nextWinterAtSeconds = 0;
     private winterActive = false;
@@ -193,7 +194,7 @@ export class Lenin extends Boss {
     }
 
     // ── Hammer & sickle ──
-    private startHammerSickle(_target: Entity, now: number): void {
+    private startHammerSickle(target: Entity, now: number): void {
         this.lastAttackType = "hammerAndSickle"; this.lastAttackAtSeconds = now;
         this.hammerSickleState = { endTimeSeconds: now + 1.2, phase: "hammer", hasHammerHit: false, hasSickleHit: false };
         this.attackLockUntilSeconds = this.hammerSickleState.endTimeSeconds;
@@ -324,7 +325,7 @@ export class Lenin extends Boss {
     }
 
     // ── Summon red soldiers ──
-    private startRedSoldiers(_target: Entity, now: number): void {
+    private startRedSoldiers(target: Entity, now: number): void {
         this.lastAttackType = "summonRedSoldiers"; this.lastAttackAtSeconds = now;
         this.redSoldiersState = { endTimeSeconds: now + 0.8, hasSpawned: false };
         this.attackLockUntilSeconds = this.redSoldiersState.endTimeSeconds;
@@ -336,7 +337,7 @@ export class Lenin extends Boss {
         if (!state.hasSpawned) {
             state.hasSpawned = true;
             const myPos = this.getEntity().getPosition();
-            // target position is read dynamically inside soldier movement tick
+            const targetPos = target.getPosition();
 
             for (let i = 0; i < this.redSoldierCount; i++) {
                 const angle = (i / this.redSoldierCount) * Math.PI * 2 + Math.random() * 0.5;

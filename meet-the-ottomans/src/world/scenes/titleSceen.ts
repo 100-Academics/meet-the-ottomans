@@ -1,7 +1,7 @@
 import { AppBase } from "playcanvas";
 import { Battle } from '../Battle';
 import { defaultScene } from './default';
-// GPT OSS 120
+
 type IntroSlide = {
   title: string;
   lines: string[];

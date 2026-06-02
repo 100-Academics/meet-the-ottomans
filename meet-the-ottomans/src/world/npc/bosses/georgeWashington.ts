@@ -180,7 +180,7 @@ export class GeorgeWashington extends Boss {
     }
 
     // ── Throw tea ──
-    private startTea(_target: Entity, now: number): void {
+    private startTea(target: Entity, now: number): void {
         this.lastAttackType = "throwTea"; this.lastAttackAtSeconds = now;
         this.teaState = { endTimeSeconds: now + 0.8, hasThrown: false };
         this.attackLockUntilSeconds = this.teaState.endTimeSeconds;
@@ -242,7 +242,7 @@ export class GeorgeWashington extends Boss {
     }
 
     // ── Build monument ──
-    private startMonument(_target: Entity, now: number): void {
+    private startMonument(target: Entity, now: number): void {
         this.lastAttackType = "buildMonument"; this.lastAttackAtSeconds = now;
         this.monumentState = { endTimeSeconds: now + 1.5, hasBuilt: false };
         this.attackLockUntilSeconds = this.monumentState.endTimeSeconds;
@@ -301,7 +301,7 @@ export class GeorgeWashington extends Boss {
     }
 
     // ── Giant sword ──
-    private startSword(_target: Entity, now: number): void {
+    private startSword(target: Entity, now: number): void {
         this.lastAttackType = "giantSword"; this.lastAttackAtSeconds = now;
         this.swordState = { endTimeSeconds: now + 1.4, phase: "windup", hasHit: false };
         this.attackLockUntilSeconds = this.swordState.endTimeSeconds;

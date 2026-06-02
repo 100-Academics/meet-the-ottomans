@@ -100,7 +100,6 @@ export class JoanOfArc extends Boss {
     private nextFireStrikeAtSeconds = 0;
     private nextFireRainAtSeconds = 0;
     private lastAttackType: JoanAttackType | null = null;
-    private lastAttackAtSeconds = -Infinity;
     private fireDashState: FireDashState | null = null;
     private fireStrikeState: FireStrikeState | null = null;
     private fireRainState: FireRainState | null = null;
@@ -326,8 +325,8 @@ export class JoanOfArc extends Boss {
             return null;
         }
 
-        // Penalise repeating the same attack if it happened recently.
-        if (options.length > 1 && this.lastAttackType && (nowSeconds - this.lastAttackAtSeconds) < 1.8) {
+        // Penalise repeating the same attack.
+        if (options.length > 1 && this.lastAttackType) {
             const match = options.find((o) => o.type === this.lastAttackType);
             if (match) {
                 match.weight *= 0.5;
