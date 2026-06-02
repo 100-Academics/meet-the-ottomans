@@ -606,7 +606,10 @@ async function spawnBoss(
     );
     for (const s of spawned) {
       npcs.push(s);
-      if (s instanceof Boss) s.drawHealthBar();
+      if (s instanceof Boss) {
+        s.drawHealthBar();
+        Boss.setActiveBoss(s);
+      }
     }
     isBossSpawned = true;
   } catch (err) {
