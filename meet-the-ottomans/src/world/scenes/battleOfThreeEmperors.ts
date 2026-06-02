@@ -44,7 +44,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import {
   DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
-  DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+  DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS,
   THREE_EMPERORS_BOSS_SPAWN_POINT,
   THREE_EMPERORS_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
@@ -500,7 +500,7 @@ export async function battleOfThreeEmperorsScene(
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
-      player.equipWeapon(3);
+      player.equipWeapon(4);
       updateBattleHUD(player);
     }
   });
@@ -594,7 +594,7 @@ async function spawnBoss(
   isBossSpawning = true;
   try {
     const bossSpawnOptions = {
-      ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+      ...DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS,
       groundYFallback,
     };
     const spawned = await spawnSceneNpcs(

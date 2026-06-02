@@ -175,7 +175,7 @@ export class CainAndAbel extends Boss {
         if (chosen === "jumpShockwave") { this.startJumpShockwave(targetEntity, currentTimeSeconds); return; }
         if (chosen === "shield") { this.startShield(currentTimeSeconds); return; }
         if (chosen === "lightningStrike") { this.startLightning(targetEntity, currentTimeSeconds); return; }
-        if (chosen === "aerialPosition") { this.startAerial(targetEntity, currentTimeSeconds); return; }
+        if (chosen === "aerialPosition") { this.startAerial(currentTimeSeconds); return; }
 
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
@@ -395,7 +395,7 @@ export class CainAndAbel extends Boss {
     }
 
     // ── Abel: Aerial position ──
-    private startAerial(target: Entity, now: number): void {
+    private startAerial(now: number): void {
         this.lastAttackType = "aerialPosition"; this.lastAttackAtSeconds = now;
         this.aerialState = { endTimeSeconds: now + 0.8, hasRepositioned: false };
         this.attackLockUntilSeconds = this.aerialState.endTimeSeconds;

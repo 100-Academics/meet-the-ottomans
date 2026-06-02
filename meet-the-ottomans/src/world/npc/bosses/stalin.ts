@@ -192,7 +192,7 @@ export class Stalin extends Boss {
     }
 
     // ── Red army surge ──
-    private startSurge(target: Entity, now: number): void {
+    private startSurge(_target: Entity, now: number): void {
         this.lastAttackType = "redArmySurge"; this.lastAttackAtSeconds = now;
         this.surgeState = {
             endTimeSeconds: now + this.surgeWaves * 0.8 + 0.5,
@@ -212,7 +212,6 @@ export class Stalin extends Boss {
             state.nextWaveAtSeconds = now + 0.8;
 
             const myPos = this.getEntity().getPosition();
-            const targetPos = target.getPosition();
 
             // Telegraph ring
             this.spawnRingEffect(myPos, 8, 400, this.surgeRingMaterial, "stalin-surge-ring", 0.6);
@@ -267,7 +266,7 @@ export class Stalin extends Boss {
     }
 
     // ── Iron curtain ──
-    private startCurtain(target: Entity, now: number): void {
+    private startCurtain(_target: Entity, now: number): void {
         this.lastAttackType = "ironCurtain"; this.lastAttackAtSeconds = now;
         this.curtainState = { endTimeSeconds: now + this.curtainDurationSeconds, hasSpawned: false };
         this.attackLockUntilSeconds = now + 0.5;

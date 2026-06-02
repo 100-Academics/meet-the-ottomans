@@ -46,7 +46,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import {
   DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
-  DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+  DEFAULT_LENIN_BOSS_SPAWN_OPTIONS,
   STALINGRAD_BOSS_SPAWN_POINT,
   STALINGRAD_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
@@ -595,7 +595,7 @@ async function spawnBoss(
   isBossSpawning = true;
   try {
     const bossSpawnOptions = {
-      ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+      ...DEFAULT_LENIN_BOSS_SPAWN_OPTIONS,
       groundYFallback,
     };
     const spawned = await spawnSceneNpcs(

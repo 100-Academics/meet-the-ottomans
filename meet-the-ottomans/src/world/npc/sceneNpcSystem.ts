@@ -12,6 +12,7 @@ import { Christ } from "./bosses/jesus";
 import { JoanOfArc } from "./bosses/joanOfArc";
 import { WilliamTheConquerer } from "./bosses/williamTheConquerer";
 import { GeorgeWashington } from "./bosses/georgeWashington";
+import { Caesar } from "./bosses/caesar";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -332,6 +333,44 @@ export async function spawnSceneNpcs(
                 const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
                 boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 boss.setHitboxRadius(hitboxRadius);
+                npcs.push(boss);
+            } else if (spawn.type === "binLadin") {
+                console.log(`Spawning Bin Ladin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+                const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+                boss.setTitle("Bin Ladin");
+                boss.setIntroTaunt("I am Bin Ladin.", "I am Bin Ladin.");
+                boss.setIntroNameTranslation("Usama bin Ladin", "Bin Ladin");
+                boss.setTauntSet({
+                    highHealth: [
+                        "You will never find me.",
+                        "This battlefield is mine.",
+                        "I am already gone before you arrive."
+                    ],
+                    bossLowPlayerHigh: [
+                        "Your victory is an illusion.",
+                        "You have reached only the outer ring."
+                    ],
+                    playerLowBossHigh: [
+                        "You are too late.",
+                        "The mountain still stands."
+                    ],
+                    bothLow: [
+                        "This ends here.",
+                        "We are both running out of time."
+                    ],
+                    death: [
+                        "The shadow fades.",
+                        "You found the hidden path."
+                    ],
+                    bossDeath: [
+                        "Bin Ladin falls.",
+                        "The man in the cave is no more."
+                    ]
+                });
+                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+                boss.setHitboxRadius(hitboxRadius);
+                boss.drawHealthBar();
+                Boss.setActiveBoss(boss);
                 npcs.push(boss);
             } else if (spawn.type === "kingGeser") {
                 console.log(`Spawning King Geser Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);

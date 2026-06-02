@@ -30,7 +30,6 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
-import { isDeathScreenVisible } from "./deathScreen";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 
@@ -450,8 +449,8 @@ export async function operationAbireyHalevScene(
       heightOffset: 2,
     },
     {
-      name: "Abel",
-      path: "models/npc/boss/Abel.glb",
+      name: "CainAndAbel",
+      path: "models/npc/boss/CainOrAbel.glb",
       offset: new Vec3(-8, 0, -8),
       rotation: new Vec3(0, 0, 0),
       scale: new Vec3(2, 2, 2),
