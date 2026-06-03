@@ -23,7 +23,7 @@ const NPC_MODEL_PATHS = {
   americanRevolutionist: "models/npc/americanRevolutionist.glb",
   baybars: "models/npc/boss/Baybars.glb",
   caesar: "models/npc/boss/Caesar.glb",
-  napoleon: "models/npc/boss/Napoleon.glb",
+  napoleon: "models/npc/boss/Napolean.glb",
   uncleSam: "models/npc/boss/UncleSam.glb",
   vietnamDragonKing: "models/npc/boss/VietnamDragonKing.glb",
   binLadin: "models/npc/boss/AnotherOldDude.glb",
