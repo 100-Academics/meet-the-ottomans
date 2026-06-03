@@ -12,7 +12,7 @@ const NPC_MODEL_PATHS = {
   frenchSoldierOld: "models/npc/FrenchSoldierWWI.glb",
   huntingrifledude: "models/npc/WWISoldier.glb",
   joanofarc: "models/npc/boss/JoanOfArc.glb",
-  willieconquer: "models/npc/WillieConquer.glb",
+  willieconquer: "models/npc/boss/WillieConquer.glb",
   koreansldier: "models/npc/KoreanSoldier.glb",
   mamlukIthink: "models/npc/Mamluk.glb",
   modernishsoldier: "models/npc/VietnamSoldier.glb",

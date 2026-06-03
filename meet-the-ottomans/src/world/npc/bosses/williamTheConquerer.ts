@@ -18,9 +18,29 @@ interface ShieldBashState {
     hasHit: boolean;
 }
 
+interface RoyalDashState {
+    endTimeSeconds: number;
+    direction: Vec3;
+    hasHit: boolean;
+    trail?: Entity | null;
+}
+
 export class WilliamTheConquerer extends Boss {
     // Charge attack: a cavalry-style rush forward.
     private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.6;
+    // Royal dash: fast forward dash that freezes the player on hit.
+    private readonly royalDashSpeed = PLAYER_MOVE_SPEED * 3.5;
+    private readonly royalDashDurationSeconds = 0.4;
+    private readonly royalDashRecoverSeconds = 0.3;
+    private readonly royalDashCooldownSeconds = 6.0;
+    private readonly royalDashFreezeMs = 3000;
+    private nextRoyalDashAtSeconds = 0;
+    // Shockwave: large area damage with knockback.
+    private readonly shockwaveRadius = 7;
+    private readonly shockwaveDamage = 22;
+    private readonly shockwaveKnockback = 4;
+    private readonly shockwaveCooldownSeconds = 8.0;
+    private nextShockwaveAtSeconds = 0;
     private readonly chargeDurationSeconds = 0.6;
     private readonly chargeRecoverSeconds = 0.4;
     private readonly chargeCooldownSeconds = 5.0;
@@ -45,7 +65,9 @@ export class WilliamTheConquerer extends Boss {
     private lastAttackAtSeconds = -Infinity;
     private chargeState: ChargeState | null = null;
     private shieldBashState: ShieldBashState | null = null;
+    private royalDashState: RoyalDashState | null = null;
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
+    private playerEntity?: Entity;
 
     // VFX materials.
     private readonly chargeTrailMaterial = this.createEffectMaterial(
@@ -107,7 +129,7 @@ export class WilliamTheConquerer extends Boss {
             ],
             bossDeath: [
                 "So falls the Conqueror",
-                "The Norman sun sets."
+                "Big Willie had an oppsie."
             ]
         });
     }
@@ -120,6 +142,7 @@ export class WilliamTheConquerer extends Boss {
         playerEntity?: Entity | null,
         onPlayerAttack?: (attacker: npc, damage: number) => void
     ): void {
+        this.playerEntity = playerEntity ?? undefined;
         this.onPlayerAttack = onPlayerAttack;
         super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
     }
@@ -149,6 +172,10 @@ export class WilliamTheConquerer extends Boss {
             this.updateShieldBash(clampedDeltaTime, targetEntity, currentTimeSeconds, onAttack);
             return;
         }
+        if (this.royalDashState) {
+            this.updateRoyalDash(clampedDeltaTime, targetEntity, currentTimeSeconds, onAttack);
+            return;
+        }
         if (currentTimeSeconds < this.attackLockUntilSeconds) {
             this.faceTarget(targetEntity, clampedDeltaTime);
             return;
@@ -163,6 +190,14 @@ export class WilliamTheConquerer extends Boss {
         }
         if (chosenAttack === "shieldBash") {
             this.startShieldBash(currentTimeSeconds);
+            return;
+        }
+        if (chosenAttack === "royalDash") {
+            this.startRoyalDash(targetEntity, currentTimeSeconds);
+            return;
+        }
+        if (chosenAttack === "shockwave") {
+            this.startShockwave(currentTimeSeconds);
             return;
         }
 
@@ -212,9 +247,21 @@ export class WilliamTheConquerer extends Boss {
 
         const canBash = nowSeconds >= this.nextShieldBashAtSeconds
             && distance <= this.shieldBashRange;
+        const canRoyalDash = nowSeconds >= this.nextRoyalDashAtSeconds && distance <= this.chargeRangeMax;
+        const canShockwave = nowSeconds >= this.nextShockwaveAtSeconds;
         if (canBash) {
             const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.shieldBashRange));
             choices.push({ type: "shieldBash", score: 1.0 + closeness });
+        }
+        if (canRoyalDash) {
+            // Prefer royal dash when close enough and not recently used.
+            const closeness = 1 - Math.min(1, distance / this.chargeRangeMax);
+            choices.push({ type: "royalDash", score: 1.2 + closeness });
+        }
+        if (canShockwave) {
+            // Shockwave is a powerful area attack.
+            const distanceScore = distance <= this.shockwaveRadius ? 1.2 : 0.5;
+            choices.push({ type: "shockwave", score: 0.9 + distanceScore });
         }
 
         if (choices.length === 0) {
@@ -364,6 +411,94 @@ export class WilliamTheConquerer extends Boss {
             this.shieldBashState = null;
             this.nextShieldBashAtSeconds = nowSeconds + this.shieldBashCooldownSeconds;
         }
+    }
+
+    // ── Royal Dash attack �n
+    private startRoyalDash(targetEntity: Entity, nowSeconds: number): void {
+        const myPos = this.getEntity().getPosition();
+        const targetPos = targetEntity.getPosition();
+        const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z);
+        if (dir.lengthSq() <= 0.0001) {
+            return;
+        }
+        dir.normalize();
+        this.lastAttackType = "royalDash";
+        this.lastAttackAtSeconds = nowSeconds;
+        this.royalDashState = {
+            endTimeSeconds: nowSeconds + this.royalDashDurationSeconds,
+            direction: dir,
+            hasHit: false,
+            trail: this.createChargeTrail()
+        };
+        this.attackLockUntilSeconds = this.royalDashState.endTimeSeconds + this.royalDashRecoverSeconds;
+    }
+
+    private updateRoyalDash(
+        deltaTime: number,
+        targetEntity: Entity,
+        nowSeconds: number,
+        onAttack?: (attacker: npc) => void
+    ): void {
+        const state = this.royalDashState;
+        if (!state) {
+            return;
+        }
+        this.moveToward(state.direction.x, state.direction.z, this.royalDashSpeed, deltaTime);
+        if (state.trail) {
+            this.updateChargeTrail(state.trail, state.direction);
+        }
+        if (!state.hasHit && this.getFlatDistanceTo(targetEntity) <= this.chargeHitRadius) {
+            state.hasHit = true;
+            this.applyDamage(this.chargeDamage, onAttack);
+            // Freeze player
+            const controller = (targetEntity as any)?.script?.FirstPersonCamera ?? (targetEntity as any)?.script?.firstPersonCamera;
+            if (controller) {
+                const lockFn: any = controller.setMovementLocked ?? ((locked: boolean) => { controller.movementLocked = locked; });
+                lockFn(true);
+                setTimeout(() => {
+                    lockFn(false);
+                }, this.royalDashFreezeMs);
+            }
+        }
+        if (nowSeconds >= state.endTimeSeconds) {
+            this.destroyEffect(state.trail);
+            this.royalDashState = null;
+            this.nextRoyalDashAtSeconds = nowSeconds + this.royalDashCooldownSeconds;
+        }
+    }
+
+    // ── Shockwave attack ──
+
+    private startShockwave(nowSeconds: number): void {
+        this.lastAttackType = "shockwave";
+        this.lastAttackAtSeconds = nowSeconds;
+        // Visual effect
+        this.spawnRingEffect(
+            this.getEntity().getPosition(),
+            this.shockwaveRadius,
+            600,
+            this.shieldBashMaterial,
+            "william shockwave",
+            0.4
+        );
+        // Apply damage and knockback if player is in range
+        if (this.playerEntity) {
+            const distance = this.getFlatDistanceTo(this.playerEntity);
+            if (distance <= this.shockwaveRadius) {
+                this.applyDamage(this.shockwaveDamage);
+                // knockback
+                const dir = this.playerEntity.getPosition().clone().sub(this.getEntity().getPosition());
+                dir.y = 0;
+                if (dir.lengthSq() > 0.0001) {
+                    dir.normalize();
+                    const newPos = this.playerEntity.getPosition().clone().add(dir.mulScalar(this.shockwaveKnockback));
+                    this.playerEntity.setPosition(newPos);
+                }
+            }
+        }
+        this.nextShockwaveAtSeconds = nowSeconds + this.shockwaveCooldownSeconds;
+        // Small lock to prevent immediate other attacks
+        this.attackLockUntilSeconds = nowSeconds + 0.2;
     }
 
     // ── VFX helpers ──

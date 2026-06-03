@@ -48,9 +48,16 @@ import {
   YORKTOWN_BOSS_SPAWN_POINT,
   YORKTOWN_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
-import { AmericanRevolutionist } from "../npc/troops/americanRevolutionist";
+// import { AmericanRevolutionist } from "../npc/troops/americanRevolutionist";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
+
+function resetYorktownBattleState(): void {
+  // Reset state variables for Yorktown battle.
+  isBossSpawned = false;
+  isBossSpawning = false;
+  // AmericanRevolutionist.resetBattleState(); // if needed
+}
 
 const groundModelPath = "/world/battlefields/Yorktown.glb";
 
