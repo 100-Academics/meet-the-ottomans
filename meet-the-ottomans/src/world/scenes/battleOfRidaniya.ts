@@ -463,10 +463,13 @@ export async function battleOfRidaniyaScene(
 
 	const bossSpawnOptions = { ...DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
 	const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, RIDANIYA_BOSS_SPAWN_POINT, bossSpawnOptions);
-	for (const boss of bossNpcs) {
-		npcs.push(boss);
-		if (boss instanceof Boss) boss.drawHealthBar();
-	}
+  for (const boss of bossNpcs) {
+    npcs.push(boss);
+    if (boss instanceof Boss) {
+      boss.drawHealthBar();
+      Boss.setActiveBoss(boss);
+    }
+  }
 
 	app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
 		if (isDeathScreenVisible()) {

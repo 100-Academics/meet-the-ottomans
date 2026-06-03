@@ -80,9 +80,10 @@ export class UncleSam extends Boss {
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
-        this.setIntroTaunt("I WANT YOU!", "I WANT YOU!");
-        this.setIntroNameTranslation("Uncle Sam", "Uncle Sam");
-        this.setTauntSet({
+    this.setIntroTaunt("I WANT YOU!", "I WANT YOU!");
+    this.setIntroNameTranslation("Uncle Sam", "Uncle Sam");
+    this.setIntroSkipTranslation(true);
+    this.setTauntSet({
             highHealth: [
                 "I want YOU… to surrender!",
                 "Freedom isn't free, and neither is your defeat.",

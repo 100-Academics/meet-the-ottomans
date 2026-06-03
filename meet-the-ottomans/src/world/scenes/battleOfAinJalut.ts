@@ -288,6 +288,7 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: Array<Awaited
       npcs.push(spawnedNpc);
       if (spawnedNpc instanceof Boss) {
         spawnedNpc.drawHealthBar();
+        Boss.setActiveBoss(spawnedNpc);
       }
     }
     isBossSpawned = true;

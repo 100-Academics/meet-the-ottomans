@@ -80,9 +80,10 @@ export class KingGeorgeIII extends Boss {
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
-        this.setIntroTaunt("The King's word is law!", "The King's word is law!");
-        this.setIntroNameTranslation("Rex Georgius III", "King George III");
-        this.setTauntSet({
+    this.setIntroTaunt("The King's word is law!", "The King's word is law!");
+    this.setIntroNameTranslation("Rex Georgius III", "King George III");
+    this.setIntroSkipTranslation(true);
+    this.setTauntSet({
             highHealth: [
                 "By royal decree, you shall fall.",
                 "The Crown does not negotiate with rebels.",

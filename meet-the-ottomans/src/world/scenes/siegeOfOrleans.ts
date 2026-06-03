@@ -535,12 +535,18 @@ import {
 					}
 				];
 
-				const spawnedJoan = await spawnSceneNpcs(app, rigidbodySystem, joanSpawnPoints, npcSpawnOptions);
-				npcs.push(...spawnedJoan);
-				joanSpawned = true;
-				if (spawnedJoan.length === 0) {
-					console.warn('[NPC] Joan of Arc spawn returned no NPCs.');
-				}
+      const spawnedJoan = await spawnSceneNpcs(app, rigidbodySystem, joanSpawnPoints, npcSpawnOptions);
+      npcs.push(...spawnedJoan);
+      joanSpawned = true;
+      if (spawnedJoan.length === 0) {
+        console.warn('[NPC] Joan of Arc spawn returned no NPCs.');
+      }
+      for (const spawned of spawnedJoan) {
+        if (spawned instanceof Boss) {
+          spawned.drawHealthBar();
+          Boss.setActiveBoss(spawned);
+        }
+      }
 			} catch (error) {
 				console.error('[NPC] Failed to spawn Joan of Arc', error);
 				joanSpawned = true;

@@ -75,9 +75,10 @@ export class GeorgeWashington extends Boss {
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
-        this.setIntroTaunt("I shall defend my country!", "I shall defend my country!");
-        this.setIntroNameTranslation("George Washington", "George Washington");
-        this.setTauntSet({
+    this.setIntroTaunt("I shall defend my country!", "I shall defend my country!");
+    this.setIntroNameTranslation("George Washington", "George Washington");
+    this.setIntroSkipTranslation(true);
+    this.setTauntSet({
             highHealth: [
                 "You face the father of a nation.",
                 "Liberty shall not fall to the likes of you.",

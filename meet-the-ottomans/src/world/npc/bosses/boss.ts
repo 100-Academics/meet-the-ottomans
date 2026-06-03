@@ -59,20 +59,21 @@ export class Boss extends npc {
     private bossLowHealthThreshold = 0.35;
     private playerLowHealthThreshold = 0.35;
     private bossDeathTauntDurationMs = 2800;
-    private introTaunt: BossIntroTaunt | null = null;
-    private introNameTranslation: BossIntroTaunt | null = null;
-    private introTauntState: "pending" | "playing" | "done" = "pending";
-    private introTauntTimeoutIds: number[] = [];
-    private introFadeCycles = 2;
-    private introFadeInMs = 260;
-    private introFadeOutMs = 260;
-    private introFadeHoldMs = 650;
-    private introFadeGapMs = 180;
-    private introScrambleFrames = 12;
-    private introScrambleFrameMs = 120;
-    private introFinalHoldMs = 1600;
-    private introNameDelayMs = 200;
-    private introNameHoldMs = 260;
+  private introTaunt: BossIntroTaunt | null = null;
+  private introNameTranslation: BossIntroTaunt | null = null;
+  private introTauntState: "pending" | "playing" | "done" = "pending";
+  private introTauntTimeoutIds: number[] = [];
+  private introFadeCycles = 2;
+  private introFadeInMs = 260;
+  private introFadeOutMs = 260;
+  private introFadeHoldMs = 650;
+  private introFadeGapMs = 180;
+  private introScrambleFrames = 12;
+  private introScrambleFrameMs = 120;
+  private introFinalHoldMs = 1600;
+  private introNameDelayMs = 200;
+  private introNameHoldMs = 260;
+  private introSkipTranslation = false;
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("boss"), title?: string) {
         super(id, "foe", maxHealth, entity);
@@ -169,20 +170,24 @@ export class Boss extends npc {
         }
     }
 
-    public setIntroTaunt(nonEnglish: string, english: string): void {
-        const nonEnglishText = nonEnglish?.trim();
-        const englishText = english?.trim();
-        if (!nonEnglishText || !englishText) {
-            this.introTaunt = null;
-            this.introTauntState = "done";
-            this.clearIntroTauntTimers();
-            return;
-        }
-
-        this.introTaunt = { nonEnglish: nonEnglishText, english: englishText };
-        this.introTauntState = "pending";
-        this.clearIntroTauntTimers();
+  public setIntroTaunt(nonEnglish: string, english: string): void {
+    const nonEnglishText = nonEnglish?.trim();
+    const englishText = english?.trim();
+    if (!nonEnglishText || !englishText) {
+      this.introTaunt = null;
+      this.introTauntState = "done";
+      this.clearIntroTauntTimers();
+      return;
     }
+
+    this.introTaunt = { nonEnglish: nonEnglishText, english: englishText };
+    this.introTauntState = "pending";
+    this.clearIntroTauntTimers();
+  }
+
+  public setIntroSkipTranslation(skip: boolean): void {
+    this.introSkipTranslation = !!skip;
+  }
 
     public setIntroNameTranslation(nonEnglish: string, english: string): void {
         const nonEnglishText = nonEnglish?.trim();
@@ -503,63 +508,110 @@ export class Boss extends npc {
         return time;
     }
 
-    private startIntroTaunt(): void {
-        if (this.introTauntState === "playing" || (!this.introTaunt && !this.introNameTranslation)) {
-            return;
-        }
-
-        this.introTauntState = "playing";
-        this.nextTauntAtSeconds = null;
-        this.lastTauntPhase = null;
-        this.lastTauntIndex = null;
-        this.clearStatusTimeout();
-        this.clearIntroTauntTimers();
-
-        if (this.introNameTranslation) {
-            const titleEl = this.ensureTitleElement();
-            if (titleEl) {
-                titleEl.textContent = this.introNameTranslation.nonEnglish;
-            }
-        }
-
-        let time = 0;
-
-        if (this.introTaunt) {
-            const status = this.ensureStatusElement();
-            if (!status) {
-                this.introTauntState = "done";
-                return;
-            }
-
-            const nonEnglish = this.introTaunt.nonEnglish;
-            const english = this.introTaunt.english;
-            const translatingLabel = "Translating...";
-            const showTranslating = (line: string, showLabel: boolean, opacity: number) => {
-                const lines = showLabel ? [line, translatingLabel] : [line];
-                this.setStatusLines(lines, opacity);
-            };
-
-            time = this.scheduleTranslationSequence(nonEnglish, english, 0, showTranslating);
-        }
-
-        if (this.introNameTranslation) {
-            time += this.introNameDelayMs;
-            time = this.scheduleNameTranslationSequence(
-                this.introNameTranslation.nonEnglish,
-                this.introNameTranslation.english,
-                time
-            );
-        }
-
-        this.scheduleIntroStep(() => {
-            if (this.statusEl) {
-                this.statusEl.textContent = "";
-                this.statusEl.style.display = "none";
-                this.statusEl.style.opacity = "0";
-            }
-            this.introTauntState = "done";
-        }, time);
+  private startIntroTaunt(): void {
+    if (this.introTauntState === "playing" || (!this.introTaunt && !this.introNameTranslation)) {
+      return;
     }
+
+    this.introTauntState = "playing";
+    this.nextTauntAtSeconds = null;
+    this.lastTauntPhase = null;
+    this.lastTauntIndex = null;
+    this.clearStatusTimeout();
+    this.clearIntroTauntTimers();
+
+    if (this.introSkipTranslation) {
+      this.startIntroTauntSkipTranslation();
+      return;
+    }
+
+    if (this.introNameTranslation) {
+      const titleEl = this.ensureTitleElement();
+      if (titleEl) {
+        titleEl.textContent = this.introNameTranslation.nonEnglish;
+      }
+    }
+
+    let time = 0;
+
+    if (this.introTaunt) {
+      const status = this.ensureStatusElement();
+      if (!status) {
+        this.introTauntState = "done";
+        return;
+      }
+
+      const nonEnglish = this.introTaunt.nonEnglish;
+      const english = this.introTaunt.english;
+      const translatingLabel = "Translating...";
+      const showTranslating = (line: string, showLabel: boolean, opacity: number) => {
+        const lines = showLabel ? [line, translatingLabel] : [line];
+        this.setStatusLines(lines, opacity);
+      };
+
+      time = this.scheduleTranslationSequence(nonEnglish, english, 0, showTranslating);
+    }
+
+    if (this.introNameTranslation) {
+      time += this.introNameDelayMs;
+      time = this.scheduleNameTranslationSequence(
+        this.introNameTranslation.nonEnglish,
+        this.introNameTranslation.english,
+        time
+      );
+    }
+
+    this.scheduleIntroStep(() => {
+      if (this.statusEl) {
+        this.statusEl.textContent = "";
+        this.statusEl.style.display = "none";
+        this.statusEl.style.opacity = "0";
+      }
+      this.introTauntState = "done";
+    }, time);
+  }
+
+  private startIntroTauntSkipTranslation(): void {
+    let time = 0;
+
+    if (this.introTaunt) {
+      const status = this.ensureStatusElement();
+      if (!status) {
+        this.introTauntState = "done";
+        return;
+      }
+
+      const text = this.introTaunt.english;
+      const fadeInMs = 300;
+      const holdMs = 1800;
+      const fadeOutMs = 300;
+
+      this.scheduleIntroStep(() => this.setStatusLines([text], 0), time);
+      time += 20;
+      this.scheduleIntroStep(() => this.setStatusLines([text], 1), time);
+      time += fadeInMs + holdMs;
+      this.scheduleIntroStep(() => this.setStatusLines([text], 0), time);
+      time += fadeOutMs;
+    }
+
+    if (this.introNameTranslation) {
+      const titleEl = this.ensureTitleElement();
+      if (titleEl) {
+        this.scheduleIntroStep(() => {
+          if (this.titleEl) this.titleEl.textContent = this.introNameTranslation!.english;
+        }, time);
+      }
+    }
+
+    this.scheduleIntroStep(() => {
+      if (this.statusEl) {
+        this.statusEl.textContent = "";
+        this.statusEl.style.display = "none";
+        this.statusEl.style.opacity = "0";
+      }
+      this.introTauntState = "done";
+    }, time);
+  }
 
     private buildScrambleText(target: string, progress: number): string {
         const clamped = Math.max(0, Math.min(1, progress));
