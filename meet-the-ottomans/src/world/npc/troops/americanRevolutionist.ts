@@ -22,7 +22,7 @@ export class AmericanRevolutionist extends npc {
     super(id, "foe", 100, modelEntity);
     this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
     this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.7;
-    this.aiConfig.detectionRange = 34;
+    this.aiConfig.detectionRange = 70;
   }
 
   protected override getCombatProfile() {

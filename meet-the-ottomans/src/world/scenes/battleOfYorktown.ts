@@ -490,13 +490,11 @@ export async function battleOfYorktownScene(
   updateBattleHUD(player);
  app.keyboard?.on("keydown", (event: { key: number | null }) => {
  if (isDeathScreenVisible()) return;
- player.equipWeapon(2);
- updateBattleHUD(player);
  if (event.key === KEY_1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
-      player.equipWeapon(3);
+      player.equipWeapon(2);
       updateBattleHUD(player);
     }
   });
