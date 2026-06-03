@@ -327,6 +327,7 @@ export async function battleOfPaviaScene(
 	});
 	createBattleHUD();
 	updateBattleHUD(player);
+	player.equipWeapon(2); // start with gun (Pavia era has firearms)
 	const cameraController = player.getCameraController();
 	const cameraEntity = player.getCameraEntity();
 	if (cameraEntity.camera) {

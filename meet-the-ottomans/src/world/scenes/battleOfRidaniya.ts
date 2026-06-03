@@ -26,6 +26,8 @@ import {
 	KEY_2,
 	KEY_NUMPAD_1,
 	KEY_NUMPAD_2,
+	KEY_3,
+	KEY_NUMPAD_3,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -37,8 +39,8 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
-import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, RIDANIYA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
+import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, RIDANIYA_BOSS_SPAWN_POINT, RIDANIYA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { changeScene } from "../../App";
 
@@ -162,41 +164,6 @@ export function createStarfieldTexture(device: AppBase['graphicsDevice'], width 
 	const texture = new Texture(device!, { mipmaps: true, name: 'ridaniya-starfield' });
 	texture.setSource(canvas);
 	return texture;
-}
-
-function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
-	const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
-	if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
-		return basePoints;
-	}
-
-	if (basePoints.length > 0) {
-		const first = basePoints[0];
-		const allSame = basePoints.every((spawn) =>
-			Math.abs(spawn.x - first.x) < 0.01 && Math.abs(spawn.z - first.z) < 0.01
-		);
-		if (!allSame) {
-			return basePoints;
-		}
-	}
-
-	const fallbackOffsets = [
-		{ x: 12, z: 6 },
-		{ x: -14, z: 4 },
-		{ x: 8, z: -10 },
-		{ x: -10, z: -8 },
-		{ x: 16, z: -2 },
-		{ x: -6, z: 12 }
-	];
-
-	const spawnCount = Math.max(3, basePoints.length || 0);
-	return fallbackOffsets.slice(0, spawnCount).map((offset, index) => ({
-		id: 100 + index,
-		team: "foe",
-		x: anchor.x + offset.x,
-		z: anchor.z + offset.z,
-		type: "mongol"
-	}));
 }
 
 export async function battleOfRidaniyaScene(
@@ -453,23 +420,15 @@ export async function battleOfRidaniyaScene(
 		app.root.addChild(light);
 	}
 
-	const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
 	const npcSpawnOptions = { ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
-	let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+	let npcs = await spawnSceneNpcs(app, rigidbodySystem, RIDANIYA_NPC_SPAWN_POINTS, npcSpawnOptions);
 	if (npcs.length === 0) {
-		console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-		npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+		console.warn('[NPC] Ridaniya spawn returned no soldiers on the first pass, retrying once');
+		npcs = await spawnSceneNpcs(app, rigidbodySystem, RIDANIYA_NPC_SPAWN_POINTS, npcSpawnOptions);
 	}
 
-	const bossSpawnOptions = { ...DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
-	const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, RIDANIYA_BOSS_SPAWN_POINT, bossSpawnOptions);
-  for (const boss of bossNpcs) {
-    npcs.push(boss);
-    if (boss instanceof Boss) {
-      boss.drawHealthBar();
-      Boss.setActiveBoss(boss);
-    }
-  }
+	let baybarsSpawned = false;
+	let baybarsSpawnFrame = -1; // track when Baybars was spawned to prevent instant victory
 
 	app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
 		if (isDeathScreenVisible()) {
@@ -489,6 +448,12 @@ export async function battleOfRidaniyaScene(
 		} else if (isKey2) {
 			player.equipWeapon(3);
 			updateBattleHUD(player);
+		} else {
+			const isKey3 = keyCode === KEY_3 || keyCode === KEY_NUMPAD_3 || keyValue === '3' || keyCodeValue === 'Digit3' || keyCodeValue === 'Numpad3';
+			if (isKey3) {
+				player.equipWeapon(2);
+				updateBattleHUD(player);
+			}
 		}
 	});
 
@@ -509,6 +474,9 @@ export async function battleOfRidaniyaScene(
 		updateBattleHUD(player);
 		if (hitNpc) {
 			console.log(`Hit NPC`);
+			if (hitNpc instanceof Boss) {
+				(hitNpc as unknown as Boss).updateHealthBar();
+			}
 		}
 	});
 
@@ -516,7 +484,10 @@ export async function battleOfRidaniyaScene(
 		updateKey: '__ainJalutNpcUpdate',
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
-			initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + RIDANIYA_BOSS_SPAWN_POINT.length,
+			initialTotal: RIDANIYA_NPC_SPAWN_POINTS.length,
+			alwaysOutline: true,
+			outlineTargets: 'foe' as const,
+			outlineColor: new Color(1, 0.9, 0.2),
 			onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 		},
 		onNpcAttack: (attacker, target, damage) => {
@@ -531,7 +502,7 @@ export async function battleOfRidaniyaScene(
 	});
 
 	let victoryHandled = false;
-	const victoryCheck = () => {
+	const victoryCheck = async () => {
 		if (isDeathScreenVisible()) {
 			return;
 		}
@@ -541,7 +512,33 @@ export async function battleOfRidaniyaScene(
 		}
 
 		const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-		if (remainingFoes.length === 0) {
+
+		// All Mamluks down — Baybars arrives as reinforcement.
+		if (!baybarsSpawned && !remainingFoes.some((f) => !(f instanceof Boss))) {
+			baybarsSpawned = true;
+			const bossSpawnOptions = { ...DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
+			const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, RIDANIYA_BOSS_SPAWN_POINT, bossSpawnOptions);
+			for (const boss of bossNpcs) {
+				npcs.push(boss);
+				if (boss instanceof Boss) {
+					boss.drawHealthBar();
+					Boss.setActiveBoss(boss);
+				}
+			}
+			baybarsSpawnFrame = 0; // require grace period before victory can trigger
+			console.log('[NPC] Baybars has entered the battle!');
+			return;
+		}
+
+		// Victory only after a short grace period following Baybars' spawn.
+		// The async spawn can resolve on the same frame the last Mamluk dies,
+		// so we need to skip victory for a few frames to let Baybars actually
+		// enter the fight.
+		if (baybarsSpawnFrame >= 0) {
+			baybarsSpawnFrame += 1;
+		}
+
+		if (remainingFoes.length === 0 && baybarsSpawned && (baybarsSpawnFrame ?? 0) > 2) {
 			removeBattleHUD();
 			victoryHandled = true;
 			changeScene(canvas, app, 777);

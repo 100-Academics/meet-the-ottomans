@@ -2,6 +2,7 @@ import { AppBase, Color, Entity, LAYERID_IMMEDIATE, OutlineRenderer, Vec3 } from
 import { loadModel, type LoadModelOptions, type Model } from "../../util/loadModel";
 import { npc } from "./npc";
 import { Mongol } from "./troops/mongol";
+import { Mamluk } from "./troops/Mamluk";
 import { Templar } from "./troops/templars";
 import { FrenchSoldier } from "./troops/frenchSoldier";
 import { AmericanRevolutionist } from "./troops/americanRevolutionist";
@@ -55,6 +56,7 @@ export interface NpcSpawnOverrides {
     facingYawOffsetDegrees?: number;
     hitboxRadius?: number;
     groundYFallback?: number;
+    detectionRange?: number;
 }
 
 export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
@@ -284,6 +286,7 @@ export async function spawnSceneNpcs(
             const facingYawOffsetDegrees = spawnOverrides?.facingYawOffsetDegrees ?? fallbackFacingYawOffsetDegrees;
             const hitboxRadius = spawnOverrides?.hitboxRadius ?? fallbackHitboxRadius;
             const groundYFallback = spawnOverrides?.groundYFallback ?? fallbackGroundY;
+            const detectionRangeOverride: number | undefined = spawnOverrides?.detectionRange;
             const npcSpawnY = getSpawnY(
                 rigidbodySystem,
                 spawn.x,
@@ -324,6 +327,17 @@ export async function spawnSceneNpcs(
       templar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       templar.setHitboxRadius(hitboxRadius);
       npcs.push(templar);
+    } else if (spawn.type === "mamlukIthink") {
+      console.log(`Spawning Mamluk NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const mamluk = new Mamluk(spawn.id, npcModel.modelEntity);
+      mamluk.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      mamluk.setHitboxRadius(hitboxRadius);
+      if (detectionRangeOverride !== undefined && detectionRangeOverride === -1) {
+        mamluk.setDetectionRange(Number.MAX_VALUE);
+      } else if (detectionRangeOverride !== undefined && Number.isFinite(detectionRangeOverride) && detectionRangeOverride > 0) {
+        mamluk.setDetectionRange(detectionRangeOverride);
+      }
+      npcs.push(mamluk);
     } else if (spawn.type === "french") {
       console.log(`Spawning French NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const frenchSoldier = new FrenchSoldier(spawn.id, npcModel.modelEntity);
@@ -498,6 +512,12 @@ export async function spawnSceneNpcs(
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 spawnedNpc.setHitboxRadius(hitboxRadius);
+                if (detectionRangeOverride !== undefined && detectionRangeOverride === -1) {
+                    spawnedNpc.setDetectionRange(Number.MAX_VALUE);
+                    console.log(`[NPC] Spawned ${spawn.type} ID=${spawn.id} at (${spawn.x}, ${spawn.z}) with DETECTION=MAX`);
+                } else if (detectionRangeOverride !== undefined && Number.isFinite(detectionRangeOverride) && detectionRangeOverride > 0) {
+                    spawnedNpc.setDetectionRange(detectionRangeOverride);
+                }
                 npcs.push(spawnedNpc);
             }
         } catch (error) {

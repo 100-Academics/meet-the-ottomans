@@ -100,6 +100,12 @@ export class npc {
         }
     }
 
+    public setDetectionRange(range: number): void {
+        if (Number.isFinite(range) && range > 0) {
+            this.aiConfig.detectionRange = range;
+        }
+    }
+
     public getHitboxRadius(): number {
         return this.hitboxRadius;
     }
@@ -287,7 +293,7 @@ export class npc {
                 attackDamage: 8,
                 attackRange: 2.2,
                 attackCooldown: 0.8,
-                detectionRange: 16
+                detectionRange: this.aiConfig.detectionRange
             };
         }
 
@@ -295,7 +301,7 @@ export class npc {
             attackDamage: 12,
             attackRange: 2,
             attackCooldown: 1.1,
-            detectionRange: 14
+            detectionRange: this.aiConfig.detectionRange
         };
     }
 

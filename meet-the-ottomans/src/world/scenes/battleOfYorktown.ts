@@ -52,23 +52,10 @@ import {
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
-function resetYorktownBattleState(): void {
-  // Reset state variables for Yorktown battle.
-  isBossSpawned = false;
-  isBossSpawning = false;
-  // AmericanRevolutionist.resetBattleState(); // if needed
-}
-
 const groundModelPath = "/world/battlefields/Yorktown.glb";
 
 var isBossSpawned = false;
 var isBossSpawning = false;
-
-//  function resetYorktownBattleState(): void {
-//    isBossSpawned = false;
-//    isBossSpawning = false;
-//    AmericanRevolutionist.resetBattleState();
-//  }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
   let current: Entity | null = entity;

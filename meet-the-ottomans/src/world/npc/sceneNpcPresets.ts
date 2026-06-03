@@ -220,12 +220,19 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   stalin: NPC_MODEL_PATHS.stalin
 };
 
+const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0,
+  detectionRange: -1
+};
+
 // NPC type -> spawn overrides. Allows the spawn system to accept a type->overrides map.
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   templar: TEMPLAR_SPAWN_OVERRIDES,
   french: FRENCH_SPAWN_OVERRIDES,
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
   americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  mamlukIthink: MAMLUK_SPAWN_OVERRIDES,
   baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
   caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
   napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
@@ -380,7 +387,52 @@ export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 ];
 export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeorgeIII" }];
 
-// Ridaniya
+// Ridaniya — ~30 Mamluk troops spread far from center (±200–300) in small clusters (~3-5 per group). Baybars arrives as reinforcement after they fall.
+export const RIDANIYA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+  // Cluster A — far northwest corner
+  { id: 1, team: "foe", x: -240, z: 260, type: "mamlukIthink" },
+  { id: 2, team: "foe", x: -235, z: 270, type: "mamlukIthink" },
+  { id: 3, team: "foe", x: -245, z: 250, type: "mamlukIthink" },
+  // Cluster B — far northeast corner
+  { id: 4, team: "foe", x: 230, z: 260, type: "mamlukIthink" },
+  { id: 5, team: "foe", x: 240, z: 270, type: "mamlukIthink" },
+  { id: 6, team: "foe", x: 235, z: 250, type: "mamlukIthink" },
+  // Cluster C — far southwest corner
+  { id: 7, team: "foe", x: -250, z: -240, type: "mamlukIthink" },
+  { id: 8, team: "foe", x: -260, z: -235, type: "mamlukIthink" },
+  { id: 9, team: "foe", x: -245, z: -245, type: "mamlukIthink" },
+  // Cluster D — far southeast corner
+  { id: 10, team: "foe", x: 240, z: -260, type: "mamlukIthink" },
+  { id: 11, team: "foe", x: 250, z: -250, type: "mamlukIthink" },
+  { id: 12, team: "foe", x: 235, z: -245, type: "mamlukIthink" },
+  // Cluster E — far north line
+  { id: 13, team: "foe", x: -200, z: 280, type: "mamlukIthink" },
+  { id: 14, team: "foe", x: -210, z: 290, type: "mamlukIthink" },
+  // Cluster F — far south line
+  { id: 15, team: "foe", x: 200, z: -280, type: "mamlukIthink" },
+  { id: 16, team: "foe", x: 210, z: -290, type: "mamlukIthink" },
+  // Cluster G — far west line
+  { id: 17, team: "foe", x: -280, z: 200, type: "mamlukIthink" },
+  { id: 18, team: "foe", x: -290, z: 210, type: "mamlukIthink" },
+  // Cluster H — far east line
+  { id: 19, team: "foe", x: 270, z: 230, type: "mamlukIthink" },
+  { id: 20, team: "foe", x: 280, z: 240, type: "mamlukIthink" },
+  // Cluster I — mid-north skirmish line
+  { id: 21, team: "foe", x: -260, z: 270, type: "mamlukIthink" },
+  { id: 22, team: "foe", x: -255, z: 280, type: "mamlukIthink" },
+  // Cluster J — mid-south skirmish line
+  { id: 23, team: "foe", x: 250, z: -270, type: "mamlukIthink" },
+  { id: 24, team: "foe", x: 260, z: -265, type: "mamlukIthink" },
+  // Cluster K — mid-west skirmish line
+  { id: 25, team: "foe", x: -270, z: -230, type: "mamlukIthink" },
+  { id: 26, team: "foe", x: -280, z: -240, type: "mamlukIthink" },
+  // Cluster L — mid-east skirmish line
+  { id: 27, team: "foe", x: 260, z: 250, type: "mamlukIthink" },
+  { id: 28, team: "foe", x: 270, z: 260, type: "mamlukIthink" },
+  // Cluster M — scattered advanced scouts
+  { id: 29, team: "foe", x: -220, z: -280, type: "mamlukIthink" },
+  { id: 30, team: "foe", x: 230, z: 280, type: "mamlukIthink" },
+];
 export const RIDANIYA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "baybars" }];
 
 // Gettysburg

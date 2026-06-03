@@ -3,24 +3,24 @@ import { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 import { Sword } from "../../../player/weapon/sword";
 
-export class Templar extends npc {
-    private readonly sword = new Sword(4, 18);
+export class Mamluk extends npc {
+    private readonly sword = new Sword(4, 6);
     private readonly arcLifetimeMs = 260;
     private readonly arcDegrees = 120;
 
-    constructor(id: number, modelEntity: Entity = new Entity("templar")) {
+    constructor(id: number, modelEntity: Entity = new Entity("mamluk")) {
         super(id, "foe", 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.75;
         this.aiConfig.detectionRange = Number.MAX_VALUE;
-        this.aiConfig.attackCooldown = 3;
+        this.aiConfig.attackCooldown = 1.5;
     }
 
     protected override getCombatProfile() {
         return {
             attackDamage: this.sword.getDamage(),
             attackRange: this.sword.getRange(),
-            attackCooldown: 0.9,
+            attackCooldown: 1.2,
             detectionRange: this.aiConfig.detectionRange
         };
     }
@@ -87,7 +87,7 @@ export class Templar extends npc {
         const halfArcRad = (this.arcDegrees * Math.PI / 180) * 0.5;
         const arcHeight = origin.y + Math.max(0.6, this.getHitboxRadius() * 0.7);
 
-        const arcRoot = new Entity("templar sword arc");
+        const arcRoot = new Entity("mamluk sword arc");
         sceneApp.root.addChild(arcRoot);
 
         for (let i = 0; i < segmentCount; i++) {
@@ -96,7 +96,7 @@ export class Templar extends npc {
             const x = origin.x + (arcRadius * Math.sin(angle));
             const z = origin.z + (arcRadius * Math.cos(angle));
 
-            const segment = new Entity("templar sword arc segment");
+            const segment = new Entity("mamluk sword arc segment");
             segment.addComponent("render", { type: "sphere" } as any);
             segment.setLocalScale(segmentScale, segmentScale, segmentScale);
             segment.setPosition(x, arcHeight, z);
