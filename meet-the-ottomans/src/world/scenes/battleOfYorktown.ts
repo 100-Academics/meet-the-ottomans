@@ -48,7 +48,7 @@ import {
   YORKTOWN_BOSS_SPAWN_POINT,
   YORKTOWN_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
-import { AmericanRevolutionist } from "../npc/troops/americanRevolutionist";
+// import { AmericanRevolutionist } from "../npc/troops/americanRevolutionist";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
@@ -57,12 +57,11 @@ const groundModelPath = "/world/battlefields/Yorktown.glb";
 var isBossSpawned = false;
 var isBossSpawning = false;
 
-//comment out because its also broken and I just need to see it work
-// function resetYorktownBattleState(): void {
-//   isBossSpawned = false;
-//   isBossSpawning = false;
-//   AmericanRevolutionist.resetBattleState();
-// }
+//  function resetYorktownBattleState(): void {
+//    isBossSpawned = false;
+//    isBossSpawning = false;
+//    AmericanRevolutionist.resetBattleState();
+//  }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
   let current: Entity | null = entity;
@@ -255,7 +254,7 @@ export async function battleOfYorktownScene(
   _sceneNum: number,
   spawnPoint?: [number, number, number],
 ) {
-  resetYorktownBattleState();
+  // resetYorktownBattleState();
   unloadAll(app);
   app.mouse?.off();
   app.keyboard?.off();
