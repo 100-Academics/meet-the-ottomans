@@ -494,11 +494,11 @@ export async function battleOfYorktownScene(
   );
   createBattleHUD();
   updateBattleHUD(player);
-  app.keyboard?.on("keydown", (event: { key: number | null }) => {
-    if (isDeathScreenVisible()) return;    // Default to gun in Yorktown
-    player.equipWeapon(2);
-    updateBattleHUD(player);
-    if (event.key === KEY_1) {
+ app.keyboard?.on("keydown", (event: { key: number | null }) => {
+ if (isDeathScreenVisible()) return;
+ player.equipWeapon(2);
+ updateBattleHUD(player);
+ if (event.key === KEY_1) {
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
