@@ -44,13 +44,15 @@ import { changeScene } from "../../App";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
 
-var isBossSpawned = false;
-var isBossSpawning = false;
+//comment this out because its breaking the game for some reason
 
-function resetPaviaBattleState(): void {
-	isBossSpawned = false;
-	isBossSpawning = false;
-}
+//var isBossSpawned = false;
+//var isBossSpawning = false;
+
+//function resetPaviaBattleState(): void {
+//	isBossSpawned = false;
+//	isBossSpawning = false;
+//}
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
 	let current: Entity | null = entity;
