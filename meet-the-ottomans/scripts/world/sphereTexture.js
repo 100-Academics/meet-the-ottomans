@@ -90,6 +90,9 @@ export async function applySphereTexture(entity, textureInput, graphicsDevice) {
     const material = meshInstance.material;
     if (!material) return;
 
+    if (material.diffuseMap && material.diffuseMap !== texture) {
+      material.diffuseMap.destroy();
+    }
     material.diffuseMap = texture;
     material.emissiveMap = null;
     material.diffuse.set(1, 1, 1);

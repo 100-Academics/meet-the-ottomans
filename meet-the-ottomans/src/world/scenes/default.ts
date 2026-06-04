@@ -201,7 +201,11 @@ async function defaultScene(
   sceneNum: number
 ) {
 
-unloadAll(app);
+  unloadAll(app);
+
+  // Remove stale hover label from a previous defaultScene invocation
+  const staleLabel = document.getElementById('battle-hover-label');
+  if (staleLabel) staleLabel.remove();
   // precision on location here is very arbitrary. 3-4 decimals should be enough.
   const battles = [
                    new Battle(1, [51.145278, 16.222778], "Battle of Legnica", new Entity()),
@@ -261,9 +265,16 @@ unloadAll(app);
   const resize = () => app.resizeCanvas();
   window.addEventListener('resize', resize);
 
-  app.once('destroy', () => {
-    window.removeEventListener('resize', resize);
-  });
+const cleanupResize = () => {
+window.removeEventListener('resize', resize);
+};
+app.once('destroy', cleanupResize);
+const keyedAppForCleanup = app as AppBase & Record<string, unknown>;
+const cleanupKey = '__sceneCleanupHandlers';
+if (!Array.isArray(keyedAppForCleanup[cleanupKey])) {
+keyedAppForCleanup[cleanupKey] = [];
+}
+(keyedAppForCleanup[cleanupKey] as (() => void)[]).push(cleanupResize);
 
   // Load assets
   await new Promise<void>((resolve) => {
@@ -281,12 +292,12 @@ unloadAll(app);
   const overlay = document.querySelector('.absolute.overlay') as HTMLElement;
   let selectedTimePeriod = -1;
   // the empty div id="time-period" is required or shit breaks idk
-  const overlayHTML = `
-    <div class="absolute overlay">
-      <div class="grow" style="min-height: 0;">
-        <header>
-        </header>
-      </div>
+const overlayHTML = `
+<div class="default-scene-ui">
+<div class="grow" style="min-height: 0;">
+<header>
+</header>
+</div>
       <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; align-items: center; position: relative;">
         <div class="pill" id="question-wrap" style="position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2; padding: 10px 12px; gap: 8px; font-size: 0.82rem; line-height: 1.25; max-width: 320px; text-align: center;">
           <div id="question-text" style="font-size: 0.9rem;">(no question loaded)</div>
@@ -320,10 +331,11 @@ unloadAll(app);
     </div>
   `;
 
-  // Insert overlay into overlay element
-  const overlayContainer = document.createElement('div');
-  overlayContainer.innerHTML = overlayHTML;
-  overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
+// Insert overlay into overlay element (clear any stale content first)
+overlay.replaceChildren();
+const overlayContainer = document.createElement('div');
+overlayContainer.innerHTML = overlayHTML;
+overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
 
   // Set up overlay event listeners
   const yesBtn = document.getElementById('yes-btn') as HTMLButtonElement | null;
@@ -416,9 +428,11 @@ unloadAll(app);
 
   const onClickWithCounter = (battle: Battle) => onClick(battle);
 
-  // Set up environment lighting (no skybox, just IBL)
-  app.scene.envAtlas = assets.envAtlas.resource as Texture;
-  const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
+// Set up environment lighting (no skybox, just IBL)
+app.scene.envAtlas = assets.envAtlas.resource as Texture;
+app.scene.skyboxIntensity = 1;
+app.scene.ambientLight = new Color(0, 0, 0);
+const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   if (skyboxLayer) {
     skyboxLayer.enabled = true;
   }
@@ -485,12 +499,12 @@ unloadAll(app);
   hoverLabel.style.display = 'none';
   hoverLabel.style.pointerEvents = 'none';
   document.body.appendChild(hoverLabel);
-  app.once('destroy', () => {
+  const cleanupHoverLabel = () => {
     try { hoverLabel.remove(); } catch(e) { /* ignore */ }
-    try { 
-      overlay.innerHTML = '';
-    } catch(e) { /* ignore */ }
-  });
+  };
+app.once('destroy', cleanupHoverLabel);
+(keyedAppForCleanup[cleanupKey] as (() => void)[]).push(cleanupHoverLabel);
+(keyedAppForCleanup[cleanupKey] as (() => void)[]).push(() => { overlay.replaceChildren(); });
 
   let isDragging = false;
   let currentBattle: Battle | null = null;

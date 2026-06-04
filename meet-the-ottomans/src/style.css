@@ -116,7 +116,7 @@ button:focus-visible {
   }
 }
 
-.overlay {
+.overlay, .default-scene-ui {
   margin: 0 auto;
   text-align: center;
   display: flex;
@@ -128,7 +128,7 @@ button:focus-visible {
   pointer-events: none;
 }
 
-.overlay > .grow {
+.overlay > .grow, .default-scene-ui > .grow {
   flex-grow: 1;
 }
 
@@ -381,7 +381,7 @@ canvas#application-canvas {
   z-index: 0;
 }
 
-.overlay {
+.overlay, .default-scene-ui {
   z-index: 10;
 }
 
