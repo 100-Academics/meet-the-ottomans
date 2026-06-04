@@ -30,7 +30,8 @@ const NPC_MODEL_PATHS = {
   cainAndAbel: "models/npc/boss/CainAndAbel.glb",
   kingGeorgeIII: "models/npc/boss/KingGeorgeIII.glb",
   lenin: "models/npc/boss/Lenin.glb",
-  stalin: "models/npc/boss/Stalin.glb"
+  stalin: "models/npc/boss/Stalin.glb",
+  unionSoldier: "models/npc/UnionSoldier.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -190,6 +191,11 @@ const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   facingYawOffsetDegrees: 0
 };
 
+const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0
+};
+
 // NPC type -> model path. The spawn system picks the model from this map
 // based on the `type` field in each spawn point.
 export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
@@ -217,7 +223,8 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   cainAndAbel: NPC_MODEL_PATHS.cainAndAbel,
   kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII,
   lenin: NPC_MODEL_PATHS.lenin,
-  stalin: NPC_MODEL_PATHS.stalin
+  stalin: NPC_MODEL_PATHS.stalin,
+  unionSoldier: NPC_MODEL_PATHS.unionSoldier
 };
 
 const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
@@ -232,6 +239,7 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   french: FRENCH_SPAWN_OVERRIDES,
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
   americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
+  unionSoldier: UNION_SOLDIER_SPAWN_OVERRIDES,
   mamlukIthink: MAMLUK_SPAWN_OVERRIDES,
   baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
   caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
@@ -437,7 +445,11 @@ export const RIDANIYA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe"
 
 // Gettysburg
 export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+  { id: 1, team: "foe", x: 6, z: -6, type: "unionSoldier" },
+  { id: 2, team: "foe", x: 9, z: -6, type: "unionSoldier" },
+  { id: 3, team: "foe", x: 12, z: -6, type: "unionSoldier" },
+  { id: 4, team: "foe", x: 15, z: -6, type: "unionSoldier" },
+  { id: 5, team: "foe", x: 18, z: -6, type: "unionSoldier" },
 ];
 export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "uncleSam" }];
 

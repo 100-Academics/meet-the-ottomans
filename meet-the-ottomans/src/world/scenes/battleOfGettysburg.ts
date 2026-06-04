@@ -51,7 +51,6 @@ import {
   GETTYSBURG_BOSS_SPAWN_POINT,
   GETTYSBURG_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
-import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
@@ -63,7 +62,6 @@ var isBossSpawning = false;
 function resetGettysburgBattleState(): void {
   isBossSpawned = false;
   isBossSpawning = false;
-  Mongol.resetBattleState();
 }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {

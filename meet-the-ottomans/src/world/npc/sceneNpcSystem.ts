@@ -6,6 +6,7 @@ import { Mamluk } from "./troops/Mamluk";
 import { Templar } from "./troops/templars";
 import { FrenchSoldier } from "./troops/frenchSoldier";
 import { AmericanRevolutionist } from "./troops/americanRevolutionist";
+import { UnionSoldier } from "./troops/unionSoldier";
 import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
@@ -344,13 +345,19 @@ export async function spawnSceneNpcs(
       frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       frenchSoldier.setHitboxRadius(hitboxRadius);
       npcs.push(frenchSoldier);
-    } else if (spawn.type === "americanRevolutionist") {
-      console.log(`Spawning American Revolutionist NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-      const rev = new AmericanRevolutionist(spawn.id, npcModel.modelEntity);
-      rev.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-      rev.setHitboxRadius(hitboxRadius);
-      npcs.push(rev);
-    } else if (spawn.type === "genghisKhan") {
+	} else if (spawn.type === "americanRevolutionist") {
+		console.log(`Spawning American Revolutionist NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+		const rev = new AmericanRevolutionist(spawn.id, npcModel.modelEntity);
+		rev.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+		rev.setHitboxRadius(hitboxRadius);
+		npcs.push(rev);
+	} else if (spawn.type === "unionSoldier") {
+		console.log(`Spawning Union Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+		const unionSoldier = new UnionSoldier(spawn.id, npcModel.modelEntity);
+		unionSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+		unionSoldier.setHitboxRadius(hitboxRadius);
+		npcs.push(unionSoldier);
+	} else if (spawn.type === "genghisKhan") {
       console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
       boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
