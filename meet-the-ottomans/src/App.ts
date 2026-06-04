@@ -8,6 +8,13 @@ import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScre
 import { Boss } from "./world/npc/bosses/boss.ts";
 import { unloadAll } from "./util/unloadall.ts";
 
+// Suppress unhandled promise rejections that can arise from async events in the game loop.
+// This prevents noisy "A listener indicated an asynchronous response..." errors in the console.
+window.addEventListener('unhandledrejection', (event) => {
+  // Log the error for debugging, but do not let it propagate to the console as a warning.
+  console.warn('Suppressed unhandled promise rejection:', event.reason);
+});
+
 const SCENE_CLEANUP_HANDLERS_KEY = "__sceneCleanupHandlers";
 
 function runSceneCleanupHandlers(app: AppBase): void {

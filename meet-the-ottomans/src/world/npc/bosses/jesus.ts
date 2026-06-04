@@ -4,7 +4,7 @@ import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
 // Combat behavior and VFX for the Jesus Christ boss.
-type ChristAttackType = "spire" | "ray";
+type ChristAttackType = "spire" | "ray" | "burst";
 
 export class Christ extends Boss {
     // Tunable attack parameters.
@@ -31,6 +31,12 @@ export class Christ extends Boss {
     private readonly holyRayRehitCooldownMs = 350;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
     private nextHolyRayAtSeconds = 0;
+    // Holy burst attack constants
+    private readonly holyBurstRange = 12;
+    private readonly holyBurstCooldown = 8.0;
+
+    private readonly holyBurstDurationMs = 500;
+    private nextHolyBurstAtSeconds = 0;
 
     // Runtime state used to sequence attacks and cooldowns.
     private lastAttackType: ChristAttackType | null = null;
@@ -106,6 +112,11 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
         if (rayReady) {
             const farBias = Math.min(1, distance / Math.max(0.001, this.holyRayRange));
             choices.push({ type: "ray", score: 0.95 + farBias });
+        }
+        const burstReady = nowSeconds >= this.nextHolyBurstAtSeconds;
+        if (burstReady) {
+            const closeBias = Math.max(0, 1 - distance / Math.max(0.001, this.holyBurstRange));
+            choices.push({ type: "burst", score: 0.85 + closeBias });
         }
 
         if (choices.length === 0) {
@@ -196,6 +207,13 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
             this.lastAttackAtSeconds = currentTimeSeconds;
             this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
             this.fireHolyRay(targetEntity, onAttack);
+            return;
+        }
+        if (chosenAttack === "burst") {
+            this.lastAttackType = "burst";
+            this.lastAttackAtSeconds = currentTimeSeconds;
+            this.nextHolyBurstAtSeconds = currentTimeSeconds + this.holyBurstCooldown;
+            this.fireHolyBurst(targetEntity, onAttack);
             return;
         }
 
@@ -556,6 +574,8 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
             if (!hasHit && this.isHitByRay(targetEntity, origin, rayEnd, this.holySpireHitRadius)) {
                 hasHit = true;
                 onAttack?.(this);
+                // Visual explosion at target position
+                this.spawnExplosion(targetEntity.getPosition().clone(), 3, new Color(1, 0.92, 0.4), 300);
             }
 
             requestAnimationFrame(animate);
@@ -616,6 +636,8 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
                 && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius)) {
                 lastHitTime = now;
                 onAttack?.(this);
+                // Visual explosion at target position
+                this.spawnExplosion(targetEntity.getPosition().clone(), 2.5, new Color(1, 0.96, 0.72), 300);
             }
 
             const progress = Math.min(1, (now - travelStart) / this.holyRayTravelMs);
@@ -637,6 +659,74 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
         };
 
         requestAnimationFrame(animate);
+    }
+
+    private fireHolyBurst(targetEntity: Entity, onAttack?: (attacker: npc) => void): void {
+        const app = this.getSceneApp();
+        if (!app?.root) return;
+
+        const position = targetEntity.getPosition().clone();
+        const burst = new Entity("holy burst");
+        const material = new StandardMaterial();
+        material.useLighting = false;
+        material.emissive = new Color(1, 0.8, 0.2);
+        material.emissiveIntensity = 6;
+        material.blendType = BLEND_ADDITIVE;
+        material.depthWrite = false;
+        material.cull = CULLFACE_NONE;
+        material.update();
+        burst.addComponent('render', { type: 'sphere', material } as any);
+        const startScale = 0.5;
+        burst.setLocalScale(startScale, startScale, startScale);
+        burst.setPosition(position.x, position.y, position.z);
+        app.root.addChild(burst);
+
+        // Damage if within range
+        const distance = this.getEntity().getPosition().distance(position);
+        if (distance <= this.holyBurstRange) {
+            onAttack?.(this);
+            this.spawnExplosion(position, 2, new Color(1, 0.8, 0.2), 300);
+        }
+
+        // Animate expansion and fade out
+        const start = performance.now();
+        const end = start + this.holyBurstDurationMs;
+        const animate = () => {
+            if (!this.isAlive() || !app.root?.children?.includes(burst)) {
+                burst.destroy();
+                return;
+            }
+            const now = performance.now();
+            if (now >= end) {
+                burst.destroy();
+                return;
+            }
+            const t = (now - start) / this.holyBurstDurationMs;
+            const scale = startScale + t * this.holyBurstRange;
+            burst.setLocalScale(scale, scale, scale);
+            requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }
+
+    // Helper to create a simple explosion visual at a position.
+    private spawnExplosion(position: Vec3, radius: number, color: Color, durationMs: number): void {
+        const app = this.getSceneApp();
+        if (!app?.root) return;
+        const explosion = new Entity('explosion');
+        const mat = new StandardMaterial();
+        mat.useLighting = false;
+        mat.emissive = color;
+        mat.emissiveIntensity = 6;
+        mat.blendType = BLEND_ADDITIVE;
+        mat.depthWrite = false;
+        mat.cull = CULLFACE_NONE;
+        mat.update();
+        explosion.addComponent('render', { type: 'sphere', material: mat } as any);
+        explosion.setLocalScale(radius, radius, radius);
+        explosion.setPosition(position.x, position.y, position.z);
+        app.root.addChild(explosion);
+        setTimeout(() => { explosion.destroy(); }, durationMs);
     }
 
     private isHitByRay(
