@@ -1,58 +1,93 @@
-import { Boss } from "./boss";
-import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
-import type { npc } from "../npc";
+import { AppBase, BLEND_ADDITIVE, Color, CULLFACE_NONE, Entity, StandardMaterial, Vec3 } from "playcanvas";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
+import { Boss } from "./boss";
+import type { npc } from "../npc";
 
-// Combat behavior and VFX for the Jesus Christ boss.
-type ChristAttackType = "spire" | "ray" | "burst";
+type ChristAttackType = "spire" | "ray" | "divineLight";
+
+interface HolyRayState {
+    root: Entity;
+    origin: Vec3;
+    targetPoint: Vec3;
+    beamEnd: Vec3;
+    startTimeMs: number;
+    windupEndMs: number;
+    endTimeMs: number;
+    hasHit: boolean;
+}
+
+interface HolySpireState {
+    root: Entity;
+    center: Vec3;
+    startTimeMs: number;
+    impactTimeMs: number;
+    endTimeMs: number;
+    hasHit: boolean;
+}
+
+interface DivineLightState {
+    root: Entity;
+    center: Vec3;
+    startTimeMs: number;
+    strikeTimeMs: number;
+    endTimeMs: number;
+    hasHit: boolean;
+}
 
 export class Christ extends Boss {
-    // Tunable attack parameters.
     private readonly holySpireDamage = 28;
-    private readonly holySpireRange = 160;
-    private readonly holySpireCooldown = 4.0;
-    private readonly holySpireWindupMs = 500;
-    private readonly holySpireTravelMs = 600;
-    private readonly holySpireHitRadius = 6;
-    private readonly holySpireBeamRadius = 3.5;
-    private readonly holySpireOvershoot = 100;
+    private readonly holySpireRange = 180;
+    private readonly holySpireCooldown = 4.1;
+    private readonly holySpireWindupMs = 620;
+    private readonly holySpireDurationMs = 500;
+    private readonly holySpireHitRadius = 7.5;
     private readonly holySpireMaterial = this.createHolySpireMaterial();
-    private nextHolySpireAtSeconds = 0;
 
+    private readonly holyRayDamage = 24;
     private readonly holyRayRange = 240;
-    private readonly holyRayCooldown = 5.5;
+    private readonly holyRayCooldown = 5.6;
     private readonly holyRayWindupMs = 450;
-    private readonly holyRayTravelMs = 420;
+    private readonly holyRayTravelMs = 430;
+    private readonly holyRayDurationMs = 820;
     private readonly holyRayHitRadius = 6.5;
-    private readonly holyRayBeamRadius = 4.2;
     private readonly holyRayOvershoot = 160;
-    private readonly holyRayPitchDownDeg = 75;
-    private readonly holyRayLingerMs = 900;
-    private readonly holyRayRehitCooldownMs = 350;
     private readonly holyRayMaterial = this.createHolyRayMaterial();
+
+    private readonly divineLightDamage = 34;
+    private readonly divineLightRange = 220;
+    private readonly divineLightCooldown = 7.2;
+    private readonly divineLightWindupMs = 900;
+    private readonly divineLightDurationMs = 700;
+    private readonly divineLightAreaRadius = 12;
+    private readonly divineLightBeamRadius = 5.5;
+    private readonly divineLightSkyHeight = 60;
+    private readonly divineLightMaterial = this.createHolyLightMaterial();
+    private readonly divineLightWarningMaterial = this.createHolyGlowMaterial(
+        new Color(0.82, 0.92, 1),
+        new Color(0.95, 0.98, 1),
+        4.0,
+        0.42
+    );
+
+    private nextHolySpireAtSeconds = 0;
     private nextHolyRayAtSeconds = 0;
-    // Holy burst attack constants
-    private readonly holyBurstRange = 12;
-    private readonly holyBurstCooldown = 8.0;
-
-    private readonly holyBurstDurationMs = 500;
-    private nextHolyBurstAtSeconds = 0;
-
-    // Runtime state used to sequence attacks and cooldowns.
+    private nextDivineLightAtSeconds = 0;
     private lastAttackType: ChristAttackType | null = null;
     private lastAttackAtSeconds = -Infinity;
+    private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
-    private activeHolyBeams = new Set<{ beamRoot: Entity; hasHit: boolean }>();
+    private holyRayState: HolyRayState | null = null;
+    private holySpireState: HolySpireState | null = null;
+    private divineLightState: DivineLightState | null = null;
+    private readonly activeEffects = new Set<Entity>();
 
-    
-
-constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Christ")) {
+    constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Christ")) {
         super(id, maxHealth, entity, "Jesus Christ");
-        // Adjust movement speeds for better responsiveness
-        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
-        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
-        // Use a reasonable attack range to allow movement when player is farther away
-        this.aiConfig.attackRange = 30;
+        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.08;
+        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.65;
+        this.aiConfig.attackRange = this.divineLightRange;
+        this.aiConfig.attackCooldown = Math.min(this.holySpireCooldown, this.holyRayCooldown, this.divineLightCooldown);
+
         this.setTauntSet({
             highHealth: [
                 "You have come far to fall here.",
@@ -80,43 +115,140 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
                 "Forgive me, my children."
             ]
         });
-        this.setIntroTaunt("Ego sum via.", "I am the way.");
+        this.setIntroTaunt("Ego sum via, veritas, et vita.", "I am the way, the truth, and the life.");
         this.setIntroNameTranslation("Iesus Christus", "Jesus Christ");
-
-        this.aiConfig.attackCooldown = Math.min(this.holySpireCooldown, this.holyRayCooldown);
     }
 
+    public override updateCombatAI(
+        deltaTime: number,
+        currentTimeSeconds: number,
+        allNpcs: npc[],
+        onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
+        playerEntity?: Entity | null,
+        onPlayerAttack?: (attacker: npc, damage: number) => void
+    ): void {
+        this.onPlayerAttack = onPlayerAttack;
+        super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
+    }
 
     protected override getCombatProfile() {
         const base = super.getCombatProfile();
         return {
             ...base,
-            attackDamage: this.holySpireDamage,
-            attackRange: 30,
-            attackCooldown: Math.min(this.holySpireCooldown, this.holyRayCooldown),
+            attackDamage: this.divineLightDamage,
+            attackRange: this.divineLightRange,
+            attackCooldown: Math.min(this.holySpireCooldown, this.holyRayCooldown, this.divineLightCooldown),
             detectionRange: Number.MAX_VALUE
         };
     }
 
-    // Choose the next attack based on range, cooldowns, and recent history.
+    public override updateAI(
+        deltaTime: number,
+        targetEntity: Entity | null,
+        currentTimeSeconds: number,
+        onAttack?: (attacker: npc) => void,
+        profileOverride?: {
+            attackDamage: number;
+            attackRange: number;
+            attackCooldown: number;
+            detectionRange: number;
+        }
+    ): void {
+        if (!this.isAlive()) {
+            return;
+        }
+
+        const clampedDeltaTime = Math.max(0, Math.min(deltaTime, 0.05));
+        if (!targetEntity) {
+            super.updateAI(clampedDeltaTime, targetEntity, currentTimeSeconds, onAttack, profileOverride);
+            return;
+        }
+
+        if (this.holyRayState || this.holySpireState || this.divineLightState) {
+            return;
+        }
+
+        const profile = profileOverride ?? this.getCombatProfile();
+        const bossPos = this.getEntity().getPosition();
+        const targetPos = targetEntity.getPosition();
+        const dx = targetPos.x - bossPos.x;
+        const dz = targetPos.z - bossPos.z;
+        const distance = Math.sqrt((dx * dx) + (dz * dz));
+
+        if (distance > profile.detectionRange) {
+            super.updateAI(clampedDeltaTime, null, currentTimeSeconds, undefined, profile);
+            return;
+        }
+
+        if (distance > profile.attackRange) {
+            this.moveToward(dx, dz, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+            return;
+        }
+
+        const chosenAttack = this.pickNextAttack(distance, currentTimeSeconds);
+        if (!chosenAttack) {
+            return;
+        }
+
+        this.lastAttackType = chosenAttack;
+        this.lastAttackAtSeconds = currentTimeSeconds;
+
+        if (chosenAttack === "ray") {
+            this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
+            this.fireHolyRay(targetEntity);
+            return;
+        }
+
+        if (chosenAttack === "divineLight") {
+            this.nextDivineLightAtSeconds = currentTimeSeconds + this.divineLightCooldown;
+            this.fireDivineLight(targetEntity);
+            return;
+        }
+
+        this.nextHolySpireAtSeconds = currentTimeSeconds + this.holySpireCooldown;
+        this.fireHolySpire(targetEntity);
+    }
+
+    public override kill(): boolean {
+        if (this.holyRayState) {
+            this.destroyEffect(this.holyRayState.root);
+        }
+        if (this.holySpireState) {
+            this.destroyEffect(this.holySpireState.root);
+        }
+        if (this.divineLightState) {
+            this.destroyEffect(this.divineLightState.root);
+        }
+        this.holyRayState = null;
+        this.holySpireState = null;
+        this.divineLightState = null;
+
+        for (const effect of this.activeEffects) {
+            this.destroyEffect(effect);
+        }
+        this.activeEffects.clear();
+
+        return super.kill();
+    }
+
     private pickNextAttack(distance: number, nowSeconds: number): ChristAttackType | null {
         const choices: Array<{ type: ChristAttackType; score: number }> = [];
-        const spireReady = nowSeconds >= this.nextHolySpireAtSeconds;
-        const rayReady = nowSeconds >= this.nextHolyRayAtSeconds;
 
-        if (spireReady) {
+        if (nowSeconds >= this.nextHolySpireAtSeconds) {
             const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.holySpireRange));
-            choices.push({ type: "spire", score: 1.05 + closeness });
+            choices.push({ type: "spire", score: 1.1 + closeness });
         }
 
-        if (rayReady) {
+        if (nowSeconds >= this.nextHolyRayAtSeconds) {
             const farBias = Math.min(1, distance / Math.max(0.001, this.holyRayRange));
-            choices.push({ type: "ray", score: 0.95 + farBias });
+            choices.push({ type: "ray", score: 1.0 + farBias });
         }
-        const burstReady = nowSeconds >= this.nextHolyBurstAtSeconds;
-        if (burstReady) {
-            const closeBias = Math.max(0, 1 - distance / Math.max(0.001, this.holyBurstRange));
-            choices.push({ type: "burst", score: 0.85 + closeBias });
+
+        if (nowSeconds >= this.nextDivineLightAtSeconds) {
+            const idealRange = this.divineLightRange * 0.55;
+            const rangeOffset = Math.abs(distance - idealRange);
+            const midBias = 1 - Math.min(1, rangeOffset / Math.max(0.001, idealRange));
+            choices.push({ type: "divineLight", score: 1.05 + midBias });
         }
 
         if (choices.length === 0) {
@@ -147,292 +279,298 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
         return best.type;
     }
 
-    // Main per-frame AI loop for the boss.
-    public override updateAI(
-        deltaTime: number,
-        targetEntity: Entity | null,
-        currentTimeSeconds: number,
-        onAttack?: (attacker: npc) => void,
-        profileOverride?: {
-            attackDamage: number;
-            attackRange: number;
-            attackCooldown: number;
-            detectionRange: number;
-        }
-    ): void {
-        if (!this.isAlive()) {
-            return;
-        }
+    private fireHolyRay(targetEntity: Entity): void {
+        const app = this.getSceneApp();
+        if (!app?.root) return;
 
-        if (!targetEntity) {
-            super.updateAI(deltaTime, targetEntity, currentTimeSeconds, onAttack, profileOverride);
-            return;
-        }
+        const origin = this.getSpellOrigin(4.4);
+        const targetPoint = this.getAimedTargetPosition(targetEntity);
+        const beamEnd = this.calculateHolyRayEnd(origin, targetPoint);
+        const state: HolyRayState = {
+            root: new Entity("holy ray root"),
+            origin,
+            targetPoint,
+            beamEnd,
+            startTimeMs: performance.now(),
+            windupEndMs: 0,
+            endTimeMs: 0,
+            hasHit: false
+        };
+        state.windupEndMs = state.startTimeMs + this.holyRayWindupMs;
+        state.endTimeMs = state.windupEndMs + this.holyRayDurationMs;
 
-        const profile = profileOverride ?? this.getCombatProfile();
-        const attackRange = Math.max(0.5, profile.attackRange);
-        const clampedDeltaTime = Math.max(0, Math.min(deltaTime, 0.05));
+        this.holyRayState = state;
+        app.root.addChild(state.root);
+        this.activeEffects.add(state.root);
 
-        if (this.activeHolyBeams.size > 0) {
-            super.updateAI(clampedDeltaTime, targetEntity, currentTimeSeconds, undefined, profile);
-            return;
-        }
+        const animate = () => {
+            if (!this.isAlive() || this.holyRayState !== state || !state.root.parent) {
+                this.cleanupState(state);
+                return;
+            }
 
-        const myPos = this.getEntity().getPosition();
-        const targetPos = targetEntity.getPosition();
-        const dx = targetPos.x - myPos.x;
-        const dz = targetPos.z - myPos.z;
-        const distance = Math.sqrt((dx * dx) + (dz * dz));
+            const nowMs = performance.now();
+            if (nowMs >= state.endTimeMs) {
+                this.cleanupState(state);
+                return;
+            }
 
-        if (distance > profile.detectionRange) {
-            super.updateAI(clampedDeltaTime, null, currentTimeSeconds, undefined, profile);
-            return;
-        }
+            if (nowMs >= state.windupEndMs && !state.hasHit && this.isHitByRay(targetEntity, state.origin, state.beamEnd, this.holyRayHitRadius)) {
+                state.hasHit = true;
+                this.applyDamage(this.holyRayDamage);
+                this.spawnExplosion(state.targetPoint.clone(), 2.4, new Color(1, 0.96, 0.72), 220);
+            }
 
-        if (distance > attackRange) {
-            this.moveToward(dx, dz, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
-            return;
-        }
+            if (nowMs >= state.windupEndMs) {
+                const progress = Math.min(1, (nowMs - state.windupEndMs) / this.holyRayTravelMs);
+                const beam = this.createCylinderBeam(
+                    state.origin,
+                    state.beamEnd,
+                    progress,
+                    this.getHolyRayBeamRadius(progress),
+                    this.holyRayMaterial,
+                    "holy ray beam"
+                );
+                this.replaceChild(state.root, beam);
+            }
 
-        const chosenAttack = this.pickNextAttack(distance, currentTimeSeconds);
-        if (!chosenAttack) {
-            return;
-        }
+            requestAnimationFrame(animate);
+        };
 
-        const shotOrigin = myPos.clone();
-        const shotTarget = targetPos.clone();
-
-        if (chosenAttack === "ray") {
-            this.lastAttackType = "ray";
-            this.lastAttackAtSeconds = currentTimeSeconds;
-            this.nextHolyRayAtSeconds = currentTimeSeconds + this.holyRayCooldown;
-            this.fireHolyRay(targetEntity, onAttack);
-            return;
-        }
-        if (chosenAttack === "burst") {
-            this.lastAttackType = "burst";
-            this.lastAttackAtSeconds = currentTimeSeconds;
-            this.nextHolyBurstAtSeconds = currentTimeSeconds + this.holyBurstCooldown;
-            this.fireHolyBurst(targetEntity, onAttack);
-            return;
-        }
-
-        this.lastAttackType = "spire";
-        this.lastAttackAtSeconds = currentTimeSeconds;
-        this.nextHolySpireAtSeconds = currentTimeSeconds + this.holySpireCooldown;
-        const spireEnd = this.calculateHolySpireEnd(shotOrigin, shotTarget);
-        this.fireHolySpire(targetEntity, shotOrigin, spireEnd, onAttack);
+        requestAnimationFrame(animate);
     }
 
-    public override kill(): boolean {
-        this.activeHolyBeams.forEach(ray => {
-            try { ray.beamRoot.destroy(); } catch (e) { }
-        });
-        this.activeHolyBeams.clear();
-        return super.kill();
+    private fireHolySpire(targetEntity: Entity): void {
+        const app = this.getSceneApp();
+        if (!app?.root) return;
+
+        const center = this.getPlayerCenterPosition(targetEntity);
+        const state: HolySpireState = {
+            root: new Entity("holy spire root"),
+            center,
+            startTimeMs: performance.now(),
+            impactTimeMs: 0,
+            endTimeMs: 0,
+            hasHit: false
+        };
+        state.impactTimeMs = state.startTimeMs + this.holySpireWindupMs;
+        state.endTimeMs = state.impactTimeMs + this.holySpireDurationMs;
+
+        this.holySpireState = state;
+        app.root.addChild(state.root);
+        this.activeEffects.add(state.root);
+
+        const animate = () => {
+            if (!this.isAlive() || this.holySpireState !== state || !state.root.parent) {
+                this.cleanupState(state);
+                return;
+            }
+
+            const nowMs = performance.now();
+            if (nowMs >= state.endTimeMs) {
+                this.cleanupState(state);
+                return;
+            }
+
+            const progress = Math.min(1, Math.max(0, (nowMs - state.startTimeMs) / this.holySpireWindupMs));
+            const orb = this.createSpireOrb(state.center, progress, this.holySpireMaterial, "holy spire orb");
+            this.replaceChild(state.root, orb);
+
+            if (nowMs >= state.impactTimeMs && !state.hasHit) {
+                state.hasHit = true;
+                if (this.isWithinRadius3D(targetEntity.getPosition(), state.center, this.holySpireHitRadius)) {
+                    this.applyDamage(this.holySpireDamage);
+                    this.spawnExplosion(state.center.clone(), 3, new Color(1, 0.92, 0.4), 260);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
     }
 
-    private createHolySpireMaterial(): StandardMaterial {
-        const material = new StandardMaterial();
-        material.useLighting = false;
-        material.diffuse = new Color(1, 0.92, 0.4);
-        material.emissive = new Color(1, 0.95, 0.5);
-        material.emissiveIntensity = 3.6;
-        material.opacity = 0.8;
-        material.blendType = BLEND_ADDITIVE;
-        material.depthWrite = false;
-        material.cull = CULLFACE_NONE;
-        material.update();
-        return material;
+    private fireDivineLight(targetEntity: Entity): void {
+        const app = this.getSceneApp();
+        if (!app?.root) return;
+
+        const center = this.getPlayerGroundPosition(targetEntity);
+        const state: DivineLightState = {
+            root: new Entity("divine light root"),
+            center,
+            startTimeMs: performance.now(),
+            strikeTimeMs: 0,
+            endTimeMs: 0,
+            hasHit: false
+        };
+        state.strikeTimeMs = state.startTimeMs + this.divineLightWindupMs;
+        state.endTimeMs = state.strikeTimeMs + this.divineLightDurationMs;
+
+        this.divineLightState = state;
+        app.root.addChild(state.root);
+        this.activeEffects.add(state.root);
+
+        const animate = () => {
+            if (!this.isAlive() || this.divineLightState !== state || !state.root.parent) {
+                this.cleanupState(state);
+                return;
+            }
+
+            const nowMs = performance.now();
+            if (nowMs >= state.endTimeMs) {
+                this.cleanupState(state);
+                return;
+            }
+
+            const telegraph = this.createDivineLightTelegraph(
+                state.center,
+                Math.min(1, Math.max(0, (nowMs - state.startTimeMs) / this.divineLightWindupMs)),
+                this.divineLightWarningMaterial,
+                "divine light telegraph"
+            );
+            this.replaceChild(state.root, telegraph);
+
+            if (nowMs >= state.strikeTimeMs) {
+                const beamOrigin = state.center.clone();
+                beamOrigin.y += this.divineLightSkyHeight;
+                const beam = this.createCylinderBeam(
+                    beamOrigin,
+                    state.center,
+                    Math.min(1, (nowMs - state.strikeTimeMs) / this.divineLightDurationMs),
+                    this.divineLightBeamRadius,
+                    this.divineLightMaterial,
+                    "divine light beam"
+                );
+                this.replaceChild(state.root, beam);
+
+                if (!state.hasHit && this.isWithinRadiusFlat(targetEntity.getPosition(), state.center, this.divineLightAreaRadius)) {
+                    state.hasHit = true;
+                    this.applyDamage(this.divineLightDamage);
+                    this.spawnExplosion(state.center.clone(), 4, new Color(0.92, 0.98, 1), 280);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        };
+
+        requestAnimationFrame(animate);
     }
 
-    private createHolyRayMaterial(): StandardMaterial {
-        const material = new StandardMaterial();
-        material.useLighting = false;
-        material.diffuse = new Color(1, 0.96, 0.72);
-        material.emissive = new Color(1, 0.98, 0.85);
-        material.emissiveIntensity = 6.4;
-        material.opacity = 0.95;
-        material.blendType = BLEND_ADDITIVE;
-        material.depthWrite = false;
-        material.cull = CULLFACE_NONE;
-        material.update();
-        return material;
+    private applyDamage(damage: number): void {
+        this.onPlayerAttack?.(this, damage);
+    }
+
+    private cleanupState(state: HolyRayState | HolySpireState | DivineLightState): void {
+        this.destroyEffect(state.root);
+        if (this.holyRayState === state) {
+            this.holyRayState = null;
+        }
+        if (this.holySpireState === state) {
+            this.holySpireState = null;
+        }
+        if (this.divineLightState === state) {
+            this.divineLightState = null;
+        }
+    }
+
+    private destroyEffect(effect: Entity | null | undefined): void {
+        if (!effect) {
+            return;
+        }
+
+        this.activeEffects.delete(effect);
+        try {
+            if (effect.parent) {
+                effect.parent.removeChild(effect);
+            }
+            effect.destroy();
+        } catch {
+            // ignore cleanup races
+        }
+    }
+
+    private replaceChild(root: Entity, child: Entity): void {
+        if (root.children.length > 0) {
+            try {
+                root.removeChild(root.children[0] as Entity);
+            } catch {
+                // ignore
+            }
+        }
+
+        root.addChild(child);
+    }
+
+    private getSceneApp(): AppBase | undefined {
+        const selfEntity = this.getEntity() as any;
+        const selfApp = (selfEntity?.app ?? selfEntity?._app) as AppBase | undefined;
+        if (selfApp?.root) return selfApp;
+
+        const globalApp = (globalThis as any)?.app as AppBase | undefined;
+        if (globalApp?.root) return globalApp;
+
+        return undefined;
+    }
+
+    private getSpellOrigin(heightOffset = 4.4): Vec3 {
+        const origin = this.getEntity().getPosition().clone();
+        origin.y += heightOffset;
+        return origin;
     }
 
     private getAimedTargetPosition(targetEntity: Entity): Vec3 {
         const targetPos = targetEntity.getPosition().clone();
         const controller = (targetEntity as any)?.script?.FirstPersonCamera
             ?? (targetEntity as any)?.script?.firstPersonCamera;
-        const rawGroundHeight = controller?.groundHeight;
-        const rawPlayerHeight = controller?.playerHeight;
-        const playerHeight = Number.isFinite(rawPlayerHeight) ? rawPlayerHeight : 2;
-        const cameraAimOffset = Math.max(1.2, playerHeight * 0.8);
-        let aimY = targetPos.y - cameraAimOffset;
+        const playerHeight = Number.isFinite(controller?.playerHeight) ? controller.playerHeight : 2;
+        const groundHeight = Number.isFinite(controller?.groundHeight)
+            ? controller.groundHeight
+            : targetPos.y - playerHeight;
 
-        if (Number.isFinite(rawGroundHeight)) {
-            const cameraToGround = Math.abs(targetPos.y - rawGroundHeight);
-            const maxGroundDelta = Math.max(3, playerHeight * 2.5);
-            if (cameraToGround <= maxGroundDelta) {
-                aimY = rawGroundHeight + (playerHeight * 0.45);
-            }
-        }
-
-        targetPos.y = aimY;
+        targetPos.y = groundHeight + (playerHeight * 0.55);
         return targetPos;
     }
 
-    private getSceneApp(): any {
-        const selfEntity = this.getEntity() as any;
-        const selfApp = (selfEntity?.app ?? selfEntity?._app) as any;
-        if (selfApp?.root) return selfApp;
-        const globalApp = (globalThis as any)?.app as any;
-        if (globalApp?.root) return globalApp;
-        return undefined;
-    }
-
-    private getWorldBoundsFromTarget(targetEntity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number } | null {
+    private getPlayerCenterPosition(targetEntity: Entity): Vec3 {
+        const targetPos = targetEntity.getPosition().clone();
         const controller = (targetEntity as any)?.script?.FirstPersonCamera
             ?? (targetEntity as any)?.script?.firstPersonCamera;
-        const minX = controller?.movementBoundsMinX;
-        const maxX = controller?.movementBoundsMaxX;
-        const minZ = controller?.movementBoundsMinZ;
-        const maxZ = controller?.movementBoundsMaxZ;
+        const playerHeight = Number.isFinite(controller?.playerHeight) ? controller.playerHeight : 2;
+        const groundHeight = Number.isFinite(controller?.groundHeight)
+            ? controller.groundHeight
+            : targetPos.y - playerHeight;
 
-        if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minZ) || !Number.isFinite(maxZ)) {
-            return null;
-        }
-
-        if (minX > maxX || minZ > maxZ) {
-            return null;
-        }
-
-        return { minX, maxX, minZ, maxZ };
+        targetPos.y = groundHeight + (playerHeight * 0.75);
+        return targetPos;
     }
 
-    private getRayEndAtBounds(
-        origin: Vec3,
-        dirNorm: Vec3,
-        bounds: { minX: number; maxX: number; minZ: number; maxZ: number }
-    ): Vec3 | null {
-        const epsilon = 0.0001;
-        const candidates: number[] = [];
+    private getPlayerGroundPosition(targetEntity: Entity): Vec3 {
+        const targetPos = targetEntity.getPosition().clone();
+        const controller = (targetEntity as any)?.script?.FirstPersonCamera
+            ?? (targetEntity as any)?.script?.firstPersonCamera;
+        const playerHeight = Number.isFinite(controller?.playerHeight) ? controller.playerHeight : 2;
+        const groundHeight = Number.isFinite(controller?.groundHeight)
+            ? controller.groundHeight
+            : targetPos.y - playerHeight;
 
-        if (Math.abs(dirNorm.x) > epsilon) {
-            const tMinX = (bounds.minX - origin.x) / dirNorm.x;
-            const zAtMinX = origin.z + (dirNorm.z * tMinX);
-            if (tMinX > 0 && Number.isFinite(zAtMinX)
-                && zAtMinX >= (bounds.minZ - epsilon) && zAtMinX <= (bounds.maxZ + epsilon)) {
-                candidates.push(tMinX);
-            }
-
-            const tMaxX = (bounds.maxX - origin.x) / dirNorm.x;
-            const zAtMaxX = origin.z + (dirNorm.z * tMaxX);
-            if (tMaxX > 0 && Number.isFinite(zAtMaxX)
-                && zAtMaxX >= (bounds.minZ - epsilon) && zAtMaxX <= (bounds.maxZ + epsilon)) {
-                candidates.push(tMaxX);
-            }
-        }
-
-        if (Math.abs(dirNorm.z) > epsilon) {
-            const tMinZ = (bounds.minZ - origin.z) / dirNorm.z;
-            const xAtMinZ = origin.x + (dirNorm.x * tMinZ);
-            if (tMinZ > 0 && Number.isFinite(xAtMinZ)
-                && xAtMinZ >= (bounds.minX - epsilon) && xAtMinZ <= (bounds.maxX + epsilon)) {
-                candidates.push(tMinZ);
-            }
-
-            const tMaxZ = (bounds.maxZ - origin.z) / dirNorm.z;
-            const xAtMaxZ = origin.x + (dirNorm.x * tMaxZ);
-            if (tMaxZ > 0 && Number.isFinite(xAtMaxZ)
-                && xAtMaxZ >= (bounds.minX - epsilon) && xAtMaxZ <= (bounds.maxX + epsilon)) {
-                candidates.push(tMaxZ);
-            }
-        }
-
-        if (candidates.length === 0) {
-            return null;
-        }
-
-        const t = Math.min(...candidates);
-        if (!Number.isFinite(t) || t <= 0) {
-            return null;
-        }
-
-        return origin.clone().add(dirNorm.clone().mulScalar(t));
+        targetPos.y = groundHeight + 0.05;
+        return targetPos;
     }
 
-    private calculateHolySpireEnd(origin: Vec3, targetPos: Vec3): Vec3 {
+    private calculateHolyRayEnd(origin: Vec3, targetPos: Vec3): Vec3 {
         const direction = targetPos.clone().sub(origin);
         const length = direction.length();
         if (length <= 0.001) {
             return targetPos.clone();
-        }
-
-        direction.normalize();
-        const totalLength = Math.max(this.holySpireRange, length) + this.holySpireOvershoot;
-        const rayEnd = origin.clone().add(direction.mulScalar(totalLength));
-
-        const app = this.getSceneApp();
-        if (!app?.root) return rayEnd;
-
-        const rigidbodySystem = (app.systems as any)?.rigidbody;
-        if (!rigidbodySystem?.raycastFirst) return rayEnd;
-
-        try {
-            const hitResult = rigidbodySystem.raycastFirst(origin, rayEnd);
-            if (hitResult?.point) {
-                const hitPoint = hitResult.point as Vec3;
-                if (Number.isFinite(hitPoint.x) && Number.isFinite(hitPoint.y) && Number.isFinite(hitPoint.z)) {
-                    return hitPoint;
-                }
-            }
-        } catch (e) {
-            // raycast failed, use default end
-        }
-
-        return rayEnd;
-    }
-
-    private calculateHolyRayEnd(origin: Vec3, targetPos: Vec3, targetEntity?: Entity): Vec3 {
-        const direction = targetPos.clone().sub(origin);
-        const length = direction.length();
-        if (length <= 0.001) {
-            return targetPos.clone();
-        }
-
-        const dirNorm = direction.clone().mulScalar(1 / length);
-        if (Number.isFinite(this.holyRayPitchDownDeg) && Math.abs(this.holyRayPitchDownDeg) > 0.01) {
-            const pitchRad = this.holyRayPitchDownDeg * (Math.PI / 180);
-            const up = new Vec3(0, 1, 0);
-            const right = new Vec3().cross(up, dirNorm);
-            const rightLen = right.length();
-            if (rightLen > 0.0001) {
-                right.mulScalar(1 / rightLen);
-                const cross = new Vec3().cross(right, dirNorm);
-                const cos = Math.cos(pitchRad);
-                const sin = Math.sin(pitchRad);
-                const rotated = dirNorm.clone().mulScalar(cos).add(cross.mulScalar(sin));
-                dirNorm.copy(rotated).normalize();
-            }
-        }
-        const bounds = targetEntity ? this.getWorldBoundsFromTarget(targetEntity) : null;
-        if (bounds) {
-            const boundedEnd = this.getRayEndAtBounds(origin, dirNorm, bounds);
-            if (boundedEnd) {
-                return boundedEnd;
-            }
         }
 
         const totalLength = Math.max(this.holyRayRange, length) + this.holyRayOvershoot;
-        return origin.clone().add(dirNorm.mulScalar(totalLength));
+        return origin.clone().add(direction.normalize().mulScalar(totalLength));
     }
 
     private getHolyRayBeamRadius(progress: number): number {
         const clamped = Math.max(0, Math.min(1, progress));
-        const minScale = 0.6;
-        const maxScale = 1.4;
-        return this.holyRayBeamRadius * (minScale + ((maxScale - minScale) * clamped));
+        return 3.6 * (0.65 + (0.7 * clamped));
     }
 
     private createCylinderBeam(
@@ -445,17 +583,17 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
     ): Entity {
         const direction = end.clone().sub(origin);
         const fullDistance = direction.length();
+        const beamRoot = new Entity(label);
 
         if (fullDistance <= 0.5) {
-            return new Entity(label);
+            return beamRoot;
         }
 
         const traveledDistance = fullDistance * Math.min(1, progress);
         if (traveledDistance <= 0.5) {
-            return new Entity(label);
+            return beamRoot;
         }
 
-        const beamRoot = new Entity(label);
         const beam = new Entity(`${label} mesh`);
         beam.addComponent("render", { type: "cylinder" } as any);
         beam.setLocalScale(radius, traveledDistance, radius);
@@ -468,275 +606,98 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
         beamRoot.addChild(beam);
         beamRoot.setPosition(origin.x, origin.y, origin.z);
 
-        const dirNorm = direction.clone().mulScalar(1 / fullDistance);
-        const quat = this.directionToQuaternionFromUp(dirNorm);
-        beamRoot.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
-
+        const quaternion = this.directionToQuaternionFromUp(direction.clone().mulScalar(1 / fullDistance));
+        beamRoot.setLocalRotation(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
         return beamRoot;
     }
 
-    private directionToQuaternionFromUp(dir: Vec3): { x: number; y: number; z: number; w: number } {
-        const up = dir.clone().normalize();
-        const forwardSeed = Math.abs(up.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
+    private createSpireOrb(center: Vec3, progress: number, material: StandardMaterial, label: string): Entity {
+        const root = new Entity(label);
+        const orb = new Entity(`${label} mesh`);
+        orb.addComponent("render", { type: "sphere" } as any);
+        const scale = 0.45 + (progress * 5.8);
+        orb.setLocalScale(scale, scale, scale);
 
-        const right = new Vec3();
-        forwardSeed.clone().cross(up, right).normalize();
-
-        const forward = new Vec3();
-        up.clone().cross(right, forward).normalize();
-
-        return this.matrixToQuat(right, up, forward);
-    }
-
-    private matrixToQuat(right: Vec3, up: Vec3, forward: Vec3): { x: number; y: number; z: number; w: number } {
-        const m00 = right.x, m01 = up.x, m02 = forward.x;
-        const m10 = right.y, m11 = up.y, m12 = forward.y;
-        const m20 = right.z, m21 = up.z, m22 = forward.z;
-
-        const trace = m00 + m11 + m22;
-        let w, x, y, z;
-
-        if (trace > 0) {
-            const s = 0.5 / Math.sqrt(trace + 1);
-            w = 0.25 / s;
-            x = (m21 - m12) * s;
-            y = (m02 - m20) * s;
-            z = (m10 - m01) * s;
-        } else if (m00 > m11 && m00 > m22) {
-            const s = 2 * Math.sqrt(1 + m00 - m11 - m22);
-            w = (m21 - m12) / s;
-            x = 0.25 * s;
-            y = (m01 + m10) / s;
-            z = (m02 + m20) / s;
-        } else if (m11 > m22) {
-            const s = 2 * Math.sqrt(1 + m11 - m00 - m22);
-            w = (m02 - m20) / s;
-            x = (m01 + m10) / s;
-            y = 0.25 * s;
-            z = (m12 + m21) / s;
-        } else {
-            const s = 2 * Math.sqrt(1 + m22 - m00 - m11);
-            w = (m10 - m01) / s;
-            x = (m02 + m20) / s;
-            y = (m12 + m21) / s;
-            z = 0.25 * s;
+        if (orb.render?.meshInstances?.length) {
+            orb.render.meshInstances[0].material = material;
         }
 
-        return { x, y, z, w };
+        root.addChild(orb);
+        root.setPosition(center.x, center.y, center.z);
+        return root;
     }
 
-    private fireHolySpire(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, onAttack?: (attacker: npc) => void): void {
-        const app = this.getSceneApp();
-        if (!app?.root) return;
+    private createDivineLightTelegraph(center: Vec3, progress: number, material: StandardMaterial, label: string): Entity {
+        const root = new Entity(label);
+        const disc = new Entity(`${label} disc`);
+        disc.addComponent("render", { type: "cylinder" } as any);
+        const pulse = 0.9 + (Math.sin(performance.now() * 0.02) * 0.1);
+        const radius = this.divineLightAreaRadius * (0.8 + (progress * 0.35)) * pulse;
+        disc.setLocalScale(radius, 0.12, radius);
 
-        let hasHit = false;
-        const rayData = { beamRoot: new Entity("holy spire root"), hasHit: false };
-        app.root.addChild(rayData.beamRoot);
-        this.activeHolyBeams.add(rayData);
+        if (disc.render?.meshInstances?.length) {
+            disc.render.meshInstances[0].material = material;
+        }
 
-        const windupStart = performance.now();
-        const travelStart = windupStart + this.holySpireWindupMs;
-        const travelEnd = travelStart + this.holySpireTravelMs;
-
-        const animate = () => {
-            if (!this.isAlive() || !this.activeHolyBeams.has(rayData)) {
-                return;
-            }
-
-            const now = performance.now();
-
-            if (now < travelStart) {
-                requestAnimationFrame(animate);
-                return;
-            }
-
-            if (now >= travelEnd) {
-                try { rayData.beamRoot.destroy(); } catch (e) { }
-                this.activeHolyBeams.delete(rayData);
-                return;
-            }
-
-            const progress = (now - travelStart) / this.holySpireTravelMs;
-            const beam = this.createCylinderBeam(
-                origin,
-                rayEnd,
-                progress,
-                this.holySpireBeamRadius,
-                this.holySpireMaterial,
-                "holy spire cylinder"
-            );
-
-            if (rayData.beamRoot.children.length > 0) {
-                rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
-            }
-            rayData.beamRoot.addChild(beam);
-
-            if (!hasHit && this.isHitByRay(targetEntity, origin, rayEnd, this.holySpireHitRadius)) {
-                hasHit = true;
-                onAttack?.(this);
-                // Visual explosion at target position
-                this.spawnExplosion(targetEntity.getPosition().clone(), 3, new Color(1, 0.92, 0.4), 300);
-            }
-
-            requestAnimationFrame(animate);
-        };
-
-        requestAnimationFrame(animate);
+        root.addChild(disc);
+        root.setPosition(center.x, center.y + 0.03, center.z);
+        return root;
     }
 
-    private fireHolyRay(targetEntity: Entity, onAttack?: (attacker: npc) => void): void {
-        const app = this.getSceneApp();
-        if (!app?.root) return;
-
-        const rayData = { beamRoot: new Entity("holy ray root"), hasHit: false };
-        app.root.addChild(rayData.beamRoot);
-        this.activeHolyBeams.add(rayData);
-
-        const windupStart = performance.now();
-        const travelStart = windupStart + this.holyRayWindupMs;
-        const travelEnd = travelStart + this.holyRayTravelMs;
-        const lingerEnd = travelEnd + this.holyRayLingerMs;
-        let hasFired = false;
-        let origin = this.getEntity().getPosition().clone();
-        let rayEnd = origin.clone();
-        let totalLength = 0;
-        let lastHitTime = 0;
-
-        const fireRay = () => {
-            origin = this.getEntity().getPosition().clone();
-            const targetPos = this.getAimedTargetPosition(targetEntity);
-            rayEnd = this.calculateHolyRayEnd(origin, targetPos, targetEntity);
-            totalLength = rayEnd.clone().sub(origin).length();
-            hasFired = true;
-        };
-
-        const animate = () => {
-            if (!this.isAlive() || !this.activeHolyBeams.has(rayData)) {
-                return;
-            }
-
-            const now = performance.now();
-
-            if (now < travelStart) {
-                requestAnimationFrame(animate);
-                return;
-            }
-
-            if (now >= lingerEnd) {
-                try { rayData.beamRoot.destroy(); } catch (e) { }
-                this.activeHolyBeams.delete(rayData);
-                return;
-            }
-
-            if (!hasFired) {
-                fireRay();
-            }
-
-            if (totalLength > 0.001 && (now - lastHitTime) >= this.holyRayRehitCooldownMs
-                && this.isHitByRay(targetEntity, origin, rayEnd, this.holyRayHitRadius)) {
-                lastHitTime = now;
-                onAttack?.(this);
-                // Visual explosion at target position
-                this.spawnExplosion(targetEntity.getPosition().clone(), 2.5, new Color(1, 0.96, 0.72), 300);
-            }
-
-            const progress = Math.min(1, (now - travelStart) / this.holyRayTravelMs);
-            const beam = this.createCylinderBeam(
-                origin,
-                rayEnd,
-                progress,
-                this.getHolyRayBeamRadius(progress),
-                this.holyRayMaterial,
-                "holy ray cylinder"
-            );
-
-            if (rayData.beamRoot.children.length > 0) {
-                rayData.beamRoot.removeChild(rayData.beamRoot.children[0]);
-            }
-            rayData.beamRoot.addChild(beam);
-
-            requestAnimationFrame(animate);
-        };
-
-        requestAnimationFrame(animate);
-    }
-
-    private fireHolyBurst(targetEntity: Entity, onAttack?: (attacker: npc) => void): void {
-        const app = this.getSceneApp();
-        if (!app?.root) return;
-
-        const position = targetEntity.getPosition().clone();
-        const burst = new Entity("holy burst");
+    private createHolyGlowMaterial(diffuse: Color, emissive: Color, emissiveIntensity: number, opacity: number): StandardMaterial {
         const material = new StandardMaterial();
         material.useLighting = false;
-        material.emissive = new Color(1, 0.8, 0.2);
-        material.emissiveIntensity = 6;
+        material.diffuse = diffuse;
+        material.emissive = emissive;
+        material.emissiveIntensity = emissiveIntensity;
+        material.opacity = opacity;
         material.blendType = BLEND_ADDITIVE;
         material.depthWrite = false;
         material.cull = CULLFACE_NONE;
         material.update();
-        burst.addComponent('render', { type: 'sphere', material } as any);
-        const startScale = 0.5;
-        burst.setLocalScale(startScale, startScale, startScale);
-        burst.setPosition(position.x, position.y, position.z);
-        app.root.addChild(burst);
-
-        // Damage if within range
-        const distance = this.getEntity().getPosition().distance(position);
-        if (distance <= this.holyBurstRange) {
-            onAttack?.(this);
-            this.spawnExplosion(position, 2, new Color(1, 0.8, 0.2), 300);
-        }
-
-        // Animate expansion and fade out
-        const start = performance.now();
-        const end = start + this.holyBurstDurationMs;
-        const animate = () => {
-            if (!this.isAlive() || !app.root?.children?.includes(burst)) {
-                burst.destroy();
-                return;
-            }
-            const now = performance.now();
-            if (now >= end) {
-                burst.destroy();
-                return;
-            }
-            const t = (now - start) / this.holyBurstDurationMs;
-            const scale = startScale + t * this.holyBurstRange;
-            burst.setLocalScale(scale, scale, scale);
-            requestAnimationFrame(animate);
-        };
-        requestAnimationFrame(animate);
+        return material;
     }
 
-    // Helper to create a simple explosion visual at a position.
+    private createHolySpireMaterial(): StandardMaterial {
+        return this.createHolyGlowMaterial(new Color(1, 0.92, 0.4), new Color(1, 0.98, 0.55), 3.8, 0.82);
+    }
+
+    private createHolyRayMaterial(): StandardMaterial {
+        return this.createHolyGlowMaterial(new Color(1, 0.97, 0.72), new Color(1, 0.99, 0.86), 6.4, 0.94);
+    }
+
+    private createHolyLightMaterial(): StandardMaterial {
+        return this.createHolyGlowMaterial(new Color(0.95, 0.98, 1), new Color(1, 1, 1), 6.8, 0.92);
+    }
+
     private spawnExplosion(position: Vec3, radius: number, color: Color, durationMs: number): void {
         const app = this.getSceneApp();
         if (!app?.root) return;
-        const explosion = new Entity('explosion');
-        const mat = new StandardMaterial();
-        mat.useLighting = false;
-        mat.emissive = color;
-        mat.emissiveIntensity = 6;
-        mat.blendType = BLEND_ADDITIVE;
-        mat.depthWrite = false;
-        mat.cull = CULLFACE_NONE;
-        mat.update();
-        explosion.addComponent('render', { type: 'sphere', material: mat } as any);
+
+        const explosion = new Entity("explosion");
+        explosion.addComponent("render", { type: "sphere" } as any);
+        if (explosion.render?.meshInstances?.length) {
+            explosion.render.meshInstances[0].material = this.createHolyGlowMaterial(color, color, 6, 0.95);
+        }
         explosion.setLocalScale(radius, radius, radius);
         explosion.setPosition(position.x, position.y, position.z);
         app.root.addChild(explosion);
-        setTimeout(() => { explosion.destroy(); }, durationMs);
+        this.activeEffects.add(explosion);
+        setTimeout(() => this.destroyEffect(explosion), durationMs);
     }
 
-    private isHitByRay(
-        targetEntity: Entity,
-        origin: Vec3,
-        rayEnd: Vec3,
-        hitRadius: number,
-        targetPosOverride?: Vec3
-    ): boolean {
-        const targetPos = targetPosOverride ?? targetEntity.getPosition();
+    private isWithinRadius3D(point: Vec3, center: Vec3, radius: number): boolean {
+        return point.distance(center) <= radius;
+    }
+
+    private isWithinRadiusFlat(point: Vec3, center: Vec3, radius: number): boolean {
+        const dx = point.x - center.x;
+        const dz = point.z - center.z;
+        return Math.sqrt((dx * dx) + (dz * dz)) <= radius;
+    }
+
+    private isHitByRay(targetEntity: Entity, origin: Vec3, rayEnd: Vec3, hitRadius: number): boolean {
+        const targetPos = targetEntity.getPosition();
         const rayDir = rayEnd.clone().sub(origin);
         const rayLen = rayDir.length();
 
@@ -752,8 +713,55 @@ constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Ch
         }
 
         const closest = origin.clone().add(rayDir.clone().mulScalar(t));
-        const dist = targetPos.distance(closest);
+        return targetPos.distance(closest) <= hitRadius;
+    }
 
-        return dist <= hitRadius;
+    private directionToQuaternionFromUp(dir: Vec3): { x: number; y: number; z: number; w: number } {
+        const up = dir.clone().normalize();
+        const forwardSeed = Math.abs(up.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
+        const right = new Vec3();
+        forwardSeed.clone().cross(up, right).normalize();
+        const forward = new Vec3();
+        up.clone().cross(right, forward).normalize();
+        return this.matrixToQuat(right, up, forward);
+    }
+
+    private matrixToQuat(right: Vec3, up: Vec3, forward: Vec3): { x: number; y: number; z: number; w: number } {
+        const m00 = right.x, m01 = up.x, m02 = forward.x;
+        const m10 = right.y, m11 = up.y, m12 = forward.y;
+        const m20 = right.z, m21 = up.z, m22 = forward.z;
+        const trace = m00 + m11 + m22;
+        let w: number;
+        let x: number;
+        let y: number;
+        let z: number;
+
+        if (trace > 0) {
+            const scale = 0.5 / Math.sqrt(trace + 1);
+            w = 0.25 / scale;
+            x = (m21 - m12) * scale;
+            y = (m02 - m20) * scale;
+            z = (m10 - m01) * scale;
+        } else if (m00 > m11 && m00 > m22) {
+            const scale = 2 * Math.sqrt(1 + m00 - m11 - m22);
+            w = (m21 - m12) / scale;
+            x = 0.25 * scale;
+            y = (m01 + m10) / scale;
+            z = (m02 + m20) / scale;
+        } else if (m11 > m22) {
+            const scale = 2 * Math.sqrt(1 + m11 - m00 - m22);
+            w = (m02 - m20) / scale;
+            x = (m01 + m10) / scale;
+            y = 0.25 * scale;
+            z = (m12 + m21) / scale;
+        } else {
+            const scale = 2 * Math.sqrt(1 + m22 - m00 - m11);
+            w = (m10 - m01) / scale;
+            x = (m02 + m20) / scale;
+            y = (m12 + m21) / scale;
+            z = 0.25 * scale;
+        }
+
+        return { x, y, z, w };
     }
 }
