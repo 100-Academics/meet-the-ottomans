@@ -1,6 +1,7 @@
 import { Boss } from "./boss";
 import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
 import type { npc } from "../npc";
+import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
 // Combat behavior and VFX for the Jesus Christ boss.
 type ChristAttackType = "spire" | "ray";
@@ -37,8 +38,15 @@ export class Christ extends Boss {
 
     private activeHolyBeams = new Set<{ beamRoot: Entity; hasHit: boolean }>();
 
-    constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Christ")) {
+    
+
+constructor(id: number, maxHealth: number, entity: Entity = new Entity("Jesus Christ")) {
         super(id, maxHealth, entity, "Jesus Christ");
+        // Adjust movement speeds for better responsiveness
+        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
+        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
+        // Use a reasonable attack range to allow movement when player is farther away
+        this.aiConfig.attackRange = 30;
         this.setTauntSet({
             highHealth: [
                 "You have come far to fall here.",
@@ -68,16 +76,17 @@ export class Christ extends Boss {
         });
         this.setIntroTaunt("Ego sum via.", "I am the way.");
         this.setIntroNameTranslation("Iesus Christus", "Jesus Christ");
-        this.aiConfig.attackRange = Math.max(this.holySpireRange, this.holyRayRange);
+
         this.aiConfig.attackCooldown = Math.min(this.holySpireCooldown, this.holyRayCooldown);
     }
+
 
     protected override getCombatProfile() {
         const base = super.getCombatProfile();
         return {
             ...base,
             attackDamage: this.holySpireDamage,
-            attackRange: Math.max(this.holySpireRange, this.holyRayRange),
+            attackRange: 30,
             attackCooldown: Math.min(this.holySpireCooldown, this.holyRayCooldown),
             detectionRange: Number.MAX_VALUE
         };

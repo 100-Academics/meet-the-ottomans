@@ -38,7 +38,7 @@ export class WilliamTheConquerer extends Boss {
     // Shockwave: large area damage with knockback.
     private readonly shockwaveRadius = 7;
     private readonly shockwaveDamage = 22;
-    private readonly shockwaveKnockback = 4;
+    private readonly shockwaveKnockback = 12;
     private readonly shockwaveCooldownSeconds = 8.0;
     private nextShockwaveAtSeconds = 0;
     private readonly chargeDurationSeconds = 0.6;
@@ -404,7 +404,9 @@ export class WilliamTheConquerer extends Boss {
                 this.shieldBashMaterial,
                 "william shield bash shockwave",
                 0.25
-            );
+        );
+        // Additional shockwave visual
+        this.spawnRingEffect(this.getEntity().getPosition(), this.shockwaveRadius * 1.4, 800, this.shieldBashMaterial, "william shockwave-large", 0.3);
         }
 
         if (nowSeconds >= state.endTimeSeconds) {
@@ -458,6 +460,8 @@ export class WilliamTheConquerer extends Boss {
                 setTimeout(() => {
                     lockFn(false);
                 }, this.royalDashFreezeMs);
+                // Dash impact visual effect
+                this.spawnRingEffect(this.getEntity().getPosition(), 2, 300, this.shieldBashMaterial, "william-royal-dash-impact", 0.5);
             }
         }
         if (nowSeconds >= state.endTimeSeconds) {
