@@ -52,6 +52,14 @@ import {
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
+// @ts-ignore
+function resetYorktownBattleState(): void {
+  // Reset state variables for Yorktown battle.
+  isBossSpawned = false;
+  isBossSpawning = false;
+  // AmericanRevolutionist.resetBattleState(); // if needed
+}
+
 const groundModelPath = "/world/battlefields/Yorktown.glb";
 
 var isBossSpawned = false;
