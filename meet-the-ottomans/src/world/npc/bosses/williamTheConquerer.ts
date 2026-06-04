@@ -1,5 +1,5 @@
 import { Boss } from "./boss";
-import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
+import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color, AppBase } from "playcanvas";
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
@@ -25,6 +25,18 @@ interface RoyalDashState {
     trail?: Entity | null;
 }
 
+interface ShockwaveState {
+    root: Entity;
+    origin: Vec3;
+    segments: Entity[];
+    haloSegments: Entity[];
+    startTimeSeconds: number;
+    durationSeconds: number;
+    maxRadius: number;
+    lastRadius: number;
+    hasHit: boolean;
+}
+
 export class WilliamTheConquerer extends Boss {
     // Charge attack: a cavalry-style rush forward.
     private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.6;
@@ -36,10 +48,18 @@ export class WilliamTheConquerer extends Boss {
     private readonly royalDashFreezeMs = 3000;
     private nextRoyalDashAtSeconds = 0;
     // Shockwave: large area damage with knockback.
-    private readonly shockwaveRadius = 7;
+    private readonly shockwaveRadius = 20;
     private readonly shockwaveDamage = 22;
-    private readonly shockwaveKnockback = 12;
+    private readonly shockwaveKnockback = 500;
     private readonly shockwaveCooldownSeconds = 8.0;
+    private readonly shockwaveWindupSeconds = 0.7;
+    private readonly shockwaveWaveSpeed = 54;
+    private readonly shockwaveWaveThickness = 4.5;
+    private readonly shockwaveWaveMinDuration = 1.4;
+    private readonly shockwaveWaveMaxDuration = 4.8;
+    private readonly shockwaveDefaultWaveRadius = 250;
+    private readonly shockwaveWaveSegments = 34;
+    private readonly shockwaveWaveSegmentScale = 0.95;
     private nextShockwaveAtSeconds = 0;
     private readonly chargeDurationSeconds = 0.6;
     private readonly chargeRecoverSeconds = 0.4;
@@ -66,6 +86,7 @@ export class WilliamTheConquerer extends Boss {
     private chargeState: ChargeState | null = null;
     private shieldBashState: ShieldBashState | null = null;
     private royalDashState: RoyalDashState | null = null;
+    private shockwaveState: ShockwaveState | null = null;
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
     private playerEntity?: Entity;
 
@@ -128,7 +149,6 @@ export class WilliamTheConquerer extends Boss {
                 "What more did you expect, challenging the man who conquered England by the hand of God."
             ],
             bossDeath: [
-                "So falls the Conqueror",
                 "Big Willie had an oppsie."
             ]
         });
@@ -174,6 +194,10 @@ export class WilliamTheConquerer extends Boss {
         }
         if (this.royalDashState) {
             this.updateRoyalDash(clampedDeltaTime, targetEntity, currentTimeSeconds, onAttack);
+            return;
+        }
+        if (this.shockwaveState) {
+            this.updateShockwave(clampedDeltaTime, targetEntity, currentTimeSeconds, onAttack);
             return;
         }
         if (currentTimeSeconds < this.attackLockUntilSeconds) {
@@ -476,33 +500,66 @@ export class WilliamTheConquerer extends Boss {
     private startShockwave(nowSeconds: number): void {
         this.lastAttackType = "shockwave";
         this.lastAttackAtSeconds = nowSeconds;
-        // Visual effect
-        this.spawnRingEffect(
-            this.getEntity().getPosition(),
-            this.shockwaveRadius,
-            600,
-            this.shieldBashMaterial,
-            "william shockwave",
-            0.4
-        );
-        // Apply damage and knockback if player is in range
-        if (this.playerEntity) {
-            const distance = this.getFlatDistanceTo(this.playerEntity);
-            if (distance <= this.shockwaveRadius) {
-                this.applyDamage(this.shockwaveDamage);
-                // knockback
-                const dir = this.playerEntity.getPosition().clone().sub(this.getEntity().getPosition());
-                dir.y = 0;
-                if (dir.lengthSq() > 0.0001) {
-                    dir.normalize();
-                    const newPos = this.playerEntity.getPosition().clone().add(dir.mulScalar(this.shockwaveKnockback));
-                    this.playerEntity.setPosition(newPos);
-                }
-            }
+        const origin = this.getEntity().getPosition();
+
+        this.spawnRingEffect(origin, this.shockwaveRadius * 0.9, 260, this.shieldBashMaterial, "william shockwave-telegraph", 0.55);
+        this.spawnRingEffect(origin, this.shockwaveRadius * 1.35, 520, this.shieldBashMaterial, "william shockwave-ripple-a", 0.38);
+        this.spawnRingEffect(origin, this.shockwaveRadius * 1.85, 760, this.shieldBashMaterial, "william shockwave-ripple-b", 0.24);
+
+        const wave = this.createShockwaveWaveEffect(origin, this.shockwaveWaveSegments);
+        if (!wave) {
+            this.nextShockwaveAtSeconds = nowSeconds + this.shockwaveCooldownSeconds;
+            this.attackLockUntilSeconds = nowSeconds + 0.2;
+            return;
         }
-        this.nextShockwaveAtSeconds = nowSeconds + this.shockwaveCooldownSeconds;
-        // Small lock to prevent immediate other attacks
-        this.attackLockUntilSeconds = nowSeconds + 0.2;
+
+        const maxRadius = this.getShockwaveMaxRadius(origin);
+        const durationSeconds = this.getShockwaveDuration(maxRadius);
+        this.shockwaveState = {
+            root: wave.root,
+            origin,
+            segments: wave.segments,
+            haloSegments: wave.haloSegments,
+            startTimeSeconds: nowSeconds + this.shockwaveWindupSeconds,
+            durationSeconds,
+            maxRadius,
+            lastRadius: 0,
+            hasHit: false
+        };
+        this.attackLockUntilSeconds = Math.max(this.attackLockUntilSeconds, this.shockwaveState.startTimeSeconds + durationSeconds);
+    }
+
+    private updateShockwave(
+        deltaTime: number,
+        targetEntity: Entity,
+        nowSeconds: number,
+        onAttack?: (attacker: npc) => void
+    ): void {
+        const state = this.shockwaveState;
+        if (!state) {
+            return;
+        }
+
+        this.faceTarget(targetEntity, deltaTime);
+
+        if (nowSeconds < state.startTimeSeconds) {
+            return;
+        }
+
+        const elapsed = nowSeconds - state.startTimeSeconds;
+        const progress = Math.min(1, Math.max(0, elapsed / state.durationSeconds));
+        const currentRadius = state.maxRadius * progress;
+
+        this.updateShockwaveVisual(state, currentRadius);
+        this.checkShockwaveHit(state, targetEntity, currentRadius, onAttack);
+        state.lastRadius = currentRadius;
+
+        if (progress >= 1) {
+            this.destroyEffect(state.root);
+            this.shockwaveState = null;
+            this.nextShockwaveAtSeconds = nowSeconds + this.shockwaveCooldownSeconds;
+            this.attackLockUntilSeconds = nowSeconds + 0.25;
+        }
     }
 
     // ── VFX helpers ──
@@ -586,6 +643,7 @@ export class WilliamTheConquerer extends Boss {
         this.activeEffects.clear();
         this.chargeState = null;
         this.shieldBashState = null;
+        this.shockwaveState = null;
     }
 
     // ── Utility methods (same pattern as GenghisKhan) ──
@@ -612,5 +670,157 @@ export class WilliamTheConquerer extends Boss {
         if (onAttack) {
             onAttack(this);
         }
+    }
+
+    private resolveSceneApp(targetEntity?: Entity): AppBase | undefined {
+        const selfEntity = this.getEntity() as any;
+        const selfApp = (selfEntity?.app ?? selfEntity?._app) as AppBase | undefined;
+        if (selfApp?.root) return selfApp;
+        const targetAny = targetEntity as any;
+        const targetApp = (targetAny?.app ?? targetAny?._app) as AppBase | undefined;
+        if (targetApp?.root) return targetApp;
+        const globalApp = (globalThis as any)?.app as AppBase | undefined;
+        if (globalApp?.root) return globalApp;
+        return undefined;
+    }
+
+    private updateShockwaveVisual(state: ShockwaveState, radius: number): void {
+        const baseScale = Math.max(0.35, this.shockwaveWaveSegmentScale);
+        const haloRadius = radius + (this.shockwaveWaveThickness * 0.6);
+        const count = state.segments.length;
+        const angleStep = (Math.PI * 2) / Math.max(1, count);
+
+        for (let i = 0; i < count; i += 1) {
+            const angle = angleStep * i;
+            const x = Math.cos(angle) * radius;
+            const z = Math.sin(angle) * radius;
+            const segment = state.segments[i];
+            segment.setLocalPosition(x, 0.15, z);
+            segment.setLocalScale(baseScale, baseScale, baseScale);
+
+            const halo = state.haloSegments[i];
+            if (halo) {
+                const hx = Math.cos(angle) * haloRadius;
+                const hz = Math.sin(angle) * haloRadius;
+                const haloScale = Math.max(0.28, baseScale * 0.72);
+                halo.setLocalPosition(hx, 0.08, hz);
+                halo.setLocalScale(haloScale, haloScale, haloScale);
+            }
+        }
+    }
+
+    private checkShockwaveHit(
+        state: ShockwaveState,
+        targetEntity: Entity,
+        radius: number,
+        onAttack?: (attacker: npc) => void
+    ): void {
+        if (state.hasHit) {
+            return;
+        }
+
+        const distance = this.getFlatDistanceTo(targetEntity);
+        const band = this.shockwaveWaveThickness;
+        const minR = Math.max(0, Math.min(state.lastRadius, radius) - band);
+        const maxR = Math.max(state.lastRadius, radius) + band;
+
+        if (distance < minR || distance > maxR) {
+            return;
+        }
+
+        state.hasHit = true;
+        this.applyDamage(this.shockwaveDamage, onAttack);
+        this.applyShockwaveKnockback(targetEntity, state.origin);
+    }
+
+    private getShockwaveDuration(maxRadius: number): number {
+        const duration = maxRadius / Math.max(1, this.shockwaveWaveSpeed);
+        return Math.min(this.shockwaveWaveMaxDuration, Math.max(this.shockwaveWaveMinDuration, duration));
+    }
+
+    private getShockwaveMaxRadius(origin: Vec3): number {
+        const player = this.playerEntity;
+        if (!player) {
+            return Math.max(this.shockwaveRadius * 2, this.shockwaveDefaultWaveRadius);
+        }
+
+        const targetPos = player.getPosition();
+        const dx = targetPos.x - origin.x;
+        const dz = targetPos.z - origin.z;
+        const distance = Math.sqrt((dx * dx) + (dz * dz));
+        return Math.max(this.shockwaveRadius * 2, distance + 18);
+    }
+
+    private createShockwaveWaveEffect(origin: Vec3, segmentCount: number): { root: Entity; segments: Entity[]; haloSegments: Entity[] } | null {
+        const sceneApp = this.resolveSceneApp();
+        if (!sceneApp?.root) {
+            return null;
+        }
+
+        const root = new Entity("william shockwave wave");
+        const segments: Entity[] = [];
+        const haloSegments: Entity[] = [];
+        const count = Math.max(8, segmentCount);
+
+        for (let i = 0; i < count; i += 1) {
+            const segment = new Entity(`william shockwave segment ${i}`);
+            segment.addComponent("render", { type: "sphere" } as any);
+            segment.setLocalScale(this.shockwaveWaveSegmentScale, this.shockwaveWaveSegmentScale, this.shockwaveWaveSegmentScale);
+            if (segment.render?.meshInstances?.length) {
+                segment.render.meshInstances[0].material = this.shieldBashMaterial;
+            }
+            root.addChild(segment);
+            segments.push(segment);
+
+            const halo = new Entity(`william shockwave halo ${i}`);
+            halo.addComponent("render", { type: "sphere" } as any);
+            const haloScale = Math.max(0.35, this.shockwaveWaveSegmentScale * 0.72);
+            halo.setLocalScale(haloScale, haloScale, haloScale);
+            if (halo.render?.meshInstances?.length) {
+                halo.render.meshInstances[0].material = this.shieldBashMaterial;
+            }
+            root.addChild(halo);
+            haloSegments.push(halo);
+        }
+
+        root.setPosition(origin.x, origin.y + 0.08, origin.z);
+        sceneApp.root.addChild(root);
+        this.activeEffects.add(root);
+        return { root, segments, haloSegments };
+    }
+
+
+
+    private applyShockwaveKnockback(playerEntity: Entity, origin: Vec3): void {
+        const controller = (playerEntity as any)?.script?.FirstPersonCamera ?? (playerEntity as any)?.script?.firstPersonCamera;
+        const playerPos = playerEntity.getPosition().clone();
+        const pushDir = playerPos.sub(origin);
+        pushDir.y = 0;
+
+        if (pushDir.lengthSq() <= 0.0001) {
+            pushDir.set(0, 0, 1);
+        } else {
+            pushDir.normalize();
+        }
+
+        const knockback = this.shockwaveKnockback;
+        const lift = Math.max(2.5, knockback * 0.22);
+
+        if (controller) {
+            if (controller.velocity) {
+                controller.velocity.x += pushDir.x * knockback;
+                controller.velocity.z += pushDir.z * knockback;
+                controller.velocity.y = Math.max(controller.velocity.y, lift);
+            }
+            if (typeof controller.setMovementLocked === "function") {
+                controller.setMovementLocked(false);
+            }
+        }
+
+        const launchedPos = playerEntity.getPosition().clone();
+        launchedPos.x += pushDir.x * knockback * 0.45;
+        launchedPos.z += pushDir.z * knockback * 0.45;
+        launchedPos.y += lift * 0.15;
+        playerEntity.setPosition(launchedPos);
     }
 }

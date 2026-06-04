@@ -99,10 +99,10 @@ export class Baybars extends Boss {
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
         this.setIntroTaunt(
-            "أنا بيبرس، سلطان مصر والشام!",
-            "I am Baybars, Sultan of Egypt and Syria!"
+            "وأنا الملك الظاهر ركن الدين بيبرس البندقداري (بيبرس) سلطان مصر والشام!»!",
+            "I am Al-Malik al-Zahir Rukn al-Din Baybars al-Bunduqdari (Baybars), Sultan of Egypt and Syria!"
         );
-        this.setIntroNameTranslation("السلطان بيبرس", "Sultan Baybars");
+        this.setIntroNameTranslation("السلطان الملك الظاهر ركن الدين بيبرس البندقداري", "Sultan Al-Malik al-Zahir Rukn al-Din Baybars al-Bunduqdari");
         this.setTauntSet({
             highHealth: [
                 "The Mamluk sultanate bows to no one.",
@@ -129,7 +129,8 @@ export class Baybars extends Boss {
             ],
             bossDeath: [
                 "My sultanate… endures beyond me.",
-                "The Mamluks will avenge me."
+                "The Mamluks will avenge me.",
+                "I have a long ass name."
             ]
         });
     }
