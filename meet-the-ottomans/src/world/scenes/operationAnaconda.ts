@@ -392,7 +392,7 @@ export async function operationAnacondaScene(
     const spawnX = (bounds.minX + bounds.maxX) * 0.5;
     const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
     const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, "ground");
-    const surfaceY = seededGroundY ?? bounds.maxY;
+    const surfaceY = seededGroundY ?? bounds.minY;
       const spawnY = surfaceY + spawnSurfaceOffset;
       player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
       respawnPosition = player.getPosition().clone();

@@ -164,9 +164,10 @@ export class Christ extends Boss {
             return;
         }
 
-        if (this.holyRayState || this.holySpireState || this.divineLightState) {
-            return;
-        }
+	if (this.holyRayState || this.holySpireState || this.divineLightState) {
+			this.faceTarget(targetEntity, clampedDeltaTime);
+			return;
+		}
 
         const profile = profileOverride ?? this.getCombatProfile();
         const bossPos = this.getEntity().getPosition();
@@ -185,10 +186,11 @@ export class Christ extends Boss {
             return;
         }
 
-        const chosenAttack = this.pickNextAttack(distance, currentTimeSeconds);
-        if (!chosenAttack) {
-            return;
-        }
+	const chosenAttack = this.pickNextAttack(distance, currentTimeSeconds);
+		if (!chosenAttack) {
+			this.moveToward(dx, dz, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+			return;
+		}
 
         this.lastAttackType = chosenAttack;
         this.lastAttackAtSeconds = currentTimeSeconds;
@@ -456,7 +458,13 @@ export class Christ extends Boss {
         requestAnimationFrame(animate);
     }
 
-    private applyDamage(damage: number): void {
+	private faceTarget(targetEntity: Entity, deltaTime: number): void {
+		const myPos = this.getEntity().getPosition();
+		const targetPos = targetEntity.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, deltaTime);
+	}
+
+	private applyDamage(damage: number): void {
         this.onPlayerAttack?.(this, damage);
     }
 
