@@ -101,12 +101,13 @@ import {
 		return Number.isFinite(firstHit.point.y) ? firstHit.point.y : undefined;
 	}
 
-	function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number } | undefined {
-		let minX = Number.POSITIVE_INFINITY;
-		let maxX = Number.NEGATIVE_INFINITY;
-		let minZ = Number.POSITIVE_INFINITY;
-		let maxZ = Number.NEGATIVE_INFINITY;
-		let maxY = Number.NEGATIVE_INFINITY;
+function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number } | undefined {
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minZ = Number.POSITIVE_INFINITY;
+  let maxZ = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
 		let found = false;
 
 		const visit = (node: Entity) => {
@@ -117,12 +118,13 @@ import {
 					if (!aabb) continue;
 					const min = aabb.getMin();
 					const max = aabb.getMax();
-					if (!Number.isFinite(min.x) || !Number.isFinite(min.z) || !Number.isFinite(max.x) || !Number.isFinite(max.y) || !Number.isFinite(max.z)) continue;
-					minX = Math.min(minX, min.x);
-					maxX = Math.max(maxX, max.x);
-					minZ = Math.min(minZ, min.z);
-					maxZ = Math.max(maxZ, max.z);
-					maxY = Math.max(maxY, max.y);
+if (!Number.isFinite(min.x) || !Number.isFinite(min.y) || !Number.isFinite(min.z) || !Number.isFinite(max.x) || !Number.isFinite(max.y) || !Number.isFinite(max.z)) continue;
+  minX = Math.min(minX, min.x);
+  maxX = Math.max(maxX, max.x);
+  minZ = Math.min(minZ, min.z);
+  maxZ = Math.max(maxZ, max.z);
+  minY = Math.min(minY, min.y);
+  maxY = Math.max(maxY, max.y);
 					found = true;
 				}
 			}
@@ -131,7 +133,7 @@ import {
 
 		visit(entity);
 		if (!found) return undefined;
-		return { minX, maxX, minZ, maxZ, maxY };
+		return { minX, maxX, minZ, maxZ, minY, maxY };
 	}
 
 	export function createStarfieldTexture(device: AppBase['graphicsDevice'], width = 1024, height = 512): Texture {

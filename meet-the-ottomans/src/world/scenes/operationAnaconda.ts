@@ -120,12 +120,13 @@ function getHighestGroundHitY(
 function getRenderableBounds(
   entity: Entity,
 ):
-  | { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number }
+  | { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number }
   | undefined {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let minZ = Number.POSITIVE_INFINITY;
   let maxZ = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
   let found = false;
   const visit = (node: Entity) => {
@@ -138,6 +139,7 @@ function getRenderableBounds(
         const max = aabb.getMax();
         if (
           !Number.isFinite(min.x) ||
+          !Number.isFinite(min.y) ||
           !Number.isFinite(min.z) ||
           !Number.isFinite(max.x) ||
           !Number.isFinite(max.y) ||
@@ -148,6 +150,7 @@ function getRenderableBounds(
         maxX = Math.max(maxX, max.x);
         minZ = Math.min(minZ, min.z);
         maxZ = Math.max(maxZ, max.z);
+        minY = Math.min(minY, min.y);
         maxY = Math.max(maxY, max.y);
         found = true;
       }
@@ -156,7 +159,7 @@ function getRenderableBounds(
   };
   visit(entity);
   if (!found) return undefined;
-  return { minX, maxX, minZ, maxZ, maxY };
+  return { minX, maxX, minZ, maxZ, minY, maxY };
 }
 
 function createStarfieldTexture(
@@ -384,11 +387,12 @@ export async function operationAnacondaScene(
     let spawnResolved = false;
     const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;
     const bounds = getRenderableBounds(ground.modelEntity);
-    if (bounds) {
-      const spawnX = (bounds.minX + bounds.maxX) * 0.5;
-      const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
-      const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, "ground");
-      const surfaceY = seededGroundY ?? bounds.maxY;
+  if (bounds) {
+    cameraController?.setMovementBounds(bounds, 2.5);
+    const spawnX = (bounds.minX + bounds.maxX) * 0.5;
+    const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
+    const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, "ground");
+    const surfaceY = seededGroundY ?? bounds.maxY;
       const spawnY = surfaceY + spawnSurfaceOffset;
       player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
       respawnPosition = player.getPosition().clone();

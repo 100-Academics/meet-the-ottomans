@@ -30,10 +30,29 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
+import {
+  createBattleHUD,
+  removeBattleHUD,
+  updateBattleHUD,
+} from "../../util/battleHUD";
+import { isDeathScreenVisible } from "./deathScreen";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
+import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { Boss } from "../npc/bosses/boss";
+import {
+  DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+  DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
+  ABIREY_HALEV_BOSS_SPAWN_POINT,
+  ABIREY_HALEV_NPC_SPAWN_POINTS,
+} from "../npc/sceneNpcPresets";
+import { npc } from "../npc/npc";
+import { changeScene } from "../../App";
 
 const groundModelPath = "/world/battlefields/Suez.glb";
+
+var isBossSpawned = false;
+var isBossSpawning = false;
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
   let current: Entity | null = entity;
@@ -92,12 +111,13 @@ function getHighestGroundHitY(
 function getRenderableBounds(
   entity: Entity,
 ):
-  | { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number }
+  | { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number }
   | undefined {
   let minX = Number.POSITIVE_INFINITY;
   let maxX = Number.NEGATIVE_INFINITY;
   let minZ = Number.POSITIVE_INFINITY;
   let maxZ = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
   let maxY = Number.NEGATIVE_INFINITY;
   let found = false;
   const visit = (node: Entity) => {
@@ -109,18 +129,20 @@ function getRenderableBounds(
         const min = aabb.getMin();
         const max = aabb.getMax();
         if (
-          !Number.isFinite(min.x) ||
-          !Number.isFinite(min.z) ||
-          !Number.isFinite(max.x) ||
-          !Number.isFinite(max.y) ||
-          !Number.isFinite(max.z)
-        )
-          continue;
-        minX = Math.min(minX, min.x);
-        maxX = Math.max(maxX, max.x);
-        minZ = Math.min(minZ, min.z);
-        maxZ = Math.max(maxZ, max.z);
-        maxY = Math.max(maxY, max.y);
+        !Number.isFinite(min.x) ||
+        !Number.isFinite(min.y) ||
+        !Number.isFinite(min.z) ||
+        !Number.isFinite(max.x) ||
+        !Number.isFinite(max.y) ||
+        !Number.isFinite(max.z)
+      )
+      continue;
+      minX = Math.min(minX, min.x);
+      maxX = Math.max(maxX, max.x);
+      minZ = Math.min(minZ, min.z);
+      maxZ = Math.max(maxZ, max.z);
+      minY = Math.min(minY, min.y);
+      maxY = Math.max(maxY, max.y);
         found = true;
       }
     }
@@ -128,7 +150,7 @@ function getRenderableBounds(
   };
   visit(entity);
   if (!found) return undefined;
-  return { minX, maxX, minZ, maxZ, maxY };
+  return { minX, maxX, minZ, maxZ, minY, maxY };
 }
 
 function createStarfieldTexture(
@@ -419,93 +441,114 @@ export async function operationAbireyHalevScene(
         "[Spawn] No valid ground-tagged spawn hit found; keeping default camera position",
       );
     }
-  } catch (error) {
-    console.error("[Ground] model load failed", error);
-  }
-  const previewAnchor = respawnPosition.clone();
-  const previewModels = [
-    {
-      name: "americanRevolutionist",
-      path: "models/npc/americanRevolutionist.glb",
-      offset: new Vec3(12, 0, 0),
-      rotation: new Vec3(-90, 0, 0),
-      scale: new Vec3(2, 2, 2),
-      heightOffset: 2,
-    },
-    {
-      name: "GermanLookingSoldier",
-      path: "/workspaces/meet-the-ottomans/meet-the-ottomans/src/assets/models/npc/boss/litteraryNoClueWhoThisDudeIsButHeLooksLikeAFrenchGeneral.glb",
-      offset: new Vec3(8, 0, 8),
-      rotation: new Vec3(-90, 0, 0),
-      scale: new Vec3(2, 2, 2),
-      heightOffset: 2,
-    },
-    {
-      name: "caeser",
-      path: "models/npc/boss/caeser.glb",
-      offset: new Vec3(-12, 0, 0),
-      rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(2, 2, 2),
-      heightOffset: 2,
-    },
-    {
-      name: "CainAndAbel",
-      path: "models/npc/boss/CainOrAbel.glb",
-      offset: new Vec3(-8, 0, -8),
-      rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(2, 2, 2),
-      heightOffset: 2,
-    },
-    {
-      name: "probablyASultan",
-      path: "models/npc/boss/probablyASultan.glb",
-      offset: new Vec3(0, 0, -12),
-      rotation: new Vec3(0, 0, 0),
-      scale: new Vec3(2, 2, 2),
-      heightOffset: 2,
-    },
-  ];
-  await Promise.all(
-    previewModels.map(async (model) => {
-      const worldX = previewAnchor.x + model.offset.x;
-      const worldZ = previewAnchor.z + model.offset.z;
-      const groundY =
-        getHighestGroundHitY(app, worldX, worldZ, "ground") ??
-        respawnGroundY;
-      const worldY = (Number.isFinite(groundY) ? groundY : 0) +
-        model.heightOffset;
-      try {
-        const preview = await loadModel(model.path, app, {
-          position: new Vec3(worldX, worldY, worldZ),
-          rotation: model.rotation,
-          scale: model.scale,
-          rigidbodyType: "static",
-          autoCollision: false,
-        });
-        preview.modelEntity.name = `preview-${model.name}`;
-      } catch (error) {
-        console.error(`[Preview] Failed to load ${model.name}`, error);
-      }
-    }),
-  );
-  const rigidbodySystem = (app.systems as any).rigidbody;
-  if (rigidbodySystem && typeof rigidbodySystem.on === "function") {
-    rigidbodySystem.on("contact", (contactResult: any) => {
-      const posA = contactResult?.entityA?.getPosition?.();
-      const posB = contactResult?.entityB?.getPosition?.();
-      const nameA = contactResult?.entityA?.name ?? "?";
-      const nameB = contactResult?.entityB?.name ?? "?";
-      const contactPos = posA ?? posB;
-      console.log(
-        `[Collision Contact] "${nameA}" <-> "${nameB}" at (${contactPos?.x?.toFixed(2) ?? "?"}, ${contactPos?.y?.toFixed(2) ?? "?"}, ${contactPos?.z?.toFixed(2) ?? "?"})`,
-      );
-    });
-  } else {
-    console.warn(
-      "[Collision] rigidbody system not available — contact logging disabled",
+} catch (error) {
+  console.error("[Ground] model load failed", error);
+}
+const rigidbodySystem = (app.systems as any).rigidbody;
+if (rigidbodySystem && typeof rigidbodySystem.on === "function") {
+  rigidbodySystem.on("contact", (contactResult: any) => {
+    const posA = contactResult?.entityA?.getPosition?.();
+    const posB = contactResult?.entityB?.getPosition?.();
+    const nameA = contactResult?.entityA?.name ?? "?";
+    const nameB = contactResult?.entityB?.name ?? "?";
+    const contactPos = posA ?? posB;
+    console.log(
+      `[Collision Contact] "${nameA}" <-> "${nameB}" at (${contactPos?.x?.toFixed(2) ?? "?"}, ${contactPos?.y?.toFixed(2) ?? "?"}, ${contactPos?.z?.toFixed(2) ?? "?"})`,
     );
-  }
-  app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
+  });
+} else {
+  console.warn(
+    "[Collision] rigidbody system not available — contact logging disabled",
+  );
+}
+const npcSpawnOptions = {
+    ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+    groundYFallback: respawnGroundY,
+  };
+  const npcs = await spawnSceneNpcs(
+    app,
+    rigidbodySystem,
+    ABIREY_HALEV_NPC_SPAWN_POINTS,
+    npcSpawnOptions,
+  );
+  createBattleHUD();
+  updateBattleHUD(player);
+  app.mouse?.on(
+    "mousedown",
+    (event: { x: number; y: number; button: number }) => {
+      if (isDeathScreenVisible()) return;
+      if (event.button !== 0) return;
+      const hitNpc = cameraController?.getClickedNpcInRange(
+        event.x,
+        event.y,
+        npcs,
+        player.getAttackRange(),
+      );
+      player.attack(hitNpc ?? null);
+      updateBattleHUD(player);
+      if (hitNpc) {
+        console.log(`Hit NPC`);
+        try {
+          if ((hitNpc as any) instanceof Boss) {
+            (hitNpc as unknown as Boss).updateHealthBar();
+          }
+        } catch (e) {}
+      }
+    },
+  );
+  bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
+    updateKey: "__abireyHalevNpcUpdate",
+    getPlayerHealth: () => ({
+      current: player.getHealth(),
+      max: player.getDebugState().maxHealth,
+    }),
+    battleStatus: {
+      getCameraEntity: () => player.getCameraEntity(),
+      initialTotal:
+        ABIREY_HALEV_NPC_SPAWN_POINTS.length +
+        ABIREY_HALEV_BOSS_SPAWN_POINT.length,
+      onRemainingCountChange: (remaining) =>
+        updateBattleHUD(player, remaining),
+    },
+    onNpcAttack: (attacker, target, damage) => {
+      target.takeDamage(damage);
+      try {
+        if ((target as any) instanceof Boss) {
+          (target as unknown as Boss).updateHealthBar();
+        }
+      } catch (e) {}
+      console.log(
+        `NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`,
+      );
+    },
+    onPlayerAttack: (attacker, damage) => {
+      player.takeDamage(damage);
+      updateBattleHUD(player);
+      console.log(
+        `Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`,
+      );
+    },
+  });
+  let victoryHandled = false;
+  const victoryCheck = () => {
+    if (isDeathScreenVisible()) return;
+    if (victoryHandled) return;
+    const remainingFoes = npcs.filter(
+      (currentNpc) =>
+        currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
+    );
+    if (remainingFoes.length === 0 && isBossSpawned) {
+      victoryHandled = true;
+      removeBattleHUD();
+      changeScene(canvas, app, 777);
+    } else if (remainingFoes.length === 0 && !isBossSpawned) {
+      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
+        console.error(err),
+      );
+    }
+  };
+app.on("update", victoryCheck);
+app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
   if (app.systems.light) {
     const light = new Entity("directional-light");
     light.addComponent("light", {
@@ -516,5 +559,39 @@ export async function operationAbireyHalevScene(
     });
     light.setLocalEulerAngles(45, 30, 0);
     app.root.addChild(light);
+  }
+}
+
+async function spawnBoss(
+  app: AppBase,
+  rigidbodySystem: any,
+  npcs: npc[],
+  groundYFallback: number,
+): Promise<void> {
+  if (isBossSpawned || isBossSpawning) return;
+  isBossSpawning = true;
+  try {
+    const bossSpawnOptions = {
+      ...DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
+      groundYFallback,
+    };
+    const spawned = await spawnSceneNpcs(
+      app,
+      rigidbodySystem,
+      ABIREY_HALEV_BOSS_SPAWN_POINT,
+      bossSpawnOptions,
+    );
+    for (const s of spawned) {
+      npcs.push(s);
+      if (s instanceof Boss) {
+        s.drawHealthBar();
+        Boss.setActiveBoss(s);
+      }
+    }
+    isBossSpawned = true;
+  } catch (err) {
+    console.error("Failed to spawn boss:", err);
+  } finally {
+    isBossSpawning = false;
   }
 }

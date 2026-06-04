@@ -364,7 +364,7 @@ export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe
 export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: -12, type: "templar" },
 ];
-export const CONSTANTINOPLE_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 12, z: 0, maxHealth: 500, type: "christ" }];
+export const CONSTANTINOPLE_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: -178, z: 77, maxHealth: 500, type: "christ" }];
 
 // Orléans
 export const ORLEANS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
