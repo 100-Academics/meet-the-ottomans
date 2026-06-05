@@ -1,56 +1,57 @@
 import {
-  AppBase,
-  Entity,
-  Color,
-  Vec3,
-  Mouse,
-  Keyboard,
-  TouchDevice,
-  createGraphicsDevice,
-  AppOptions,
-  RenderComponentSystem,
-  CameraComponentSystem,
-  ScriptComponentSystem,
-  LightComponentSystem,
-  CollisionComponentSystem,
-  RigidBodyComponentSystem,
-  TextureHandler,
-  ContainerHandler,
-  Asset,
-  AssetListLoader,
-  TEXTURETYPE_RGBP,
-  Texture,
-  StandardMaterial,
-  MeshInstance,
-  FILLMODE_FILL_WINDOW,
-  RESOLUTION_AUTO,
-  KEY_1,
-  KEY_2,
-  createSphere,
-  CULLFACE_FRONT,
+AppBase,
+Entity,
+Color,
+Vec3,
+Mouse,
+Keyboard,
+TouchDevice,
+createGraphicsDevice,
+AppOptions,
+RenderComponentSystem,
+CameraComponentSystem,
+ScriptComponentSystem,
+LightComponentSystem,
+CollisionComponentSystem,
+RigidBodyComponentSystem,
+TextureHandler,
+ContainerHandler,
+Asset,
+AssetListLoader,
+TEXTURETYPE_RGBP,
+Texture,
+StandardMaterial,
+MeshInstance,
+FILLMODE_FILL_WINDOW,
+RESOLUTION_AUTO,
+KEY_1,
+KEY_2,
+createSphere,
+CULLFACE_FRONT,
 } from "playcanvas";
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
 import {
-  createBattleHUD,
-  removeBattleHUD,
-  updateBattleHUD,
+createBattleHUD,
+removeBattleHUD,
+updateBattleHUD,
 } from "../../util/battleHUD";
 import { isDeathScreenVisible } from "./deathScreen";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
-import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
+import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import {
-  DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
-  DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS,
-  ANACONDA_BOSS_SPAWN_POINT,
-  ANACONDA_NPC_SPAWN_POINTS,
+DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS,
+ANACONDA_BOSS_SPAWN_POINT,
+ANACONDA_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
+import { Smoke } from "../doSmoke";
 
 const groundModelPath = "/world/battlefields/Shahikot.glb";
 
@@ -172,10 +173,10 @@ function createStarfieldTexture(
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx)
-    return new Texture(device!, {
-      mipmaps: true,
-      name: "anaconda-starfield-fallback",
-    });
+return new Texture(device!, {
+mipmaps: true,
+name: "anaconda-night-sky-fallback",
+});
   const baseGradient = ctx.createLinearGradient(0, 0, width, height);
   baseGradient.addColorStop(0, "#000000");
   baseGradient.addColorStop(0.5, "#04040b");
@@ -242,10 +243,10 @@ function createStarfieldTexture(
     ctx.arc(x, y, 6, 0, Math.PI * 2);
     ctx.fill();
   }
-  const texture = new Texture(device!, {
-    mipmaps: true,
-    name: "anaconda-starfield",
-  });
+const texture = new Texture(device!, {
+mipmaps: true,
+name: "anaconda-night-sky",
+});
   texture.setSource(canvas);
   return texture;
 }
