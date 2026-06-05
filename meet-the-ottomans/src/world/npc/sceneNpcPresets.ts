@@ -499,7 +499,7 @@ export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "
 
 // Anaconda
 export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+{ id: 1, team: "foe", x: 6, z: 1, type: "huntingrifledude" },
 ];
 export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "binLadin" }];
 

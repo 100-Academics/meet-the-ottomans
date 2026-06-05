@@ -32,7 +32,7 @@ public/models/npc/boss/.tower_00001_extracted.json
 *.sln
 *.sw?
 
-agents.md
+AGENTS.md
 claude.md
 node_modules/
 notesToSelf.md
