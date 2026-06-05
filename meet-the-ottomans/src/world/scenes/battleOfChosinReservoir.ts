@@ -33,6 +33,7 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
+import { waitForAmmoReady } from "../../util/spawnHelpers";
 import {
   createBattleHUD,
   removeBattleHUD,
@@ -80,12 +81,17 @@ function getHighestGroundHitY(
   x: number,
   z: number,
   groundTag: string,
+  terrainBounds?: { minY: number; maxY: number },
 ): number | undefined {
   const rigidbodySystem = (app.systems as any).rigidbody as any;
   if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function")
     return undefined;
-  const start = new Vec3(x, 500, z);
-  const end = new Vec3(x, -500, z);
+
+  // Use terrain bounds to determine the ray range, falling back to ±300
+  const rayRange = terrainBounds ? (terrainBounds.maxY - terrainBounds.minY) : 600;
+  const rayCenter = terrainBounds ? (terrainBounds.maxY + terrainBounds.minY) * 0.5 : 0;
+  const start = new Vec3(x, rayCenter + rayRange * 0.5, z);
+  const end = new Vec3(x, rayCenter - rayRange * 0.5, z);
   if (typeof rigidbodySystem.raycastAll === "function") {
     const hits = rigidbodySystem.raycastAll(start, end);
     if (hits && hits.length > 0) {
@@ -388,7 +394,10 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
     );
   }
 
-  await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  // Give Ammo.js time to register collision bodies. PlayCanvas adds rigidbody/collision
+  // components synchronously, but the underlying Ammo.js physics engine needs a render cycle
+  // to process them into its internal world. We poll for up to ~2 seconds.
+  await waitForAmmoReady(app, "ground");
 
   let spawnResolved = false;
     const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;
@@ -397,37 +406,60 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
     cameraController?.setMovementBounds(bounds, 2.5);
     const spawnX = (bounds.minX + bounds.maxX) * 0.5;
     const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
-    const offsets = [[0,0],[8,0],[-8,0],[0,8],[0,-8],[8,8],[-8,-8],[8,-8],[-8,8]];
+    // Search multiple nearby points for the highest valid ground hit
     let seededGroundY: number | undefined;
-    let chosenSpawnX = spawnX;
-    let chosenSpawnZ = spawnZ;
-    for (const [ox, oz] of offsets) {
-      const tx = spawnX + ox;
-      const tz = spawnZ + oz;
-      const y = getHighestGroundHitY(app, tx, tz, "ground");
-      if (y !== undefined) {
-        seededGroundY = y;
-        chosenSpawnX = tx;
-        chosenSpawnZ = tz;
-        break;
+    const searchRadius = 16;
+    const searchStep = 8;
+    for (
+      let ox = -searchRadius;
+      ox <= searchRadius;
+      ox += searchStep
+    ) {
+      for (
+        let oz = -searchRadius;
+        oz <= searchRadius;
+        oz += searchStep
+      ) {
+        const hitY = getHighestGroundHitY(
+          app,
+          spawnX + ox,
+          spawnZ + oz,
+          "ground",
+          bounds,
+        );
+        if (hitY !== undefined && (seededGroundY === undefined || hitY > seededGroundY)) {
+          seededGroundY = hitY;
+        }
       }
     }
+
+    let surfaceY: number;
     if (seededGroundY !== undefined) {
-      const surfaceY = seededGroundY;
-      const spawnY = surfaceY + spawnSurfaceOffset;
-      player.setPosition(new Vec3(chosenSpawnX, spawnY, chosenSpawnZ));
-      respawnPosition = player.getPosition().clone();
-      respawnGroundY = surfaceY;
-      if (cameraController) cameraController.groundHeight = surfaceY;
-      spawnResolved = true;
-      console.log(
-        `[Spawn] camera placed on terrain surface at (${chosenSpawnX.toFixed(2)}, ${spawnY.toFixed(2)}, ${chosenSpawnZ.toFixed(2)}), surfaceY ${surfaceY.toFixed(2)}, seededRayY ${seededGroundY.toFixed(2)}`,
+      surfaceY = seededGroundY;
+    } else if (bounds) {
+      // Raycast failed everywhere — use terrain center estimate instead of the peak.
+      const terrainHeightRange = bounds.maxY - bounds.minY;
+      surfaceY = bounds.minY + terrainHeightRange * 0.75;
+      console.warn(
+        `[Spawn] Ground raycast failed everywhere; using terrain estimate surfaceY=${surfaceY.toFixed(2)} (bounds minY=${bounds.minY.toFixed(2)}, maxY=${bounds.maxY.toFixed(2)})`,
       );
+    } else {
+      surfaceY = 0;
     }
-    }
+    const spawnY = surfaceY + spawnSurfaceOffset;
+    player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
+    respawnPosition = player.getPosition().clone();
+    respawnGroundY = surfaceY;
+    if (cameraController) cameraController.groundHeight = surfaceY;
+    spawnResolved = true;
+    console.log(
+      `[Spawn] camera placed on terrain surface at (${spawnX.toFixed(2)}, ${spawnY.toFixed(2)}, ${spawnZ.toFixed(2)}), surfaceY ${surfaceY.toFixed(2)}, seededRayY ${seededGroundY?.toFixed(2) ?? "n/a"}`,
+    );
+  }
+
   if (!spawnResolved) {
     const spawnCandidates: Vec3[] = [];
-    const spawnSearchRadius = 48;
+    const spawnSearchRadius = 24;
     const spawnSearchStep = 8;
     for (
       let x = -spawnSearchRadius;
@@ -439,7 +471,6 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
         z <= spawnSearchRadius;
         z += spawnSearchStep
       ) {
-        if (x === 0 && z === 0) continue;
         spawnCandidates.push(new Vec3(x, 0, z));
       }
     }
@@ -453,7 +484,7 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
         "ground",
       );
       if (hitY === undefined) continue;
-      if (bestSpawnGroundY === undefined || hitY < bestSpawnGroundY) {
+      if (bestSpawnGroundY === undefined || hitY > bestSpawnGroundY) {
         bestSpawnGroundY = hitY;
         bestSpawnCandidate = candidate;
       }
@@ -512,8 +543,6 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
   const npcSpawnOptions = {
     ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
     groundYFallback: respawnGroundY,
-    groundProbeHeight: 500,
-    groundProbeDepth: 500,
   };
   const npcs = await spawnSceneNpcs(
     app,
@@ -563,8 +592,6 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
   );
 bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
   updateKey: "__chosinNpcUpdate",
-  groundProbeHeight: 500,
-  groundProbeDepth: 500,
   getPlayerHealth: () => ({
       current: player.getHealth(),
       max: player.getDebugState().maxHealth,
@@ -627,8 +654,6 @@ async function spawnBoss(
     const bossSpawnOptions = {
       ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
       groundYFallback,
-      groundProbeHeight: 500,
-      groundProbeDepth: 500,
     };
     const spawned = await spawnSceneNpcs(
       app,
