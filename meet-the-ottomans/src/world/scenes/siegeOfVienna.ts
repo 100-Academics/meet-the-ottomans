@@ -41,7 +41,7 @@ import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
-import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, LEGNICA_BOSS_SPAWN_POINT, LEGNICA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
+import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, VIENNA_BOSS_SPAWN_POINT, VIENNA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
@@ -96,8 +96,8 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
 	}
 
 	// Define the ray: starting from high above and going downward to find ground
-	const start = new Vec3(x, 300, z);
-	const end = new Vec3(x, -300, z);
+const start = new Vec3(x, 500, z);
+  const end = new Vec3(x, -500, z);
 
 	// Try to get all collision hits along the ray (more reliable than just the first hit)
 	if (typeof rigidbodySystem.raycastAll === 'function') {
@@ -169,11 +169,13 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
 	isBossSpawning = true;
 
 	try {
-		const bossSpawnOptions = {
-			...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
-			groundYFallback
-		};
-		const spawned = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_BOSS_SPAWN_POINT, bossSpawnOptions);
+const bossSpawnOptions = {
+      ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+      groundYFallback,
+      groundProbeHeight: 500,
+      groundProbeDepth: 500
+    };
+		const spawned = await spawnSceneNpcs(app, rigidbodySystem, VIENNA_BOSS_SPAWN_POINT, bossSpawnOptions);
 		for (const s of spawned) {
 			npcs.push(s);
 			if (s instanceof Boss) {
@@ -528,12 +530,14 @@ export async function siegeOfViennaScene(
 			ammoRuntime: (globalThis as any).__ammoRuntime
 		});
 
-		// Warn if collision wasn't set up properly (raycasting won't work then)
-		if (!groundRb && !groundCol && childColliders.length === 0) {
-			console.error('[Ground] NO collision/rigidbody detected — raycasting will fail!');
-		}
+// Warn if collision wasn't set up properly (raycasting won't work then)
+  if (!groundRb && !groundCol && childColliders.length === 0) {
+    console.error('[Ground] NO collision/rigidbody detected — raycasting will fail!');
+  }
 
-		// Try to spawn the player on top of the ground
+  await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+
+  // Try to spawn the player on top of the ground
 		let spawnResolved = false;
 		const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;  // Slightly above ground
 		const bounds = getRenderableBounds(ground.modelEntity);
@@ -543,28 +547,29 @@ export async function siegeOfViennaScene(
       cameraController?.setMovementBounds(bounds, 2.5);
       const spawnX = (bounds.minX + bounds.maxX) * 0.5;
       const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
-      const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
-      const surfaceY = seededGroundY ?? bounds.minY;
-			const spawnY = surfaceY + spawnSurfaceOffset;
-			player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
-			respawnPosition = player.getPosition().clone();
-			respawnGroundY = surfaceY;
+const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
+    if (seededGroundY !== undefined) {
+      const surfaceY = seededGroundY;
+      const spawnY = surfaceY + spawnSurfaceOffset;
+      player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
+      respawnPosition = player.getPosition().clone();
+      respawnGroundY = surfaceY;
 
-			// Tell the camera controller where the ground is for gravity calculations
-			if (cameraController) {
-				cameraController.groundHeight = surfaceY;
-			}
-			spawnResolved = true;
-			console.log(
-				`[Spawn] camera placed on terrain surface at (${spawnX.toFixed(2)}, ${spawnY.toFixed(2)}, ${spawnZ.toFixed(2)}), surfaceY ${surfaceY.toFixed(2)}, seededRayY ${seededGroundY?.toFixed(2) ?? "n/a"}`
-			);
+      if (cameraController) {
+        cameraController.groundHeight = surfaceY;
+      }
+      spawnResolved = true;
+      console.log(
+        `[Spawn] camera placed on terrain surface at (${spawnX.toFixed(2)}, ${spawnY.toFixed(2)}, ${spawnZ.toFixed(2)}), surfaceY ${surfaceY.toFixed(2)}, seededRayY ${seededGroundY.toFixed(2)}`
+      );
+    }
 		}
 
 		// If center spawn didn't work, search nearby positions for a valid ground hit
 		if (!spawnResolved) {
 			const spawnCandidates: Vec3[] = [];
-			const spawnSearchRadius = 24;
-			const spawnSearchStep = 8;
+const spawnSearchRadius = 48;
+  const spawnSearchStep = 8;
 			// Create a grid of candidate positions around the center
 			for (let x = -spawnSearchRadius; x <= spawnSearchRadius; x += spawnSearchStep) {
 				for (let z = -spawnSearchRadius; z <= spawnSearchRadius; z += spawnSearchStep) {
@@ -649,11 +654,13 @@ export async function siegeOfViennaScene(
 		app.root.addChild(light);
 	}
 
-	const npcSpawnOptions = {
-		...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
-		groundYFallback: respawnGroundY
-	};
-	const npcs = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_NPC_SPAWN_POINTS, npcSpawnOptions);
+const npcSpawnOptions = {
+    ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
+    groundYFallback: respawnGroundY,
+    groundProbeHeight: 500,
+    groundProbeDepth: 500
+  };
+	const npcs = await spawnSceneNpcs(app, rigidbodySystem, VIENNA_NPC_SPAWN_POINTS, npcSpawnOptions);
 
 	// Create battle HUD to display weapon and health
 	createBattleHUD();
@@ -700,12 +707,14 @@ export async function siegeOfViennaScene(
 		}
 	});
 
-	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
-		updateKey: '__legnicaNpcUpdate',
-		getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
+bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
+  updateKey: '__viennaNpcUpdate',
+  groundProbeHeight: 500,
+  groundProbeDepth: 500,
+  getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
-			initialTotal: LEGNICA_NPC_SPAWN_POINTS.length + LEGNICA_BOSS_SPAWN_POINT.length,
+			initialTotal: VIENNA_NPC_SPAWN_POINTS.length + VIENNA_BOSS_SPAWN_POINT.length,
 			onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 		},
 		onNpcAttack: (attacker, target, damage) => {

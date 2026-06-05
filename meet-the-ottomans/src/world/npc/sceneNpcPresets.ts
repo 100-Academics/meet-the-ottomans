@@ -516,5 +516,11 @@ export const AGINCOURT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 // Change boss spawn type for Agincourt to William the Conquerer
 export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "williamTheConquerer" }];
 
+// Vienna
+export const VIENNA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+];
+export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+
 // Pavia
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];

@@ -61,8 +61,10 @@ export interface NpcSpawnOverrides {
 }
 
 export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
-    typeModelPaths?: Record<string, string>;
-    typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
+  typeModelPaths?: Record<string, string>;
+  typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
+  groundProbeHeight?: number;
+  groundProbeDepth?: number;
 }
 
 export interface NpcCombatLoopOptions {
@@ -268,10 +270,10 @@ export async function spawnSceneNpcs(
     const fallbackGroundY = options.groundYFallback;
     const typeModelPaths = options.typeModelPaths ?? {};
     const typeSpawnOverrides = options.typeSpawnOverrides ?? {};
-    const groundTag = "ground";
-    const groundProbeHeight = 300;
-    const groundProbeDepth = 300;
-    const defaultGroundClearance = 0.1;
+const groundTag = "ground";
+  const groundProbeHeight = options.groundProbeHeight ?? 300;
+  const groundProbeDepth = options.groundProbeDepth ?? 300;
+  const defaultGroundClearance = 0.1;
 
     const npcs: npc[] = [];
 
