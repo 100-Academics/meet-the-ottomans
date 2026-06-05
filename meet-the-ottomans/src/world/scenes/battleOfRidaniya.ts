@@ -31,7 +31,8 @@ import {
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
-import { loadModel } from '../../util/loadModel';
+import { loadModel } from '../../util/loadModel'
+import { waitForAmmoReady } from "../../util/spawnHelpers";
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
 import { isDeathScreenVisible } from './deathScreen';
 
@@ -310,7 +311,9 @@ export async function battleOfRidaniyaScene(
 		});
 
 		ground.modelEntity.name = 'ground';
-		ground.modelEntity.tags.add('ground');
+		ground.modelEntity.tags.add('ground')
+// Give Ammo.js a frame to register collision meshes before raycasting.
+await waitForAmmoReady(app, "ground");
 
 		const groundRb = ground.modelEntity.rigidbody;
 		const groundCol = ground.modelEntity.collision;
@@ -342,7 +345,18 @@ export async function battleOfRidaniyaScene(
 			const spawnX = (bounds.minX + bounds.maxX) * 0.5;
 			const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
 			const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
-			const surfaceY = seededGroundY ?? bounds.maxY;
+			let surfaceY: number;
+			if (seededGroundY !== undefined) {
+				surfaceY = seededGroundY;
+			} else if (bounds) {
+				const terrainHeightRange = bounds.maxY - bounds.minY;
+				surfaceY = bounds.minY + terrainHeightRange * 0.75;
+				console.warn(
+					`[Spawn] Ground raycast failed at center (${spawnX.toFixed(2)}, ${spawnZ.toFixed(2)}); using terrain estimate surfaceY=${surfaceY.toFixed(2)} (bounds minY=${bounds.minY.toFixed(2)}, maxY=${bounds.maxY.toFixed(2)})`,
+				);
+			} else {
+				surfaceY = 0;
+			}
 			const spawnY = surfaceY + spawnSurfaceOffset;
 			player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
 			respawnPosition = player.getPosition().clone();

@@ -26,7 +26,8 @@ import {
 	RESOLUTION_AUTO,
 	KEY_1,
 	KEY_2,
-	createSphere,
+	Mesh,
+	SphereGeometry,
 	CULLFACE_FRONT,
 } from "playcanvas";
 
@@ -132,11 +133,11 @@ function addNightSkyDome(app: AppBase, cameraEntity: Entity): void {
 	skyMaterial.update();
 
 	const skyDome = new Entity('constantinople-night-sky-dome');
-	const skyMesh = createSphere(app.graphicsDevice, {
+	const skyMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
 		radius: 260,
 		latitudeBands: 64,
 		longitudeBands: 64
-	});
+	}));
 	skyDome.addComponent('render', {
 		meshInstances: [new MeshInstance(skyMesh, skyMaterial)]
 	});

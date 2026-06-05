@@ -24,7 +24,8 @@ import {
   MeshInstance,
   FILLMODE_FILL_WINDOW,
   RESOLUTION_AUTO,
-  createSphere,
+  Mesh,
+  SphereGeometry,
   CULLFACE_FRONT,
 } from "playcanvas";
 
@@ -330,11 +331,11 @@ export async function operationAbireyHalevScene(
   starMaterial.cull = CULLFACE_FRONT;
   starMaterial.update();
   const starDome = new Entity("abirey-star-dome");
-  const starMesh = createSphere(app.graphicsDevice, {
+  const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
     radius: 220,
     latitudeBands: 64,
     longitudeBands: 64,
-  });
+  }));
   starDome.addComponent("render", {
     meshInstances: [new MeshInstance(starMesh, starMaterial)],
   });

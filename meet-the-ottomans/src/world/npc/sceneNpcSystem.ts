@@ -118,6 +118,7 @@ function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
 function getGroundYAt(
     rigidbodySystem: RigidbodyRaycastSystem | undefined,
     x: number,
+    y: number,
     z: number,
     groundTag: string,
     probeHeight: number,
@@ -127,8 +128,9 @@ function getGroundYAt(
         return undefined;
     }
 
-    const rayStart = new Vec3(x, probeHeight, z);
-    const rayEnd = new Vec3(x, -probeDepth, z);
+    const rayStart = new Vec3(x, y + probeHeight, z);
+    const rayEnd = new Vec3(x, y - probeDepth, z);
+    console.log(`[GroundProbe] ray Y=${rayStart.y.toFixed(1)}→${rayEnd.y.toFixed(1)}, origin=(${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
 
     if (typeof rigidbodySystem.raycastAll === "function") {
         const hits = rigidbodySystem.raycastAll(rayStart, rayEnd);
@@ -173,6 +175,7 @@ function getGroundYAt(
 function getSpawnY(
     rigidbodySystem: RigidbodyRaycastSystem | undefined,
     x: number,
+    y: number,
     z: number,
     groundTag: string,
     probeHeight: number,
@@ -180,12 +183,14 @@ function getSpawnY(
     defaultGroundClearance: number,
     fallbackGroundY?: number
 ): number {
-    const groundY = getGroundYAt(rigidbodySystem, x, z, groundTag, probeHeight, probeDepth);
+    const groundY = getGroundYAt(rigidbodySystem, x, y, z, groundTag, probeHeight, probeDepth);
     if (groundY === undefined) {
         if (typeof fallbackGroundY === "number" && Number.isFinite(fallbackGroundY)) {
             return fallbackGroundY + defaultGroundClearance;
         }
-        return 0;
+        // Avoid spawning at an arbitrary Y=0 when we have no ground data.
+        // Use a small positive offset so entities don't clip into the terrain below.
+        return defaultGroundClearance;
     }
 
     return groundY + defaultGroundClearance;
@@ -200,6 +205,14 @@ function getEntityMinY(entity: Entity): number | undefined {
     let found = false;
 
     const visit = (node: Entity) => {
+        // Force the render component's bounding box to reflect the current transform/scale.
+        // Without this, meshInstance.aabb may hold stale bounds from before a scale change,
+        // which causes post-load alignment to miscalculate for scaled boss models.
+        const renderComp = node.render as { syncBoundingBox?: () => void } | undefined;
+        if (typeof renderComp?.syncBoundingBox === "function") {
+            renderComp.syncBoundingBox();
+        }
+
         const meshInstances = node.render?.meshInstances ?? (node as { model?: { meshInstances?: any[] } }).model?.meshInstances;
         if (meshInstances && meshInstances.length > 0) {
             for (const meshInstance of meshInstances) {
@@ -285,7 +298,10 @@ const groundTag = "ground";
                 ?? fallbackModelPath;
             const modelRotation = spawnOverrides?.modelRotation ?? fallbackModelRotation;
             const modelScale = spawnOverrides?.modelScale ?? fallbackModelScale;
-            const modelHeightOffset = spawnOverrides?.modelHeightOffset ?? fallbackModelHeightOffset;
+            // Scale the height offset by the model's Y-scale to account for stretched geometry.
+            // When a model is scaled up, its feet move further below the origin proportionally.
+            const scaleY = modelScale.y ?? 1;
+            const modelHeightOffset = (spawnOverrides?.modelHeightOffset ?? fallbackModelHeightOffset) * Math.max(1, scaleY);
             const facingYawOffsetDegrees = spawnOverrides?.facingYawOffsetDegrees ?? fallbackFacingYawOffsetDegrees;
             const hitboxRadius = spawnOverrides?.hitboxRadius ?? fallbackHitboxRadius;
             const groundYFallback = spawnOverrides?.groundYFallback ?? fallbackGroundY;
@@ -293,6 +309,7 @@ const groundTag = "ground";
             const npcSpawnY = getSpawnY(
                 rigidbodySystem,
                 spawn.x,
+                0,
                 spawn.z,
                 groundTag,
                 groundProbeHeight,
@@ -300,6 +317,7 @@ const groundTag = "ground";
                 defaultGroundClearance,
                 groundYFallback
             );
+            console.log(`[NPC] spawnY=${npcSpawnY.toFixed(2)} (groundProbeH=${groundProbeHeight}, depth=${groundProbeDepth}), fallback=${groundYFallback?.toFixed(2) ?? "n/a"}`);
 
             const npcModel = await loadNpcModelWithFallback(app, modelPath, {
                 rigidbodyType: "kinematic",
@@ -310,6 +328,7 @@ const groundTag = "ground";
             });
             npcModel.modelEntity.tags.add("npc");
             const modelMinY = getEntityMinY(npcModel.modelEntity);
+            console.log(`[NPC] modelMinY=${modelMinY?.toFixed(2) ?? "n/a"}, targetMinY=${(npcSpawnY + defaultGroundClearance).toFixed(2)}, scaleY=${scaleY}`);
             if (modelMinY !== undefined) {
                 const targetMinY = npcSpawnY + defaultGroundClearance;
                 const deltaY = targetMinY - modelMinY;
@@ -631,7 +650,7 @@ export function bindNpcCombatLoop(
     if (groundCollisionEnabled && rigidbodySystem) {
         for (const currentNpc of npcs) {
             const position = currentNpc.getEntity().getPosition();
-            const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
+            const groundY = getGroundYAt(rigidbodySystem, position.x, position.y, position.z, groundTag, groundProbeHeight, groundProbeDepth);
             if (groundY === undefined) {
                 npcGroundOffsets.set(currentNpc, defaultGroundClearance);
                 npcLastValidPositions.set(currentNpc, position.clone());
@@ -805,7 +824,7 @@ export function bindNpcCombatLoop(
                 for (const newNpc of newNpcs) {
                     if (groundCollisionEnabled && rigidbodySystem) {
                         const position = newNpc.getEntity().getPosition();
-                        const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
+                        const groundY = getGroundYAt(rigidbodySystem, position.x, position.y, position.z, groundTag, groundProbeHeight, groundProbeDepth);
                         npcGroundOffsets.set(newNpc, groundY !== undefined ? Math.max(defaultGroundClearance, position.y - groundY) : defaultGroundClearance);
                     }
                     npcs.push(newNpc);
@@ -822,7 +841,7 @@ export function bindNpcCombatLoop(
                 }
 
                 const position = currentNpc.getEntity().getPosition();
-                const groundY = getGroundYAt(rigidbodySystem, position.x, position.z, groundTag, groundProbeHeight, groundProbeDepth);
+                const groundY = getGroundYAt(rigidbodySystem, position.x, position.y, position.z, groundTag, groundProbeHeight, groundProbeDepth);
                 if (groundY === undefined) {
                     const fallbackPosition = npcLastValidPositions.get(currentNpc);
                     if (fallbackPosition) {

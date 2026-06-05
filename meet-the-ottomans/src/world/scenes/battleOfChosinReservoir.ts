@@ -26,7 +26,8 @@ import {
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
-  createSphere,
+  Mesh,
+  SphereGeometry,
   CULLFACE_FRONT,
 } from "playcanvas";
 
@@ -344,11 +345,11 @@ export async function battleOfChosinReservoirScene(
   starMaterial.cull = CULLFACE_FRONT;
   starMaterial.update();
   const starDome = new Entity("chosin-star-dome");
-  const starMesh = createSphere(app.graphicsDevice, {
+  const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
     radius: 220,
     latitudeBands: 64,
     longitudeBands: 64,
-  });
+  }));
   starDome.addComponent("render", {
     meshInstances: [new MeshInstance(starMesh, starMaterial)],
   });
@@ -403,7 +404,7 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
     for (const [ox, oz] of offsets) {
       const tx = spawnX + ox;
       const tz = spawnZ + oz;
-      const y = getLowestSolidGroundY(app, tx, tz, "ground", bounds);
+      const y = getHighestGroundHitY(app, tx, tz, "ground");
       if (y !== undefined) {
         seededGroundY = y;
         chosenSpawnX = tx;
@@ -445,12 +446,11 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
     let bestSpawnCandidate: Vec3 | undefined;
     let bestSpawnGroundY: number | undefined;
     for (const candidate of spawnCandidates) {
-      const hitY = getLowestSolidGroundY(
+      const hitY = getHighestGroundHitY(
         app,
         candidate.x,
         candidate.z,
         "ground",
-        undefined,
       );
       if (hitY === undefined) continue;
       if (bestSpawnGroundY === undefined || hitY < bestSpawnGroundY) {

@@ -256,7 +256,9 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
 // Shared battle options applied in scenes.
 export const DEFAULT_BATTLE_NPC_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
   typeModelPaths: NPC_TYPE_MODEL_PATHS,
-  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES,
+  groundProbeHeight: 5000,
+  groundProbeDepth: 5000
 };
 
 // Boss spawn options used by scenes that include the named boss.

@@ -3,7 +3,8 @@ import {
   BLEND_PREMULTIPLIED,
   Color,
   CULLFACE_NONE,
-  createSphere,
+  Mesh,
+  SphereGeometry,
   Entity,
   MeshInstance,
   StandardMaterial,
@@ -82,11 +83,11 @@ export class Smoke {
     smokeRoot.setPosition(this.position);
     this.app.root.addChild(smokeRoot);
 
-    const smokeMesh = createSphere(this.app.graphicsDevice!, {
+    const smokeMesh = Mesh.fromGeometry(this.app.graphicsDevice!, new SphereGeometry({
       radius: 1,
       latitudeBands: 4,
       longitudeBands: 4
-    });
+    }));
 
     const smokePuffs: SmokePuff[] = [];
 

@@ -26,7 +26,8 @@ import {
   Asset,
   AssetListLoader,
   TEXTURETYPE_RGBP,
-  createSphere,
+  Mesh,
+  SphereGeometry,
   EVENT_MOUSEDOWN,
   BLEND_ADDITIVE,
   CULLFACE_FRONT,
@@ -454,22 +455,22 @@ const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   // Create sphere entity (heightmap-ready sphere)
   const sphere = new Entity('heightmap-sphere');
   sphere.setPosition(new Vec3(0, 0.5, 0));
-  const sphereMesh = createSphere(app.graphicsDevice, {
+  const sphereMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
     radius: 1,
     latitudeBands: SPHERE_SEGMENTS,
     longitudeBands: SPHERE_SEGMENTS
-  });
+  }));
   sphere.addComponent('render', {
     meshInstances: [new MeshInstance(sphereMesh, material)]
   });
   app.root.addChild(sphere);
 
   const starDome = new Entity('star-dome');
-  const starMesh = createSphere(app.graphicsDevice, {
+  const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
     radius: 18,
     latitudeBands: 64,
     longitudeBands: 64
-  });
+  }));
   starDome.addComponent('render', {
     meshInstances: [new MeshInstance(starMesh, starMaterial)]
   });

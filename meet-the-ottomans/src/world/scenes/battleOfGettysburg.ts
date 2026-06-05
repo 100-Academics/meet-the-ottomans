@@ -26,7 +26,8 @@ import {
   RESOLUTION_AUTO,
   KEY_1,
   KEY_2,
-  createSphere,
+  Mesh,
+  SphereGeometry,
   CULLFACE_FRONT,
 } from "playcanvas";
 
@@ -381,11 +382,11 @@ export async function battleOfGettysburgScene(
   starMaterial.update();
 
   const starDome = new Entity("gettysburg-star-dome");
-  const starMesh = createSphere(app.graphicsDevice, {
+  const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
     radius: 220,
     latitudeBands: 64,
     longitudeBands: 64,
-  });
+  }));
   starDome.addComponent("render", {
     meshInstances: [new MeshInstance(starMesh, starMaterial)],
   });
