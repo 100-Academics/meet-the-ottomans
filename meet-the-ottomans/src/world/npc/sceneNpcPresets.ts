@@ -31,7 +31,8 @@ const NPC_MODEL_PATHS = {
   kingGeorgeIII: "models/npc/boss/KingGeorgeIII.glb",
   lenin: "models/npc/boss/Lenin.glb",
   stalin: "models/npc/boss/Stalin.glb",
-  unionSoldier: "models/npc/UnionSoldier.glb"
+  unionSoldier: "models/npc/UnionSoldier.glb",
+  towerBoss: "models/npc/boss/Tower_00001_.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -170,6 +171,15 @@ const STALIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   hitboxRadius: 2.4
 };
 
+export const TOWER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.towerBoss,
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(3, 3, 3),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+
 // Non-boss per-type overrides (used in typeSpawnOverrides below).
 const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
@@ -224,7 +234,8 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII,
   lenin: NPC_MODEL_PATHS.lenin,
   stalin: NPC_MODEL_PATHS.stalin,
-  unionSoldier: NPC_MODEL_PATHS.unionSoldier
+  unionSoldier: NPC_MODEL_PATHS.unionSoldier,
+  towerBoss: NPC_MODEL_PATHS.towerBoss
 };
 
 const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
@@ -250,7 +261,8 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
   kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
   lenin: LENIN_BOSS_SPAWN_OVERRIDES,
-  stalin: STALIN_BOSS_SPAWN_OVERRIDES
+  stalin: STALIN_BOSS_SPAWN_OVERRIDES,
+  towerBoss: TOWER_BOSS_SPAWN_OVERRIDES
 };
 
 // Shared battle options applied in scenes.
@@ -348,6 +360,12 @@ export const DEFAULT_LENIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
 
 export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
   ...STALIN_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_TOWER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...TOWER_BOSS_SPAWN_OVERRIDES,
   typeModelPaths: NPC_TYPE_MODEL_PATHS,
   typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
@@ -526,3 +544,8 @@ export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", 
 
 // Pavia
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];
+
+// Northwood High School — do not investigate further
+export const NORTHWOOD_HIGH_SPAWN_POINT: NpcSpawnPoint[] = [
+  { id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "towerBoss" }
+];

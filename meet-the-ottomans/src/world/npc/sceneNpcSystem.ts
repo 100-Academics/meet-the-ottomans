@@ -23,6 +23,7 @@ import { CainAndAbel } from "./bosses/cainAndAbel";
 import { KingGeorgeIII } from "./bosses/kingGeorgeIII";
 import { Lenin } from "./bosses/lenin";
 import { Stalin } from "./bosses/stalin";
+import { TowerBoss } from "./bosses/towerBoss";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -493,6 +494,14 @@ const groundTag = "ground";
     } else if (spawn.type === "stalin") {
       console.log(`Spawning Stalin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new Stalin(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+      boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      boss.setHitboxRadius(hitboxRadius);
+      boss.drawHealthBar();
+      Boss.setActiveBoss(boss);
+      npcs.push(boss);
+    } else if (spawn.type === "towerBoss") {
+      console.log(`Spawning Tower Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const boss = new TowerBoss(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
       boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       boss.setHitboxRadius(hitboxRadius);
       boss.drawHealthBar();

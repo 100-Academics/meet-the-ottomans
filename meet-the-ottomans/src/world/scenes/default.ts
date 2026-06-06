@@ -67,6 +67,7 @@ import { operationAbireyHalevScene } from "./operationAbireyHalev.js";
 import { operationAnacondaScene } from "./operationAnaconda.js";
 import { battleOfKyivScene } from "./battleOfKyiv.js";
 import { operationArnonScene } from "./operationArnon.js";
+import { battleOfNorthwoodHighScene } from "./battleOfNorthwoodHigh.js";
 // battles
 
 const DEFAULT_COLOR = new Color(1, 1, 1);
@@ -229,7 +230,8 @@ async function defaultScene(
                    new Battle(6, [30.56, 32.32], "Operation Abirey-Halev", new Entity()),
                    new Battle(7, [33.6667, 69.1833], "Operation Anaconda", new Entity()),
                    new Battle(7, [50.450001, 30.523333], "Battle of Kyiv", new Entity()),
-                   new Battle(7, [31.4486, 34.3925], "Operation Arnon", new Entity())
+                   new Battle(7, [31.4486, 34.3925], "Operation Arnon", new Entity()),
+                   new Battle(8, [39.0356, -77.0228], "Northwood High School", new Entity())
                   ];
   if (!canvas) {
     throw new Error('Canvas not found');
@@ -326,6 +328,7 @@ const overlayHTML = `
             <button id="period5-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1900-1945</button>
             <button id="period6-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1945-2000</button>
             <button id="period7-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">2000-2026</button>
+            <button id="period8-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem; background: rgba(40,0,0,0.5); color: #ff4444; border: 1px solid rgba(255,68,68,0.3); font-family: 'Courier New', monospace; letter-spacing: 0.1em;">∞</button>
           </div>
         </div>
       </div>
@@ -358,6 +361,7 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
     document.getElementById('period5-btn') as HTMLButtonElement | null,
     document.getElementById('period6-btn') as HTMLButtonElement | null,
     document.getElementById('period7-btn') as HTMLButtonElement | null,
+    document.getElementById('period8-btn') as HTMLButtonElement | null,
   ];
   const timePeriodText = document.getElementById('time-period') as HTMLElement | null;
   let activeCorrectAnswer = '';
@@ -668,6 +672,9 @@ app.once('destroy', cleanupHoverLabel);
       }
       else if (battle.getName() === 'Operation Arnon') {
         operationArnonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
+      else if (battle.getName() === 'Northwood High School') {
+        battleOfNorthwoodHighScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
       onClickWithCounter(battle);
     });
