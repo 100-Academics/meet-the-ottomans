@@ -33,6 +33,7 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
+import { waitForAmmoReady, type AmmoReadyResult } from "../../util/spawnHelpers";
 import {
   createBattleHUD,
   removeBattleHUD,
@@ -78,12 +79,17 @@ function getHighestGroundHitY(
   x: number,
   z: number,
   groundTag: string,
+  terrainBounds?: { minY: number; maxY: number },
 ): number | undefined {
   const rigidbodySystem = (app.systems as any).rigidbody as any;
   if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function")
     return undefined;
-  const start = new Vec3(x, 300, z);
-  const end = new Vec3(x, -300, z);
+
+  // Use terrain bounds to determine the ray range, falling back to ±300
+  const rayRange = terrainBounds ? (terrainBounds.maxY - terrainBounds.minY) : 600;
+  const rayCenter = terrainBounds ? (terrainBounds.maxY + terrainBounds.minY) * 0.5 : 0;
+  const start = new Vec3(x, rayCenter + rayRange * 0.5, z);
+  const end = new Vec3(x, rayCenter - rayRange * 0.5, z);
   if (typeof rigidbodySystem.raycastAll === "function") {
     const hits = rigidbodySystem.raycastAll(start, end);
     if (hits && hits.length > 0) {
@@ -385,6 +391,12 @@ export async function battleOfVerdunScene(
         "[Ground] NO collision/rigidbody detected — raycasting will fail!",
       );
     }
+
+    // Give Ammo.js time to register collision bodies. PlayCanvas adds rigidbody/collision
+    // components synchronously, but the underlying Ammo.js physics engine needs a render cycle
+    // to process them into its internal world. We poll for up to ~2 seconds.
+    const ammoReady = await waitForAmmoReady(app, "ground");
+
     let spawnResolved = false;
     const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;
     const bounds = getRenderableBounds(ground.modelEntity);
@@ -392,9 +404,56 @@ export async function battleOfVerdunScene(
     cameraController?.setMovementBounds(bounds, 2.5);
     const spawnX = (bounds.minX + bounds.maxX) * 0.5;
     const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
-    const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, "ground");
-    const surfaceY = seededGroundY ?? bounds.maxY;
-      const spawnY = surfaceY + spawnSurfaceOffset;
+
+    // Search multiple nearby points for the highest valid ground hit
+    let seededGroundY: number | undefined;
+    const searchRadius = 16;
+    const searchStep = 8;
+    for (
+      let ox = -searchRadius;
+      ox <= searchRadius;
+      ox += searchStep
+    ) {
+      for (
+        let oz = -searchRadius;
+        oz <= searchRadius;
+        oz += searchStep
+      ) {
+        const hitY = getHighestGroundHitY(
+          app,
+          spawnX + ox,
+          spawnZ + oz,
+          "ground",
+          bounds,
+        );
+        if (hitY !== undefined && (seededGroundY === undefined || hitY > seededGroundY)) {
+          seededGroundY = hitY;
+        }
+      }
+    }
+
+    let surfaceY: number;
+    if (seededGroundY !== undefined) {
+      surfaceY = seededGroundY;
+    } else if (ammoReady.hitY !== undefined) {
+      // waitForAmmoReady found ground-level collision — use it directly.
+      // This is more reliable than a percentage estimate for terrain models
+      // with skybox/billboard geometry that inflates maxY far above walkable ground.
+      surfaceY = ammoReady.hitY;
+      console.log(
+        `[Spawn] Seeded search missed all points; using waitForAmmoReady hitY=${ammoReady.hitY.toFixed(2)} (entity: ${ammoReady.entityName})`,
+      );
+    } else if (bounds) {
+      // Both seeded search and waitForAmmoReady failed — last resort estimate.
+      const terrainHeightRange = bounds.maxY - bounds.minY;
+      surfaceY = bounds.minY + terrainHeightRange * 0.75;
+      console.warn(
+        `[Spawn] Ground raycast failed everywhere; using terrain estimate surfaceY=${surfaceY.toFixed(2)} (bounds minY=${bounds.minY.toFixed(2)}, maxY=${bounds.maxY.toFixed(2)})`,
+      );
+    } else {
+      surfaceY = 0;
+    }
+    const spawnY = surfaceY + spawnSurfaceOffset;
       player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
       respawnPosition = player.getPosition().clone();
       respawnGroundY = surfaceY;

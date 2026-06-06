@@ -11,10 +11,23 @@ import { Vec3 } from "playcanvas";
  * We poll for up to 100 frames (~2 seconds). Only resolves when a ground-tagged entity
  * is actually hit — not just any collider.
  */
+/**
+ * Result of waitForAmmoReady — includes the Y coordinate of the first
+ * ground-tagged hit, useful as a direct ground-level reference.
+ */
+export interface AmmoReadyResult {
+    /** Frame number when the first ground hit was found (0 = raycastFirst unavailable) */
+    frame: number;
+    /** Name of the hit entity (null if timed out) */
+    entityName: string | null;
+    /** Y coordinate of the hit point (undefined if timed out or no hit) */
+    hitY: number | undefined;
+}
+
 export function waitForAmmoReady(
     app: any,
     groundTag: string,
-): Promise<void> {
+): Promise<AmmoReadyResult> {
     return new Promise((resolve) => {
         const rigidbodySystem = (app.systems?.rigidbody as {
             raycastFirst?: (start: Vec3, end: Vec3) => { entity?: any; point?: any } | null;
@@ -22,7 +35,7 @@ export function waitForAmmoReady(
 
         if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function") {
             console.warn("[Spawn] waitForAmmoReady: no raycastFirst available");
-            resolve();
+            resolve({ frame: 0, entityName: null, hitY: undefined });
             return;
         }
 
@@ -36,7 +49,7 @@ export function waitForAmmoReady(
         function tryHit(): void {
             if (attempts++ >= maxAttempts) {
                 console.warn("[Spawn] waitForAmmoReady timed out after", attempts, "frames — no ground hit found");
-                resolve();
+                resolve({ frame: attempts, entityName: null, hitY: undefined });
                 return;
             }
 
@@ -47,7 +60,7 @@ export function waitForAmmoReady(
             // collider meshes that don't have the tag in their hierarchy).
             if (hit?.entity && hasTagInHierarchy(hit.entity, groundTag)) {
                 console.log("[Spawn] waitForAmmoReady succeeded on frame", attempts, "hit:", hit.entity.name ?? hit.entity.id, "at Y=", hit.point?.y);
-                resolve();
+                resolve({ frame: attempts, entityName: hit.entity.name ?? null, hitY: hit.point?.y });
                 return;
             }
 
