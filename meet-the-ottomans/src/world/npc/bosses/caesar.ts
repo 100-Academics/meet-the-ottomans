@@ -21,10 +21,10 @@ interface BowState {
 export class Caesar extends Boss {
 
     // Build monuments from ground
-    private readonly monumentBlockCount = 25;
-    private readonly monumentIntervalSeconds = 0.5;
-    private readonly monumentCooldownSeconds = 2.0;
-  private readonly monumentRange = 110;
+  private readonly monumentBlockCount = 25;
+  private readonly monumentIntervalSeconds = 0.05;
+  private readonly monumentCooldownSeconds = 0.15;
+  private readonly monumentRange = 200;
   private readonly monumentDamage = 25;
   private readonly monumentHitRadius = 8.0;
     private nextMonumentAtSeconds = 0;
@@ -86,7 +86,8 @@ export class Caesar extends Boss {
             ],
             bossDeath: [
                 "The eagles… fall.",
-                "Rome… endures without me."
+                "Rome… endures without me.",
+                " Pizza Pizza."
             ]
     });
   }
@@ -203,8 +204,8 @@ export class Caesar extends Boss {
 
             // Animate rising
             const startMs = Date.now();
-            const riseMs = 400;
-            const holdMs = 800;
+      const riseMs = 40;
+      const holdMs = 80;
             const totalMs = riseMs + holdMs;
             const tick = () => {
                 const elapsed = Date.now() - startMs;
