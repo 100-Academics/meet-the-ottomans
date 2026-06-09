@@ -151,6 +151,7 @@ async function titleScreen(
     const lastIndex = introSlides.length - 1;
     if (prevBtn) prevBtn.style.display = currentSlide === 0 ? 'none' : 'inline-flex';
     if (nextBtn) nextBtn.style.display = currentSlide === lastIndex ? 'none' : 'inline-flex';
+    if (skipBtn) skipBtn.style.display = currentSlide === lastIndex ? 'none' : 'inline-flex';
     if (startBtn) startBtn.style.display = currentSlide === lastIndex ? 'inline-flex' : 'none';
   };
 
