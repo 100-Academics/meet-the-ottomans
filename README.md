@@ -1,8 +1,6 @@
 # meet-the-ottomans
 An APWH game. You play as Bob Jefferson, the last descendant of Sultan Suleiman the Magnificent. You go back in time in order to change the past to bring about a better future for the Ottoman Empire.
 
-opencode -s ses_1527659d6ffeZgmicbTTz7lAia
-
 Featuring 21 historical battles across 7 time periods, 21 historical bosses, enemies (controlled via rudimentary AI), as well as combat.
 
 Featuring battles such as:
