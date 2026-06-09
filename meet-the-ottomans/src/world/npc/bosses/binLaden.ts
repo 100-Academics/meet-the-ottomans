@@ -438,40 +438,40 @@ export class BinLadin extends Boss {
   private savedMaterialOpacities: Map<any, number> = new Map();
 
   private setBossModelVisible(visible: boolean): void {
-    const entity = this.getEntity();
-    const model = entity.model;
-    if (model) {
-      model.castShadows = visible;
-      model.receiveShadows = visible;
-      const meshInstances = model.meshInstances;
-      if (meshInstances) {
-        for (const instance of meshInstances) {
-          instance.visible = true;
-          const mat = instance.material as StandardMaterial | undefined;
-          if (mat) {
-            if (visible) {
-              const saved = this.savedMaterialOpacities.get(mat);
-              if (saved !== undefined) {
-                mat.opacity = saved;
-                this.savedMaterialOpacities.delete(mat);
-              }
-              mat.blendType = (saved !== undefined && saved < 1) ? mat.blendType : 0;
-            } else {
-              if (!this.savedMaterialOpacities.has(mat)) {
-                this.savedMaterialOpacities.set(mat, mat.opacity);
-              }
-              mat.opacity = 0.08;
-              mat.blendType = BLEND_ADDITIVE;
-            }
-            mat.update();
-          }
-        }
-      }
-    }
-    const healthBar = document.getElementById("boss-health-bar");
-    if (healthBar) {
-      healthBar.style.opacity = visible ? "1" : "0.2";
-    }
+  const entity = this.getEntity();
+  const model = entity.model;
+  if (model) {
+  model.castShadows = visible;
+  model.receiveShadows = visible;
+  const meshInstances = model.meshInstances;
+  if (meshInstances) {
+  for (const instance of meshInstances) {
+  instance.visible = visible;
+  const mat = instance.material as StandardMaterial | undefined;
+  if (mat) {
+  if (visible) {
+  const saved = this.savedMaterialOpacities.get(mat);
+  if (saved !== undefined) {
+  mat.opacity = saved;
+  this.savedMaterialOpacities.delete(mat);
+  }
+  mat.blendType = (saved !== undefined && saved < 1) ? mat.blendType : 0;
+  } else {
+  if (!this.savedMaterialOpacities.has(mat)) {
+  this.savedMaterialOpacities.set(mat, mat.opacity);
+  }
+  mat.opacity = 0;
+  mat.blendType = BLEND_ADDITIVE;
+  }
+  mat.update();
+  }
+  }
+  }
+  }
+  const healthBar = document.getElementById("boss-health-bar");
+  if (healthBar) {
+  healthBar.style.opacity = visible ? "1" : "0.2";
+  }
   }
 
 	private spawnSmokeCloud(origin: Vec3): void {

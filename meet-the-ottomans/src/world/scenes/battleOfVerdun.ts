@@ -33,7 +33,7 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
-import { waitForAmmoReady, type AmmoReadyResult } from "../../util/spawnHelpers";
+import { waitForAmmoReady } from "../../util/spawnHelpers";
 import {
   createBattleHUD,
   removeBattleHUD,

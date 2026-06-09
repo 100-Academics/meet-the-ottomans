@@ -508,49 +508,16 @@ await waitForAmmoReady(app, "ground");;
 		npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
 	}
 
-<<<<<<< HEAD
 	const bossSpawnOptions = { ...DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
 	const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, PAVIA_BOSS_SPAWN_POINT, bossSpawnOptions);
 for (const boss of bossNpcs) {
-    npcs.push(boss);
-    if (boss instanceof Boss) {
-      boss.drawHealthBar();
-      Boss.setActiveBoss(boss);
-    }
-  }
+ npcs.push(boss);
+ if (boss instanceof Boss) {
+ boss.drawHealthBar();
+ Boss.setActiveBoss(boss);
+ }
+ }
 
-=======
-  // Helper to generate Italian soldier spawn points
-  const getItalianSpawnPoints = (anchor: Vec3, count: number): NpcSpawnPoint[] => {
-    const fallbackOffsets = [
-      { x: 12, z: 6 },
-      { x: -14, z: 4 },
-      { x: 8, z: -10 },
-      { x: -10, z: -8 },
-      { x: 16, z: -2 },
-      { x: -6, z: 12 }
-    ];
-    const spawnCount = Math.min(count, fallbackOffsets.length);
-    return fallbackOffsets.slice(0, spawnCount).map((offset, index) => ({
-      id: 100 + index,
-      team: "foe",
-      x: anchor.x + offset.x,
-      z: anchor.z + offset.z,
-      type: "italian"
-    }));
-  };
-
-// Spawn 4 Italian soldiers
-let npcs = await spawnSceneNpcs(app, rigidbodySystem, getItalianSpawnPoints(respawnPosition, 4), npcSpawnOptions);
-if (npcs.length === 0) {
-  console.warn('[NPC] Italian soldier spawn returned no soldiers, retrying once');
-  npcs = await spawnSceneNpcs(app, rigidbodySystem, getItalianSpawnPoints(respawnPosition, 4), npcSpawnOptions);
-}
-
-
-
-
->>>>>>> da9ba7f (idk how Bin Ladin works (idk, crying emoji))
 	app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
 		if (isDeathScreenVisible()) {
 			return;
@@ -595,60 +562,38 @@ if (npcs.length === 0) {
   }
 });
 
-<<<<<<< HEAD
-	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
-		updateKey: '__ainJalutNpcUpdate',
-		battleStatus: {
-			getCameraEntity: () => player.getCameraEntity(),
-			initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + PAVIA_BOSS_SPAWN_POINT.length,
-			onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
-		},
-		onNpcAttack: (attacker, target, damage) => {
-			target.takeDamage(damage);
-			console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
-		},
-		onPlayerAttack: (attacker, damage) => {
-			player.takeDamage(damage);
-			updateBattleHUD(player);
-			console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
-		}
-	});
-=======
 bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
-  updateKey: '__paviaNpcUpdate',
-    battleStatus: {
-      getCameraEntity: () => player.getCameraEntity(),
-      initialTotal: 5,
-    onRemainingCountChange: (remaining) => {
-      updateBattleHUD(player, remaining);
-    },
-  },
-  onNpcAttack: (attacker, target, damage) => {
-    target.takeDamage(damage);
-    try {
-      if ((target as any) instanceof Boss) {
-        (target as unknown as Boss).updateHealthBar();
-      }
-    } catch (e) {
-      // ignore
-    }
-    console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
-  },
-  onPlayerAttack: (attacker, damage) => {
-    player.takeDamage(damage);
-    updateBattleHUD(player);
-    console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
-  }
+	updateKey: '__paviaNpcUpdate',
+	battleStatus: {
+		getCameraEntity: () => player.getCameraEntity(),
+		initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + PAVIA_BOSS_SPAWN_POINT.length,
+		onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
+	},
+	onNpcAttack: (attacker, target, damage) => {
+		target.takeDamage(damage);
+		try {
+			if ((target as any) instanceof Boss) {
+				(target as unknown as Boss).updateHealthBar();
+			}
+		} catch (e) {
+			// ignore
+		}
+		console.log(`NPC ${attacker.getId()} (${attacker.getTeam()}) hit NPC ${target.getId()} for ${damage}.`);
+	},
+	onPlayerAttack: (attacker, damage) => {
+		player.takeDamage(damage);
+		updateBattleHUD(player);
+		console.log(`Player hit by NPC ${attacker.getId()} for ${damage}, health now ${player.getHealth()}`);
+	}
 });
 
 let victoryHandled = false;
 let caesarSpawned = false;
 let caesarSpawnFrame: number | null = null;
 const victoryCheck = async () => {
-  if (isDeathScreenVisible()) {
-    return;
-  }
->>>>>>> da9ba7f (idk how Bin Ladin works (idk, crying emoji))
+	if (isDeathScreenVisible()) {
+		return;
+	}
 
   if (victoryHandled) {
     return;

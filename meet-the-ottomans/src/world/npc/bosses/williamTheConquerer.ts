@@ -39,51 +39,18 @@ interface ShockwaveWaveState {
 }
 
 export class WilliamTheConquerer extends Boss {
-<<<<<<< HEAD
-    // Charge attack: a cavalry-style rush forward.
-    private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.6;
-    // Royal dash: fast forward dash that freezes the player on hit.
-    private readonly royalDashSpeed = PLAYER_MOVE_SPEED * 3.5;
-    private readonly royalDashDurationSeconds = 0.4;
-    private readonly royalDashRecoverSeconds = 0.3;
-    private readonly royalDashCooldownSeconds = 6.0;
-    private readonly royalDashFreezeMs = 3000;
-    private nextRoyalDashAtSeconds = 0;
-    // Shockwave: large area damage with knockback.
-    private readonly shockwaveRadius = 20;
-    private readonly shockwaveDamage = 22;
-    private readonly shockwaveKnockback = 500;
-    private readonly shockwaveCooldownSeconds = 8.0;
-    private readonly shockwaveWindupSeconds = 0.7;
-    private readonly shockwaveWaveSpeed = 54;
-    private readonly shockwaveWaveThickness = 4.5;
-    private readonly shockwaveWaveMinDuration = 1.4;
-    private readonly shockwaveWaveMaxDuration = 4.8;
-    private readonly shockwaveDefaultWaveRadius = 250;
-    private readonly shockwaveWaveSegments = 34;
-    private readonly shockwaveWaveSegmentScale = 0.95;
-    private nextShockwaveAtSeconds = 0;
-    private readonly chargeDurationSeconds = 0.6;
-    private readonly chargeRecoverSeconds = 0.4;
-    private readonly chargeCooldownSeconds = 5.0;
-    private readonly chargeRangeMin = 8;
-    private readonly chargeRangeMax = 35;
-    private readonly chargeHitRadius = 3.6;
-    private readonly chargeDamage = 18;
-    private nextChargeAtSeconds = 0;
-=======
-  private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.6;
-  private readonly chargeDurationSeconds = 0.6;
-  private readonly chargeRecoverSeconds = 0.4;
-  private readonly chargeCooldownSeconds = 5.0;
-  private readonly chargeRangeMin = 8;
-  private readonly chargeRangeMax = 35;
-  private readonly chargeHitRadius = 3.6;
-  private readonly chargeDamage = 18;
-  private nextChargeAtSeconds = 0;
->>>>>>> da9ba7f (idk how Bin Ladin works (idk, crying emoji))
+ // Charge attack: a cavalry-style rush forward.
+ private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.6;
+ private readonly chargeDurationSeconds = 0.6;
+ private readonly chargeRecoverSeconds = 0.4;
+ private readonly chargeCooldownSeconds = 5.0;
+ private readonly chargeRangeMin = 8;
+ private readonly chargeRangeMax = 35;
+ private readonly chargeHitRadius = 3.6;
+ private readonly chargeDamage = 18;
+ private nextChargeAtSeconds = 0;
 
-  private readonly shieldBashRange = 5;
+ private readonly shieldBashRange = 5;
   private readonly shieldBashDamage = 14;
   private readonly shieldBashWindupSeconds = 0.6;
   private readonly shieldBashRecoverSeconds = 0.5;
@@ -613,12 +580,9 @@ export class WilliamTheConquerer extends Boss {
       return;
     }
 
-<<<<<<< HEAD
-    // ── Utility methods ──
-=======
-    const yawDegrees = Math.atan2(state.direction.x, state.direction.z) * (180 / Math.PI);
-    state.root.setLocalEulerAngles(0, yawDegrees, 0);
->>>>>>> da9ba7f (idk how Bin Ladin works (idk, crying emoji))
+ // ── Utility methods ──
+ const yawDegrees = Math.atan2(state.direction.x, state.direction.z) * (180 / Math.PI);
+ state.root.setLocalEulerAngles(0, yawDegrees, 0);
 
     const segmentCount = state.segments.length;
     if (segmentCount === 0) {
@@ -704,91 +668,27 @@ export class WilliamTheConquerer extends Boss {
     }
 
     if (controller) {
-      const controllerAny = controller as any;
-      if (typeof controllerAny.setMovementLocked === "function") {
-        controllerAny.setMovementLocked(true);
-      } else {
-        controllerAny.movementLocked = true;
-      }
-
-<<<<<<< HEAD
-    private getShockwaveMaxRadius(origin: Vec3): number {
-        const player = this.playerEntity;
-        if (!player) {
-            return Math.max(this.shockwaveRadius * 2, this.shockwaveDefaultWaveRadius);
-        }
-
-        const targetPos = player.getPosition();
-        const dx = targetPos.x - origin.x;
-        const dz = targetPos.z - origin.z;
-        const distance = Math.sqrt((dx * dx) + (dz * dz));
-        return Math.max(this.shockwaveRadius * 2, distance + 8);
+    const controllerAny = controller as any;
+    if (typeof controllerAny.setMovementLocked === "function") {
+    controllerAny.setMovementLocked(true);
+    } else {
+    controllerAny.movementLocked = true;
     }
 
-    private createShockwaveWaveEffect(origin: Vec3, segmentCount: number): { root: Entity; segments: Entity[]; haloSegments: Entity[] } | null {
-        const sceneApp = this.resolveSceneApp();
-        if (!sceneApp?.root) {
-            return null;
-        }
-
-        const root = new Entity("william shockwave wave");
-        const segments: Entity[] = [];
-        const haloSegments: Entity[] = [];
-        const count = Math.max(8, segmentCount);
-
-        for (let i = 0; i < count; i += 1) {
-            const segment = new Entity(`william shockwave segment ${i}`);
-            segment.addComponent("render", { type: "sphere" } as any);
-            segment.setLocalScale(this.shockwaveWaveSegmentScale, this.shockwaveWaveSegmentScale, this.shockwaveWaveSegmentScale);
-            if (segment.render?.meshInstances?.length) {
-                segment.render.meshInstances[0].material = this.shieldBashMaterial;
-            }
-            root.addChild(segment);
-            segments.push(segment);
-
-            const halo = new Entity(`william shockwave halo ${i}`);
-            halo.addComponent("render", { type: "sphere" } as any);
-            const haloScale = Math.max(0.35, this.shockwaveWaveSegmentScale * 0.72);
-            halo.setLocalScale(haloScale, haloScale, haloScale);
-            if (halo.render?.meshInstances?.length) {
-                halo.render.meshInstances[0].material = this.shieldBashMaterial;
-            }
-            root.addChild(halo);
-            haloSegments.push(halo);
-        }
-
-        root.setPosition(origin.x, origin.y + 0.08, origin.z);
-        sceneApp.root.addChild(root);
-        this.activeEffects.add(root);
-        return { root, segments, haloSegments };
+    const knockbackToken = { active: true };
+    const durationMs = this.shockwaveKnockbackDurationSeconds * 1000;
+    window.setTimeout(() => {
+    if (!knockbackToken.active) return;
+    if (typeof controllerAny.setMovementLocked === "function") {
+    controllerAny.setMovementLocked(false);
+    } else {
+    controllerAny.movementLocked = false;
+    }
+    }, durationMs);
+    }
     }
 
-
-
-    private applyShockwaveKnockback(playerEntity: Entity, origin: Vec3): void {
-        const controller = (playerEntity as any)?.script?.FirstPersonCamera ?? (playerEntity as any)?.script?.firstPersonCamera;
-        const playerPos = playerEntity.getPosition().clone();
-        const pushDir = playerPos.sub(origin);
-        pushDir.y = 0;
-
-        if (pushDir.lengthSq() <= 0.0001) {
-            pushDir.set(0, 0, 1);
-=======
-      const knockbackToken = { active: true };
-      const durationMs = this.shockwaveKnockbackDurationSeconds * 1000;
-      window.setTimeout(() => {
-        if (!knockbackToken.active) return;
-        if (typeof controllerAny.setMovementLocked === "function") {
-          controllerAny.setMovementLocked(false);
->>>>>>> da9ba7f (idk how Bin Ladin works (idk, crying emoji))
-        } else {
-          controllerAny.movementLocked = false;
-        }
-      }, durationMs);
-    }
-  }
-
-  private getPlayerHeightAboveGround(targetEntity: Entity): number {
+    private getPlayerHeightAboveGround(targetEntity: Entity): number {
     const controller = (targetEntity as any)?.script?.FirstPersonCamera
       ?? (targetEntity as any)?.script?.firstPersonCamera;
     const playerHeight = Number.isFinite(controller?.playerHeight) ? controller.playerHeight : 2;
