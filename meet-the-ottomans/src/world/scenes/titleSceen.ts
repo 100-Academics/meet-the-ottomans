@@ -1,6 +1,7 @@
 import { AppBase } from "playcanvas";
 import { Battle } from '../Battle';
 import { defaultScene } from './default';
+import { showTitleCard } from "./titleCard";
 
 type IntroSlide = {
   title: string;
@@ -78,6 +79,9 @@ async function titleScreen(
   getSelectedTimePeriod: () => number,
   _sceneNum: number
 ) {
+  // Show the title card splash first, then proceed to intro slides
+  await showTitleCard();
+
   const overlay = document.querySelector('.overlay') as HTMLElement | null;
   const introWrap = document.createElement('div');
   introWrap.id = 'intro-screen';
