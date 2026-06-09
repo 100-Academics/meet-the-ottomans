@@ -240,8 +240,9 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   lenin: NPC_MODEL_PATHS.lenin,
   stalin: NPC_MODEL_PATHS.stalin,
   unionSoldier: NPC_MODEL_PATHS.unionSoldier,
-  towerBoss: NPC_MODEL_PATHS.towerBoss
-};
+  towerBoss: NPC_MODEL_PATHS.towerBoss,
+  italian: "models/npc/ItalianSoldier.glb"
+  };
 
 const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
@@ -551,6 +552,13 @@ export const VIENNA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
 
 // Pavia
+export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+ { id: 1, team: "foe", x: 0, z: 0, type: "italian" },
+ { id: 2, team: "foe", x: 0, z: 0, type: "italian" },
+ { id: 3, team: "foe", x: 0, z: 0, type: "italian" },
+ { id: 4, team: "foe", x: 0, z: 0, type: "italian" },
+ { id: 5, team: "foe", x: 0, z: 0, type: "italian" },
+];
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];
 
 // Northwood High School — do not investigate further
