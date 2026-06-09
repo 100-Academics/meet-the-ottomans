@@ -11,19 +11,20 @@ import { Boss } from '../world/npc/bosses/boss';
 
 
 export class Player{
-    private cameraEntity: Entity;
-    private cameraController: FirstPersonCamera | undefined;
-    private app: AppBase;
-    private maxHealth = 100;
-    private health = this.maxHealth;
-    private team = 'friend'; // Player is always on the 'friend' team
-    private readonly swordWeapon = new Sword(4, 25);
-    private readonly gunWeapon = new Gun(35, 100, 12);
-    private readonly bowWeapon = new Bow(50, 100, 20, 250);
-    private readonly oldGunWeapon = new Gun(15, 60, 12, "Gun"); // Weaker gun for early time periods
-    private equippedWeapon: Weapon = this.swordWeapon;
-    private deathQuizTimePeriod = -1;
-    private restartBattle: (() => void) | undefined;
+ private cameraEntity: Entity;
+ private cameraController: FirstPersonCamera | undefined;
+ private app: AppBase;
+ private maxHealth = 100;
+ private health = this.maxHealth;
+ private team = 'friend'; // Player is always on the 'friend' team
+ private readonly swordWeapon = new Sword(4, 25);
+ private readonly gunWeapon = new Gun(35, 100, 12);
+ private readonly bowWeapon = new Bow(50, 100, 20, 250);
+ private readonly oldGunWeapon = new Gun(15, 60, 12, "Gun"); // Weaker gun for early time periods
+ private equippedWeapon: Weapon = this.swordWeapon;
+ private deathQuizTimePeriod = -1;
+ private restartBattle: (() => void) | undefined;
+ private gracePeriodEnd = 0; // Timestamp (ms) until which player is invulnerable after reviving
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
         this.app = app;
@@ -78,23 +79,29 @@ export class Player{
     }
 
     public takeDamage(damage: number): void {
-        if (!this.isAlive()) {
-            return;
-        }
+    if (!this.isAlive()) {
+    return;
+    }
 
-        this.health -= damage;
-        if(!this.isAlive()) {
-            this.health = 0; // prevent negative health
-        }
-        this.die(this.isAlive()); // checks for death
+    // Grace period: ignore damage for 3 seconds after reviving
+    if (Date.now() < this.gracePeriodEnd) {
+    return;
+    }
+
+    this.health -= damage;
+    if(!this.isAlive()) {
+    this.health = 0; // prevent negative health
+    }
+    this.die(this.isAlive()); // checks for death
     }
 
     public revive(position?: Vec3): void {
-        this.health = this.maxHealth;
-        if (position) {
-            this.setPosition(position);
-        }
-        hideDeathScreen();
+    this.health = this.maxHealth;
+    this.gracePeriodEnd = Date.now() + 3000; // 3-second grace period
+    if (position) {
+    this.setPosition(position);
+    }
+    hideDeathScreen();
     }
 
     private die(isAlive: boolean): void {

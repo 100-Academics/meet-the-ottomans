@@ -7,6 +7,7 @@ import { Templar } from "./troops/templars";
 import { FrenchSoldier } from "./troops/frenchSoldier";
 import { AmericanRevolutionist } from "./troops/americanRevolutionist";
 import { UnionSoldier } from "./troops/unionSoldier";
+import { ItalianSoldier } from "./troops/italianSoldier";
 import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
@@ -376,12 +377,18 @@ const groundTag = "ground";
 		rev.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
 		rev.setHitboxRadius(hitboxRadius);
 		npcs.push(rev);
-	} else if (spawn.type === "unionSoldier") {
-		console.log(`Spawning Union Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-		const unionSoldier = new UnionSoldier(spawn.id, npcModel.modelEntity);
-		unionSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-		unionSoldier.setHitboxRadius(hitboxRadius);
-		npcs.push(unionSoldier);
+    } else if (spawn.type === "unionSoldier") {
+        console.log(`Spawning Union Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+        const unionSoldier = new UnionSoldier(spawn.id, npcModel.modelEntity);
+        unionSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+        unionSoldier.setHitboxRadius(hitboxRadius);
+        npcs.push(unionSoldier);
+    } else if (spawn.type === "italian") {
+        console.log(`Spawning Italian Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+        const italian = new ItalianSoldier(spawn.id, npcModel.modelEntity);
+        italian.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+        italian.setHitboxRadius(hitboxRadius);
+        npcs.push(italian);
 	} else if (spawn.type === "genghisKhan") {
       console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);

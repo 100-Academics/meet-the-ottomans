@@ -100,7 +100,7 @@ export function showDeathScreen(options?: {
 
   const restartButton = document.createElement('button');
   restartButton.className = 'btn';
-  restartButton.textContent = 'Restart Battle';
+  restartButton.textContent = 'Revive';
   restartButton.addEventListener('click', () => {
     if (onRestart) {
       onRestart();
