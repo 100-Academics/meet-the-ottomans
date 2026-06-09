@@ -878,6 +878,8 @@ async function spawnBoss(
     const bossSpawnOptions = {
       ...DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS,
       groundYFallback,
+      groundProbeHeight: 500,
+      groundProbeDepth: 500
     };
     const spawned = await spawnSceneNpcs(
       app,

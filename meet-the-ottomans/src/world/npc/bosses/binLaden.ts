@@ -59,9 +59,9 @@ export class BinLadin extends Boss {
 	private readonly akRange = 35;
 	private nextAkAtSeconds = 0;
 
-	private readonly invisCooldownSeconds = 15.0;
-	private readonly invisDurationSeconds = 4.0;
-	private readonly invisRange = 40;
+  private readonly invisCooldownSeconds = 30.0;
+  private readonly invisDurationSeconds = 3.0;
+  private readonly invisRange = 30;
 	private nextInvisAtSeconds = 0;
 
 	private readonly bomberCount = 3;
@@ -115,7 +115,8 @@ export class BinLadin extends Boss {
 
 		this.setIntroTaunt("لن تجدني أبداً!", "You will never find me!");
 		this.setIntroNameTranslation("أسامة بن لادن", "Usama bin Ladin");
-		this.setTauntSet({
+		
+        this.setTauntSet({
 			highHealth: [
 				"The mountains are my fortress.",
 				"You cannot destroy what you cannot find.",
@@ -137,7 +138,6 @@ export class BinLadin extends Boss {
 			],
 			death: [
 				"الجنة… قريبة…",
-				"I go to a place you cannot follow."
 			],
 			bossDeath: [
 				"The cave is silent once more.",
@@ -209,9 +209,9 @@ export class BinLadin extends Boss {
 		if (now >= this.nextAkAtSeconds && distance <= this.akRange) {
 			choices.push({ type: "akSpray", score: 1.0 + (distance / Math.max(0.001, this.akRange)) });
 		}
-		if (now >= this.nextInvisAtSeconds && distance <= this.invisRange) {
-			choices.push({ type: "goInvisible", score: 1.5 });
-		}
+  if (now >= this.nextInvisAtSeconds && distance <= this.invisRange) {
+    choices.push({ type: "goInvisible", score: 0.6 });
+  }
 		if (now >= this.nextBomberAtSeconds && distance <= this.bomberRange) {
 			choices.push({ type: "suicideBombers", score: 1.8 });
 		}
@@ -398,7 +398,7 @@ export class BinLadin extends Boss {
 		this.attackLockUntilSeconds = now + 0.5;
 	}
 
-	private updateInvisibility(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+  private updateInvisibility(dt: number, target: Entity, now: number, _onAttack?: (attacker: npc) => void): void {
 		const state = this.invisState; if (!state) return;
 
 		if (!state.hasFadedOut) {
@@ -435,24 +435,44 @@ export class BinLadin extends Boss {
 		}
 	}
 
-	private setBossModelVisible(visible: boolean): void {
-		const entity = this.getEntity();
-		const model = entity.model;
-		if (model) {
-			model.castShadows = visible;
-			model.receiveShadows = visible;
-			const meshInstances = model.meshInstances;
-			if (meshInstances) {
-				for (const instance of meshInstances) {
-					instance.visible = visible;
-				}
-			}
-		}
-		const healthBar = document.getElementById("boss-health-bar");
-		if (healthBar) {
-			healthBar.style.opacity = visible ? "1" : "0.2";
-		}
-	}
+  private savedMaterialOpacities: Map<any, number> = new Map();
+
+  private setBossModelVisible(visible: boolean): void {
+    const entity = this.getEntity();
+    const model = entity.model;
+    if (model) {
+      model.castShadows = visible;
+      model.receiveShadows = visible;
+      const meshInstances = model.meshInstances;
+      if (meshInstances) {
+        for (const instance of meshInstances) {
+          instance.visible = true;
+          const mat = instance.material as StandardMaterial | undefined;
+          if (mat) {
+            if (visible) {
+              const saved = this.savedMaterialOpacities.get(mat);
+              if (saved !== undefined) {
+                mat.opacity = saved;
+                this.savedMaterialOpacities.delete(mat);
+              }
+              mat.blendType = (saved !== undefined && saved < 1) ? mat.blendType : 0;
+            } else {
+              if (!this.savedMaterialOpacities.has(mat)) {
+                this.savedMaterialOpacities.set(mat, mat.opacity);
+              }
+              mat.opacity = 0.08;
+              mat.blendType = BLEND_ADDITIVE;
+            }
+            mat.update();
+          }
+        }
+      }
+    }
+    const healthBar = document.getElementById("boss-health-bar");
+    if (healthBar) {
+      healthBar.style.opacity = visible ? "1" : "0.2";
+    }
+  }
 
 	private spawnSmokeCloud(origin: Vec3): void {
 		const particleCount = 6;
@@ -500,7 +520,7 @@ export class BinLadin extends Boss {
 		this.showStatusText("Suicide bombers incoming!", 2000);
 	}
 
-	private spawnBombers(target: Entity): void {
+  private spawnBombers(_target: Entity): void {
 		const myPos = this.getEntity().getPosition();
 		const parent = this.getEntity().parent ?? this.getEntity();
 
@@ -562,7 +582,7 @@ export class BinLadin extends Boss {
 			const yaw = Math.atan2(ndx, ndz) * 180 / Math.PI;
 			bomber.entity.setLocalEulerAngles(0, yaw, 0);
 
-			const bombChild = bomber.entity.children?.[0];
+        const bombChild = bomber.entity.children?.[0] as Entity | undefined;
 			if (bombChild) {
 				const pulse = 0.4 + 0.3 * Math.sin(elapsed / 100);
 				bombChild.setLocalScale(pulse, pulse, pulse);
@@ -691,13 +711,14 @@ export class BinLadin extends Boss {
 		if (entity.parent) entity.parent.removeChild(entity); entity.destroy();
 	}
 
-	private cleanupEffects(): void {
-		for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
-		this.activeEffects.clear(); this.caveAmbushState = null; this.iedBlastState = null; this.akSprayState = null;
-		this.invisState = null; this.bombersState = null;
-		if (this.isCurrentlyInvisible) {
-			this.isCurrentlyInvisible = false;
-			this.setBossModelVisible(true);
-		}
-	}
+  private cleanupEffects(): void {
+    for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
+    this.activeEffects.clear(); this.caveAmbushState = null; this.iedBlastState = null; this.akSprayState = null;
+    this.invisState = null; this.bombersState = null;
+    if (this.isCurrentlyInvisible) {
+      this.isCurrentlyInvisible = false;
+      this.setBossModelVisible(true);
+    }
+    this.savedMaterialOpacities.clear();
+  }
 }
