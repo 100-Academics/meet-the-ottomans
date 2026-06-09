@@ -24,6 +24,7 @@ import { KingGeorgeIII } from "./bosses/kingGeorgeIII";
 import { Lenin } from "./bosses/lenin";
 import { Stalin } from "./bosses/stalin";
 import { TowerBoss } from "./bosses/towerBoss";
+import { BinLadin } from "./bosses/binLaden";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
@@ -507,44 +508,14 @@ const groundTag = "ground";
       boss.drawHealthBar();
       Boss.setActiveBoss(boss);
       npcs.push(boss);
-    } else if (spawn.type === "binLadin") {
-                console.log(`Spawning Bin Ladin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
-                const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
-                boss.setTitle("Bin Ladin");
-                boss.setIntroTaunt("I am Bin Ladin.", "I am Bin Ladin.");
-                boss.setIntroNameTranslation("Usama bin Ladin", "Bin Ladin");
-                boss.setTauntSet({
-                    highHealth: [
-                        "You will never find me.",
-                        "This battlefield is mine.",
-                        "I am already gone before you arrive."
-                    ],
-                    bossLowPlayerHigh: [
-                        "Your victory is an illusion.",
-                        "You have reached only the outer ring."
-                    ],
-                    playerLowBossHigh: [
-                        "You are too late.",
-                        "The mountain still stands."
-                    ],
-                    bothLow: [
-                        "This ends here.",
-                        "We are both running out of time."
-                    ],
-                    death: [
-                        "The shadow fades.",
-                        "You found the hidden path."
-                    ],
-                    bossDeath: [
-                        "Bin Ladin falls.",
-                        "The man in the cave is no more."
-                    ]
-                });
-                boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-                boss.setHitboxRadius(hitboxRadius);
-      boss.drawHealthBar();
-      Boss.setActiveBoss(boss);
-      npcs.push(boss);
+} else if (spawn.type === "binLadin") {
+			console.log(`Spawning Bin Ladin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+			const boss = new BinLadin(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+			boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+			boss.setHitboxRadius(hitboxRadius);
+			boss.drawHealthBar();
+			Boss.setActiveBoss(boss);
+			npcs.push(boss);
     } else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
