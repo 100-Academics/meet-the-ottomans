@@ -22,12 +22,10 @@ import {
 	Texture,
 	FILLMODE_FILL_WINDOW,
 	RESOLUTION_AUTO,
-	KEY_1,
-	KEY_2,
-	KEY_NUMPAD_1,
-	KEY_NUMPAD_2,
-	KEY_3,
-	KEY_NUMPAD_3,
+ KEY_1,
+ KEY_2,
+ KEY_NUMPAD_1,
+ KEY_NUMPAD_2,
 } from "playcanvas";
 
 import { unloadAll } from '../../util/unloadall';
@@ -458,19 +456,13 @@ await waitForAmmoReady(app, "ground");
 
 		const isKey1 = keyCode === KEY_1 || keyCode === KEY_NUMPAD_1 || keyValue === '1' || keyCodeValue === 'Digit1' || keyCodeValue === 'Numpad1';
 		const isKey2 = keyCode === KEY_2 || keyCode === KEY_NUMPAD_2 || keyValue === '2' || keyCodeValue === 'Digit2' || keyCodeValue === 'Numpad2';
-		if (isKey1) {
-			player.equipWeapon(1);
-			updateBattleHUD(player);
-		} else if (isKey2) {
-			player.equipWeapon(3);
-			updateBattleHUD(player);
-		} else {
-			const isKey3 = keyCode === KEY_3 || keyCode === KEY_NUMPAD_3 || keyValue === '3' || keyCodeValue === 'Digit3' || keyCodeValue === 'Numpad3';
-			if (isKey3) {
-				player.equipWeapon(2);
-				updateBattleHUD(player);
-			}
-		}
+ if (isKey1) {
+    player.equipWeapon(1);
+    updateBattleHUD(player);
+ } else if (isKey2) {
+    player.equipWeapon(4);
+    updateBattleHUD(player);
+ }
 	});
 
 	app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {

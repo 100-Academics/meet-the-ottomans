@@ -504,7 +504,7 @@ export async function fallOfSaigonScene(
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
-      player.equipWeapon(3);
+      player.equipWeapon(2);
       updateBattleHUD(player);
     }
   });

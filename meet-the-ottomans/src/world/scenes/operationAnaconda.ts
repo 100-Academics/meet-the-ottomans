@@ -781,7 +781,7 @@ if (event.key === KEY_1) {
 player.equipWeapon(1);
 updateBattleHUD(player);
 } else if (event.key === KEY_2) {
-player.equipWeapon(3);
+player.equipWeapon(2);
 updateBattleHUD(player);
 }
 });

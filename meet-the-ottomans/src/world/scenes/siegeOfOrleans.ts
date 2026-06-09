@@ -586,10 +586,10 @@ await waitForAmmoReady(app, "ground");
 			if (isKey1) {
 				player.equipWeapon(1);
 				updateBattleHUD(player);
-			} else if (isKey2) {
-				player.equipWeapon(2);
-				updateBattleHUD(player);
-			}
+ } else if (isKey2) {
+    player.equipWeapon(4);
+    updateBattleHUD(player);
+ }
 		});
 
 		app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {

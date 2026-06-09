@@ -504,7 +504,7 @@ export async function battleOfThreeEmperorsScene(
       player.equipWeapon(1);
       updateBattleHUD(player);
     } else if (event.key === KEY_2) {
-      player.equipWeapon(4);
+      player.equipWeapon(2);
       updateBattleHUD(player);
     }
   });

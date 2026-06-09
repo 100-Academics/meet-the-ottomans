@@ -330,7 +330,7 @@ export async function battleOfPaviaScene(
 	});
 	createBattleHUD();
 	updateBattleHUD(player);
-	player.equipWeapon(2); // start with gun (Pavia era has firearms)
+	player.equipWeapon(4);
 	const cameraController = player.getCameraController();
 	const cameraEntity = player.getCameraEntity();
 	if (cameraEntity.camera) {
@@ -533,10 +533,10 @@ for (const boss of bossNpcs) {
 		if (isKey1) {
 			player.equipWeapon(1);
 			updateBattleHUD(player);
-		} else if (isKey2) {
-			player.equipWeapon(2);
-			updateBattleHUD(player);
-		}
+ } else if (isKey2) {
+    player.equipWeapon(4);
+    updateBattleHUD(player);
+ }
 	});
 
 	app.mouse?.on('mousedown', (event: { x: number; y: number; button: number }) => {
