@@ -83,9 +83,12 @@ export class Boss extends npc {
         this.aiConfig.detectionRange = Number.MAX_VALUE;
     }
 
-    public static setActiveBoss(boss: Boss | null): void {
-        Boss.activeBoss = boss;
+  public static setActiveBoss(boss: Boss | null): void {
+    if (Boss.activeBoss && Boss.activeBoss !== boss) {
+      Boss.activeBoss.removeHealthBar();
     }
+    Boss.activeBoss = boss;
+  }
 
     public static getActiveDeathTaunt(): string | null {
         return Boss.activeBoss?.getDeathTaunt() ?? null;

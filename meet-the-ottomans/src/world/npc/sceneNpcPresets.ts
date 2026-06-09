@@ -202,8 +202,13 @@ const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(0, 0, 0),
-  facingYawOffsetDegrees: 0
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
+};
+
+const ITALIAN_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+    modelRotation: new Vec3(0, 0, 0),
+    facingYawOffsetDegrees: 0
 };
 
 // NPC type -> model path. The spawn system picks the model from this map
@@ -250,7 +255,8 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   french: FRENCH_SPAWN_OVERRIDES,
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
   americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
-  unionSoldier: UNION_SOLDIER_SPAWN_OVERRIDES,
+    unionSoldier: UNION_SOLDIER_SPAWN_OVERRIDES,
+    italian: ITALIAN_SPAWN_OVERRIDES,
   mamlukIthink: MAMLUK_SPAWN_OVERRIDES,
   baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
   caesar: CAESAR_BOSS_SPAWN_OVERRIDES,

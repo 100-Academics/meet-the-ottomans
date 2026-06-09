@@ -7,6 +7,7 @@ import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts"
 import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScreen.ts";
 import { Boss } from "./world/npc/bosses/boss.ts";
 import { unloadAll } from "./util/unloadall.ts";
+import { removeBattleHUD } from "./util/battleHUD";
 
 // Suppress unhandled promise rejections that can arise from async events in the game loop.
 // This prevents noisy "A listener indicated an asynchronous response..." errors in the console.
@@ -100,6 +101,7 @@ export async function changeScene(
   // Clear transient UI and runtime listeners so a scene switch starts clean.
   hideDeathScreen();
   hideVictoryScreen();
+  removeBattleHUD();
   Boss.setActiveBoss(null);
   runSceneCleanupHandlers(app);
   const overlay = ensureOverlayRoot();

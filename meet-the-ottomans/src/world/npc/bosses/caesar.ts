@@ -3,12 +3,8 @@ import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } 
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
-type CaesarAttackType = "summonSoldiers" | "buildMonument" | "bowShot";
-
-interface SummonState {
-    endTimeSeconds: number;
-    hasSummoned: boolean;
-}
+// Attack types for Caesar (summon removed)
+type CaesarAttackType = "buildMonument" | "bowShot";
 
 interface MonumentState {
     endTimeSeconds: number;
@@ -23,24 +19,19 @@ interface BowState {
 }
 
 export class Caesar extends Boss {
-    // Summon Roman soldiers
-    private readonly summonCooldownSeconds = 10.0;
-    private readonly summonRange = 25;
-    private readonly summonDamage = 5;
-    private nextSummonAtSeconds = 0;
 
     // Build monuments from ground
-    private readonly monumentBlockCount = 5;
-    private readonly monumentIntervalSeconds = 0.2;
-    private readonly monumentCooldownSeconds = 8.0;
-    private readonly monumentRange = 18;
-    private readonly monumentDamage = 14;
-    private readonly monumentHitRadius = 2.5;
+    private readonly monumentBlockCount = 25;
+    private readonly monumentIntervalSeconds = 0.5;
+    private readonly monumentCooldownSeconds = 2.0;
+  private readonly monumentRange = 110;
+  private readonly monumentDamage = 25;
+  private readonly monumentHitRadius = 8.0;
     private nextMonumentAtSeconds = 0;
 
     // Bow & arrow
-    private readonly bowDamage = 10;
-    private readonly bowCooldownSeconds = 3.5;
+    private readonly bowDamage = 5;
+    private readonly bowCooldownSeconds = 0.5;
     private readonly bowRange = 35;
     private nextBowAtSeconds = 0;
 
@@ -48,7 +39,6 @@ export class Caesar extends Boss {
     private attackLockUntilSeconds = 0;
     private lastAttackType: CaesarAttackType | null = null;
     private lastAttackAtSeconds = -Infinity;
-    private summonState: SummonState | null = null;
     private monumentState: MonumentState | null = null;
     private bowState: BowState | null = null;
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
@@ -60,16 +50,13 @@ export class Caesar extends Boss {
     private readonly arrowMaterial = this.createEffectMaterial(
         new Color(0.85, 0.75, 0.3), new Color(1, 0.9, 0.4), 3.0, 0.7
     );
-    private readonly summonRingMaterial = this.createEffectMaterial(
-        new Color(0.6, 0.5, 0.3), new Color(0.8, 0.7, 0.4), 2.5, 0.6
-    );
 
     private readonly activeEffects = new Set<Entity>();
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("Caesar")) {
         super(id, maxHealth, entity, "Julius Caesar");
-        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
-        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
+    this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.5;
+    this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.8;
 
         this.setIntroTaunt("Veni, vidi, vici!", "I came, I saw, I conquered!");
         this.setIntroNameTranslation("Gaius Iulius Caesar", "Julius Caesar");
@@ -101,8 +88,8 @@ export class Caesar extends Boss {
                 "The eagles… fall.",
                 "Rome… endures without me."
             ]
-        });
-    }
+    });
+  }
 
     public override updateCombatAI(
         deltaTime: number, currentTimeSeconds: number, allNpcs: npc[],
@@ -123,7 +110,6 @@ export class Caesar extends Boss {
         const dt = Math.max(0, Math.min(deltaTime, 0.05));
         if (!targetEntity) { super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride); return; }
 
-        if (this.summonState) { this.updateSummon(dt, targetEntity, currentTimeSeconds, onAttack); return; }
         if (this.monumentState) { this.updateMonument(dt, targetEntity, currentTimeSeconds, onAttack); return; }
         if (this.bowState) { this.updateBow(dt, targetEntity, currentTimeSeconds, onAttack); return; }
 
@@ -131,7 +117,6 @@ export class Caesar extends Boss {
 
         const distance = this.getFlatDistanceTo(targetEntity);
         const chosen = this.pickNextAttack(distance, currentTimeSeconds);
-        if (chosen === "summonSoldiers") { this.startSummon(currentTimeSeconds); return; }
         if (chosen === "buildMonument") { this.startMonument(targetEntity, currentTimeSeconds); return; }
         if (chosen === "bowShot") { this.startBow(currentTimeSeconds); return; }
 
@@ -140,11 +125,11 @@ export class Caesar extends Boss {
         this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
     }
 
-    public override kill(): boolean {
-        const didKill = super.kill();
-        if (didKill) this.cleanupEffects();
-        return didKill;
-    }
+  public override kill(): boolean {
+    const didKill = super.kill();
+    if (didKill) this.cleanupEffects();
+    return didKill;
+  }
 
     protected override getCombatProfile() {
         const base = super.getCombatProfile();
@@ -154,9 +139,6 @@ export class Caesar extends Boss {
     // ── Attack selection ──
     private pickNextAttack(distance: number, now: number): CaesarAttackType | null {
         const choices: Array<{ type: CaesarAttackType; score: number }> = [];
-        if (now >= this.nextSummonAtSeconds && distance <= this.summonRange) {
-            choices.push({ type: "summonSoldiers", score: 1.0 });
-        }
         if (now >= this.nextMonumentAtSeconds && distance <= this.monumentRange) {
             const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.monumentRange));
             choices.push({ type: "buildMonument", score: 1.2 + closeness });
@@ -175,29 +157,6 @@ export class Caesar extends Boss {
         return best.type;
     }
 
-    // ── Summon Roman soldiers ──
-    private startSummon(now: number): void {
-        this.lastAttackType = "summonSoldiers"; this.lastAttackAtSeconds = now;
-        this.summonState = { endTimeSeconds: now + 1.0, hasSummoned: false };
-        this.attackLockUntilSeconds = this.summonState.endTimeSeconds;
-    }
-
-    private updateSummon(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.summonState; if (!state) return;
-        this.faceTarget(target, dt);
-        if (!state.hasSummoned) {
-            state.hasSummoned = true;
-            // Visual: summon ring at boss position
-            this.spawnRingEffect(this.getEntity().getPosition(), 4, 1200, this.summonRingMaterial, "caesar-summon-ring", 0.5);
-            // Damage pulse on summon
-            this.applyDamage(this.summonDamage, onAttack);
-        }
-        if (now >= state.endTimeSeconds) {
-            this.summonState = null;
-            this.nextSummonAtSeconds = now + this.summonCooldownSeconds;
-        }
-    }
-
     // ── Build monuments from ground ──
     private startMonument(target: Entity, now: number): void {
         this.lastAttackType = "buildMonument"; this.lastAttackAtSeconds = now;
@@ -208,8 +167,8 @@ export class Caesar extends Boss {
 
         const blockPositions: Vec3[] = [];
         for (let i = 0; i < this.monumentBlockCount; i++) {
-            const forwardDist = i * 2.5 + 3;
-            const lateralOffset = (i % 2 === 0 ? 1 : -1) * 1.5;
+    const forwardDist = i * 4.5 + 3;
+    const lateralOffset = (i % 2 === 0 ? 1 : -1) * 3.0;
             blockPositions.push(new Vec3(
                 myPos.x + dir.x * forwardDist + (-dir.z) * lateralOffset,
                 myPos.y,
@@ -310,7 +269,7 @@ export class Caesar extends Boss {
         arrow.setLocalScale(0.15, 0.15, 1.5);
         const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
         const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
-        arrow.setLocalEulerAngles(-90, yaw, 0);
+        arrow.setLocalEulerAngles(0, yaw, 0);
         arrow.setPosition(myPos.x + dir.x * 2, myPos.y + 1.5, myPos.z + dir.z * 2);
         this.getEntity().parent?.addChild(arrow) ?? this.getEntity().addChild(arrow);
         this.activeEffects.add(arrow);
@@ -353,31 +312,14 @@ export class Caesar extends Boss {
         mat.update(); return mat;
     }
 
-    private spawnRingEffect(origin: Vec3, radius: number, durationMs: number, material: StandardMaterial, name: string, opacity: number): void {
-        const ring = new Entity(name);
-        ring.addComponent("render", { type: "torus", material });
-        ring.setPosition(origin.x, origin.y + 0.1, origin.z);
-        ring.setLocalScale(radius, radius * 0.15, radius);
-        this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
-        this.activeEffects.add(ring);
-        const startMs = Date.now();
-        const tick = () => {
-            const elapsed = Date.now() - startMs;
-            if (elapsed >= durationMs) { this.destroyEffect(ring); return; }
-            const mat = ring.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
-            if (mat) { mat.opacity = opacity * (1 - elapsed / durationMs); mat.update(); }
-            requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-    }
 
     private destroyEffect(entity: Entity | null | undefined): void {
         if (!entity) return; this.activeEffects.delete(entity);
         if (entity.parent) entity.parent.removeChild(entity); entity.destroy();
     }
 
-    private cleanupEffects(): void {
-        for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
-        this.activeEffects.clear(); this.summonState = null; this.monumentState = null; this.bowState = null;
-    }
+  private cleanupEffects(): void {
+    for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
+    this.activeEffects.clear(); this.monumentState = null; this.bowState = null;
+  }
 }
