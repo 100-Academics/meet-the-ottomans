@@ -66,6 +66,7 @@ function createStarfieldTexture(
       mipmaps: true,
       name: "northwood-starfield-fallback",
     });
+    
   // Cold, sterile white-grey gradient — nothing like the other starfields.
   const baseGradient = ctx.createLinearGradient(0, 0, width, height);
   baseGradient.addColorStop(0, "#1a1a1e");

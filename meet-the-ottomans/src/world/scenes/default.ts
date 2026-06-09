@@ -676,6 +676,9 @@ app.once('destroy', cleanupHoverLabel);
       else if (battle.getName() === 'Northwood High School') {
         battleOfNorthwoodHighScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
       }
+      else if (battle.getName() === 'Northwood High School') {
+        battleOfNorthwoodHighScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+      }
       onClickWithCounter(battle);
     });
   });
