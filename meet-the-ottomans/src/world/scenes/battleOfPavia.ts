@@ -39,7 +39,7 @@ import { isDeathScreenVisible } from './deathScreen';
 import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
-import { AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
+import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { changeScene } from "../../App";
 
@@ -177,8 +177,8 @@ export function createStarfieldTexture(device: AppBase['graphicsDevice'], width 
 	return texture;
 }
 
-function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
-	const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
+function resolvePaviaSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
+	const basePoints = PAVIA_NPC_SPAWN_POINTS;
 	if (!Number.isFinite(anchor.x) || !Number.isFinite(anchor.z)) {
 		return basePoints;
 	}
@@ -208,7 +208,7 @@ function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
 		team: "foe",
 		x: anchor.x + offset.x,
 		z: anchor.z + offset.z,
-		type: "mongol"
+		type: "italian"
 	}));
 }
 
@@ -497,26 +497,16 @@ await waitForAmmoReady(app, "ground");;
 		app.root.addChild(light);
 	}
 
-	const ainJalutSpawnPoints = resolveAinJalutSpawnPoints(respawnPosition);
+	const paviaSpawnPoints = resolvePaviaSpawnPoints(respawnPosition);
 	const npcSpawnOptions = {
 		...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
 		groundYFallback: respawnGroundY
 	};
-	let npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+	let npcs = await spawnSceneNpcs(app, rigidbodySystem, paviaSpawnPoints, npcSpawnOptions);
 	if (npcs.length === 0) {
-		console.warn('[NPC] Ain Jalut spawn returned no soldiers on the first pass, retrying once');
-		npcs = await spawnSceneNpcs(app, rigidbodySystem, ainJalutSpawnPoints, npcSpawnOptions);
+		console.warn('[NPC] Pavia spawn returned no soldiers on the first pass, retrying once');
+		npcs = await spawnSceneNpcs(app, rigidbodySystem, paviaSpawnPoints, npcSpawnOptions);
 	}
-
-	const bossSpawnOptions = { ...DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
-	const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, PAVIA_BOSS_SPAWN_POINT, bossSpawnOptions);
-for (const boss of bossNpcs) {
- npcs.push(boss);
- if (boss instanceof Boss) {
- boss.drawHealthBar();
- Boss.setActiveBoss(boss);
- }
- }
 
 	app.keyboard?.on('keydown', (event: { key: number | string | null; event?: globalThis.KeyboardEvent | null }) => {
 		if (isDeathScreenVisible()) {
@@ -566,7 +556,7 @@ bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
 	updateKey: '__paviaNpcUpdate',
 	battleStatus: {
 		getCameraEntity: () => player.getCameraEntity(),
-		initialTotal: AIN_JALUT_NPC_SPAWN_POINTS.length + PAVIA_BOSS_SPAWN_POINT.length,
+		initialTotal: PAVIA_NPC_SPAWN_POINTS.length,
 		onRemainingCountChange: (remaining) => updateBattleHUD(player, remaining)
 	},
 	onNpcAttack: (attacker, target, damage) => {
