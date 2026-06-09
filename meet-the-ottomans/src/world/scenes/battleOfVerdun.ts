@@ -85,6 +85,13 @@ function getHighestGroundHitY(
   if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function")
     return undefined;
 
+
+
+
+
+
+
+  
   // Use terrain bounds to determine the ray range, falling back to ±300
   const rayRange = terrainBounds ? (terrainBounds.maxY - terrainBounds.minY) : 600;
   const rayCenter = terrainBounds ? (terrainBounds.maxY + terrainBounds.minY) * 0.5 : 0;
