@@ -118,20 +118,22 @@ function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
 }
 
 function getGroundYAt(
-    rigidbodySystem: RigidbodyRaycastSystem | undefined,
-    x: number,
-    y: number,
-    z: number,
-    groundTag: string,
-    probeHeight: number,
-    probeDepth: number
+  rigidbodySystem: RigidbodyRaycastSystem | undefined,
+  x: number,
+  y: number,
+  z: number,
+  groundTag: string,
+  probeHeight: number,
+  probeDepth: number
 ): number | undefined {
-    if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function") {
-        return undefined;
-    }
+  if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function") {
+    return undefined;
+  }
 
-    const rayStart = new Vec3(x, y + probeHeight, z);
-    const rayEnd = new Vec3(x, y - probeDepth, z);
+  const absoluteTop = Math.max(probeHeight, 500);
+  const absoluteBottom = Math.min(-probeDepth, -500);
+  const rayStart = new Vec3(x, absoluteTop, z);
+  const rayEnd = new Vec3(x, absoluteBottom, z);
     console.log(`[GroundProbe] ray Y=${rayStart.y.toFixed(1)}→${rayEnd.y.toFixed(1)}, origin=(${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
 
     if (typeof rigidbodySystem.raycastAll === "function") {

@@ -323,8 +323,8 @@ const overlayHTML = `
           <div class="btn-row" style="gap: 6px; flex-wrap: wrap;">
             <button id="period1-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1200-1300</button>
             <button id="period2-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1400-1500</button>
-            <button id="period3-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1500-1650</button>
-            <button id="period4-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1750-1900</button>
+            <button id="period3-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1500-1700</button>
+            <button id="period4-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1700-1900</button>
             <button id="period5-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1900-1945</button>
             <button id="period6-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">1945-2000</button>
             <button id="period7-btn" class="btn" style="padding: 6px 10px; font-size: 0.72rem;">2000-2026</button>

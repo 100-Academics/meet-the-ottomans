@@ -271,15 +271,56 @@ export class npc {
             return;
         }
 
-        // Normalize direction so movement speed stays constant regardless of vector length.
         const nx = dirX / magnitude;
         const nz = dirZ / magnitude;
         const currentPos = this.entity.getPosition();
-        const nextPos = new Vec3(
-            currentPos.x + (nx * speed * deltaTime),
-            currentPos.y,
-            currentPos.z + (nz * speed * deltaTime)
-        );
+        const nextX = currentPos.x + (nx * speed * deltaTime);
+        const nextZ = currentPos.z + (nz * speed * deltaTime);
+        const rigidbodySystem = (this.entity as any).app
+            ? ((this.entity as any).app.systems as any)?.rigidbody
+            : ((globalThis as any).app?.systems as any)?.rigidbody;
+        let nextY = currentPos.y;
+        if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function') {
+            const probeY = Math.max(currentPos.y + 300, 500);
+            const rayStart = new Vec3(nextX, probeY, nextZ);
+            const rayEnd = new Vec3(nextX, -500, nextZ);
+            let groundHitY: number | undefined;
+            if (typeof rigidbodySystem.raycastAll === 'function') {
+                const hits = rigidbodySystem.raycastAll(rayStart, rayEnd);
+                if (hits && hits.length > 0) {
+                    let bestFraction = Number.POSITIVE_INFINITY;
+                    for (const hit of hits) {
+                        if (!hit?.point || !Number.isFinite(hit.point.y)) continue;
+                        let e: Entity | null = hit.entity ?? null;
+                        let tagged = false;
+                        while (e) {
+                            if (e.tags?.has('ground')) { tagged = true; break; }
+                            e = (e.parent as Entity | null) ?? null;
+                        }
+                        if (!tagged) continue;
+                        const hf = hit.hitFraction;
+                        if (typeof hf === 'number' && Number.isFinite(hf) && hf < bestFraction) {
+                            bestFraction = hf;
+                            groundHitY = hit.point.y;
+                        }
+                    }
+                }
+            }
+            if (groundHitY === undefined) {
+                const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
+                if (hit?.point && Number.isFinite(hit.point.y)) {
+                    let e: Entity | null = hit.entity ?? null;
+                    while (e) {
+                        if (e.tags?.has('ground')) { groundHitY = hit.point.y; break; }
+                        e = (e.parent as Entity | null) ?? null;
+                    }
+                }
+            }
+            if (groundHitY !== undefined) {
+                nextY = Math.max(currentPos.y, groundHitY + 0.1);
+            }
+        }
+        const nextPos = new Vec3(nextX, nextY, nextZ);
         this.entity.setPosition(nextPos);
 
         // Keep imported model pitch/roll while steering yaw toward travel direction.

@@ -708,10 +708,11 @@ const npcSpawnOptions = {
 		}
 	});
 
-bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
+  bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
   updateKey: '__viennaNpcUpdate',
   groundProbeHeight: 500,
   groundProbeDepth: 500,
+  obstacleCollisionEnabled: true,
   getPlayerHealth: () => ({ current: player.getHealth(), max: player.getDebugState().maxHealth }),
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
