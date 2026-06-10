@@ -109,7 +109,7 @@ export class BinLadin extends Boss {
 	private readonly activeEffects = new Set<Entity>();
 
 	constructor(id: number, maxHealth: number, entity: Entity = new Entity("BinLadin")) {
-		super(id, maxHealth, entity, "Bin Ladin");
+		super(id, maxHealth, entity, "Air Ladin");
 		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
 		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
@@ -137,7 +137,7 @@ export class BinLadin extends Boss {
 				"The end is written."
 			],
 			death: [
-				"الجنة… قريبة…",
+				"Allah akbar!",
 			],
 			bossDeath: [
 				"The cave is silent once more.",
