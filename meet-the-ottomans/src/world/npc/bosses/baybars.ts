@@ -65,7 +65,7 @@ export class Baybars extends Boss {
     private readonly spikeCount = 6;
     private readonly spikeIntervalSeconds = 0.18;
     private readonly spikeCooldownSeconds = 7.0;
-    private readonly spikeRange = 20;
+    private readonly spikeRange = 40;
     private readonly spikeHitRadius = 2.0;
     private nextSpikesAtSeconds = 0;
 
@@ -137,7 +137,6 @@ export class Baybars extends Boss {
                 "You were brave, but foolish."
             ],
             bossDeath: [
-                "My sultanate… endures beyond me.",
                 "The Mamluks will avenge me.",
                 "I have a long ass name."
             ]

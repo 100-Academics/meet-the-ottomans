@@ -553,11 +553,11 @@ export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", 
 
 // Pavia
 export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
- { id: 1, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 2, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 3, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 4, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 5, team: "foe", x: 0, z: 0, type: "italian" },
+  { id: 1, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 2, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 3, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 4, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 5, team: "foe", x: -150, z: 100, type: "italian" },
 ];
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];
 
