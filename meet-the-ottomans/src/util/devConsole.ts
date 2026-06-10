@@ -541,6 +541,16 @@ export class DevConsole {
       return `Equipped weapon slot ${slot}`;
     }, '<weaponName>');
 
+    DevConsole.register('lockround', 'Prevent a level from ending', () => {
+      if (DevConsole._roundLock) {
+        DevConsole._roundLock = false;
+        return 'Round end prevention DISABLED';
+      } else {
+        DevConsole._roundLock = true;
+        return 'Round end prevention ENABLED';
+      }
+    });
+
     // ---- exit ----
     DevConsole.register('exit', 'Close the dev console', () => {
       DevConsole.toggle();
@@ -553,6 +563,8 @@ export class DevConsole {
 
   /** Fly mode flag — checked by FirstPersonCamera. */
   static _flyMode = false;
+
+  static _roundLock = false; // flag to prevent the round from ending
 }
 
 // Expose on window for quick browser-console access: DevConsole.toggle()

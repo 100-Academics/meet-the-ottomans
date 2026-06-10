@@ -46,6 +46,7 @@ import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, LEGN
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
+import { DevConsole } from "../../util/devConsole";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
 
@@ -752,7 +753,7 @@ export async function battleOfLegnicaScene(
     }
 
     const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-    if (remainingFoes.length === 0 && isBossSpawned) {
+    if (remainingFoes.length === 0 && isBossSpawned && !DevConsole._roundLock) {
       victoryHandled = true;
       removeBattleHUD();
       changeScene(canvas, app, 777);
