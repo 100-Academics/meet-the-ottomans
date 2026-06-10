@@ -127,8 +127,8 @@ const VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const BIN_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelPath: NPC_MODEL_PATHS.binLadin,
-  modelRotation: new Vec3(0, 0, 0),
+ modelPath: NPC_MODEL_PATHS.binLadin,
+ modelRotation: new Vec3(-90, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
