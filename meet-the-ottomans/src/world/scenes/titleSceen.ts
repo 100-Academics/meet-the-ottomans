@@ -44,14 +44,15 @@ const introSlides: IntroSlide[] = [
     lines: [
       'The nationalists have developed a time machine.',
       'They intend to send you back in time in order to change the course of battles fought across history.',
-      'Equipped with nothing more than weapons of the time period and a translator unit, you are expected to change the future.'
+      'Equipped with nothing more than weapons, body modifications, and a translator unit, you are expected to change the future.'
     ]
   },
   {
     title: 'Change the Future',
     lines: [
       'If all goes well, you will ensure the Ottoman Empire is stronger than ever before.',
-      'You must return glory to your forgotten empire.'
+      'You must return glory to your forgotten empire.',
+      'But be advised: there may be unseen forces at play.'
     ]
   },
   {

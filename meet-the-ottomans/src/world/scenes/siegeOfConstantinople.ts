@@ -960,7 +960,7 @@ export async function siegeOfConstantinopleScene(
 			player.equipWeapon(1);
 			updateBattleHUD(player);
 		} else if (event.key === KEY_2) { 
-			player.equipWeapon(3);
+			player.equipWeapon(4);
 			updateBattleHUD(player);
 		// } else if (event.key === KEY_3) { // unecessary weapon slot for this scene.
 		// 	player.equipWeapon(3);

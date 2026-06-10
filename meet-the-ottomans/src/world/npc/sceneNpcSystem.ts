@@ -44,12 +44,14 @@ interface RigidbodyRaycastSystem {
 }
 
 export interface NpcSpawnPoint {
-    id: number;
-    team: NpcSceneTeam;
-    x: number;
-    z: number;
-    maxHealth?: number;
-    type?: string; // Optional type field for different NPC classes (e.g., "mongol")
+  id: number;
+  team: NpcSceneTeam;
+  x: number;
+  z: number;
+  maxHealth?: number;
+  type?: string;
+  rotation?: Vec3;
+  yaw?: number;
 }
 
 export interface NpcSpawnOverrides {
@@ -301,8 +303,8 @@ const groundTag = "ground";
             const modelPath = spawnOverrides?.modelPath
                 ?? (spawn.type ? typeModelPaths[spawn.type] : undefined)
                 ?? fallbackModelPath;
-            const modelRotation = spawnOverrides?.modelRotation ?? fallbackModelRotation;
-            const modelScale = spawnOverrides?.modelScale ?? fallbackModelScale;
+        const modelRotation = spawn.rotation ?? spawnOverrides?.modelRotation ?? fallbackModelRotation;
+        const modelScale = spawnOverrides?.modelScale ?? fallbackModelScale;
             // Scale the height offset by the model's Y-scale to account for stretched geometry.
             // When a model is scaled up, its feet move further below the origin proportionally.
             const scaleY = modelScale.y ?? 1;
@@ -331,8 +333,12 @@ const groundTag = "ground";
                 rotation: modelRotation,
                 scale: modelScale
             });
-            npcModel.modelEntity.tags.add("npc");
-            const modelMinY = getEntityMinY(npcModel.modelEntity);
+        npcModel.modelEntity.tags.add("npc");
+        if (spawn.yaw !== undefined && Number.isFinite(spawn.yaw)) {
+          const currentEuler = npcModel.modelEntity.getLocalEulerAngles();
+          npcModel.modelEntity.setLocalEulerAngles(currentEuler.x, currentEuler.y + spawn.yaw, currentEuler.z);
+        }
+        const modelMinY = getEntityMinY(npcModel.modelEntity);
             console.log(`[NPC] modelMinY=${modelMinY?.toFixed(2) ?? "n/a"}, targetMinY=${(npcSpawnY + defaultGroundClearance).toFixed(2)}, scaleY=${scaleY}`);
             if (modelMinY !== undefined) {
                 const targetMinY = npcSpawnY + defaultGroundClearance;

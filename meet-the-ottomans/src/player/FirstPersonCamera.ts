@@ -176,69 +176,86 @@ export class FirstPersonCamera extends ScriptType {
         }
     }
 
-    private tryMoveDash(
-        position: Vec3,
-        direction: Vec3,
-        speed: number,
-        dt: number,
-        currentGroundHeight: number | undefined,
-        onGround: boolean
-    ): void {
-        const movement = direction.clone().mulScalar(speed * dt);
-        const distance = movement.length();
-        if (distance <= 0.0001) {
-            return;
-        }
+ private tryMoveDash(
+ position: Vec3,
+ direction: Vec3,
+ speed: number,
+ dt: number,
+ currentGroundHeight: number | undefined,
+ onGround: boolean
+ ): void {
+ const movement = direction.clone().mulScalar(speed * dt);
+ const distance = movement.length();
+ if (distance <= 0.0001) {
+ return;
+ }
 
-        const maxDashStep = Math.max(0.75, this.groundSampleRadius * 4);
-        const steps = Math.max(1, Math.ceil(distance / maxDashStep));
-        const stepVector = movement.clone().mulScalar(1 / steps);
-        const allowGroundChecks = onGround;
-        let stepGroundHeight = allowGroundChecks && this.isFiniteNumber(currentGroundHeight)
-            ? currentGroundHeight
-            : undefined;
-        const allowGroundSnap = allowGroundChecks && direction.y <= 0.01;
+ const maxDashStep = Math.max(0.75, this.groundSampleRadius * 4);
+ const steps = Math.max(1, Math.ceil(distance / maxDashStep));
+ const stepVector = movement.clone().mulScalar(1 / steps);
+ const allowGroundSnap = onGround && direction.y <= 0.01;
+ let stepGroundHeight = this.isFiniteNumber(currentGroundHeight)
+ ? currentGroundHeight
+ : undefined;
 
-        // Sub-step dash movement to keep ground checks stable on uneven terrain.
-        for (let step = 0; step < steps; step += 1) {
-            const currentStepGroundHeight = stepGroundHeight;
-            const proposedPos = position.clone().add(stepVector);
+ for (let step = 0; step < steps; step += 1) {
+ const currentStepGroundHeight = stepGroundHeight;
+ const proposedPos = position.clone().add(stepVector);
 
-            if (allowGroundChecks && this.isFiniteNumber(stepGroundHeight)) {
-                const nextGroundHeight = this.getStepGroundHeight(stepGroundHeight, proposedPos);
-                if (!this.isFiniteNumber(nextGroundHeight)) {
-                    return;
-                }
-                stepGroundHeight = nextGroundHeight;
-                if (allowGroundSnap) {
-                    proposedPos.y = stepGroundHeight + this.playerHeight;
-                }
-            } else if (allowGroundChecks && !this.hasGroundSupport(proposedPos)) {
-                return;
-            }
+ if (onGround && this.isFiniteNumber(stepGroundHeight)) {
+ const nextGroundHeight = this.getStepGroundHeight(stepGroundHeight, proposedPos);
+ if (!this.isFiniteNumber(nextGroundHeight)) {
+ return;
+ }
+ stepGroundHeight = nextGroundHeight;
+ if (allowGroundSnap) {
+ proposedPos.y = stepGroundHeight + this.playerHeight;
+ }
+ } else if (onGround && !this.hasGroundSupport(proposedPos)) {
+ return;
+ }
 
-            // Check collision only for horizontal components to allow upward dashing
-            const currentCheck = position.clone();
-            if (allowGroundSnap && this.isFiniteNumber(currentStepGroundHeight)) {
-                currentCheck.y = currentStepGroundHeight + this.playerHeight;
-            }
-            const horizontalCheck = new Vec3(proposedPos.x, currentCheck.y, proposedPos.z);
-            let blocked = this.isBlocked(currentCheck, horizontalCheck);
-            if (!blocked && Math.abs(proposedPos.y - currentCheck.y) > 0.001) {
-                const elevatedCurrent = currentCheck.clone();
-                elevatedCurrent.y = proposedPos.y;
-                const elevatedNext = proposedPos.clone();
-                elevatedNext.y = proposedPos.y;
-                blocked = this.isBlocked(elevatedCurrent, elevatedNext);
-            }
+ if (!onGround) {
+ const terrainHeight = this.sampleGroundHeight(proposedPos, Number.POSITIVE_INFINITY, this.groundHeight);
+ if (this.isFiniteNumber(terrainHeight) && terrainHeight + this.playerHeight > proposedPos.y + 0.05) {
+ return;
+ }
+ if (this.isDashBlockedByTerrain(proposedPos)) {
+ return;
+ }
+ if (this.isFiniteNumber(stepGroundHeight)) {
+ const nextTerrainHeight = this.sampleGroundHeight(proposedPos, stepGroundHeight + this.maxStepHeight + this.groundedEpsilon, stepGroundHeight);
+ if (this.isFiniteNumber(nextTerrainHeight)) {
+ stepGroundHeight = nextTerrainHeight;
+ } else if (!this.hasGroundSupport(proposedPos)) {
+ return;
+ }
+ } else if (!this.hasGroundSupport(proposedPos)) {
+ return;
+ }
+ }
 
-            if (blocked) {
-                return;
-            }
+ const currentCheck = position.clone();
+ if (allowGroundSnap && this.isFiniteNumber(currentStepGroundHeight)) {
+ currentCheck.y = currentStepGroundHeight + this.playerHeight;
+ }
+ const horizontalCheck = new Vec3(proposedPos.x, currentCheck.y, proposedPos.z);
+ let blocked = this.isBlocked(currentCheck, horizontalCheck);
+ if (!blocked && Math.abs(proposedPos.y - currentCheck.y) > 0.001) {
+ const elevatedCurrent = currentCheck.clone();
+ elevatedCurrent.y = proposedPos.y;
+ const elevatedNext = proposedPos.clone();
+ elevatedNext.y = proposedPos.y;
+ blocked = this.isBlocked(elevatedCurrent, elevatedNext);
+ }
 
-            position.copy(proposedPos);
-        }
-    }
+ if (blocked) {
+ return;
+ }
+
+ position.copy(proposedPos);
+ }
+ }
 
     initialize() {
         this.eulers.x = this.entity.getLocalEulerAngles().x;
@@ -364,33 +381,33 @@ export class FirstPersonCamera extends ScriptType {
         return { minX, minY, minZ, maxX, maxY, maxZ };
     }
 
-    private isBlocked(currentPos: Vec3, nextPos: Vec3): boolean {
-        const rigidbodySystem = (this.app.systems as any).rigidbody;
-        const moveDelta = nextPos.clone().sub(currentPos);
-        const moveDistance = moveDelta.length();
-        if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function' && moveDistance > 0.0001) {
-            const rayStart = currentPos.clone();
-            rayStart.y -= this.playerHeight * 0.5;
-            const rayEnd = nextPos.clone();
-            rayEnd.y = rayStart.y;
-            const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd) as
-                | { entity?: Entity | null; point?: Vec3; normal?: Vec3 }
-                | null;
+ private isBlocked(currentPos: Vec3, nextPos: Vec3): boolean {
+ const rigidbodySystem = (this.app.systems as any).rigidbody;
+ const moveDelta = nextPos.clone().sub(currentPos);
+ const moveDistance = moveDelta.length();
+ if (rigidbodySystem && typeof rigidbodySystem.raycastFirst === 'function' && moveDistance > 0.0001) {
+ const rayStart = currentPos.clone();
+ rayStart.y -= this.playerHeight * 0.5;
+ const rayEnd = nextPos.clone();
+ rayEnd.y = rayStart.y;
+ const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd) as
+ | { entity?: Entity | null; point?: Vec3; normal?: Vec3 }
+ | null;
 
-            if (hit?.point && hit?.entity) {
-                const toHit = hit.point.clone().sub(rayStart);
-                if (toHit.length() <= moveDistance + this.collisionProbePadding) {
-                    if (hit.normal && this.isFiniteNumber(hit.normal.x) && this.isFiniteNumber(hit.normal.y) && this.isFiniteNumber(hit.normal.z)) {
-                        const normal = new Vec3(hit.normal.x, hit.normal.y, hit.normal.z).normalize();
-                        if (normal.y < 0.6) {
-                            return true;
-                        }
-                    } else {
-                        return true;
-                    }
-                }
-            }
-        }
+ if (hit?.point && hit?.entity) {
+ const toHit = hit.point.clone().sub(rayStart);
+ if (toHit.length() <= moveDistance + this.collisionProbePadding) {
+ if (hit.normal && this.isFiniteNumber(hit.normal.x) && this.isFiniteNumber(hit.normal.y) && this.isFiniteNumber(hit.normal.z)) {
+ const normal = new Vec3(hit.normal.x, hit.normal.y, hit.normal.z).normalize();
+ if (normal.y < 0.6) {
+ return true;
+ }
+ } else {
+ return true;
+ }
+ }
+ }
+ }
 
         const obstacles = this.app.root.findByTag(this.collisionTag) as Entity[];
         if (!obstacles || obstacles.length === 0) {
@@ -420,10 +437,38 @@ export class FirstPersonCamera extends ScriptType {
             }
         }
 
-        return false;
-    }
+ return false;
+ }
 
-    // Raycast from click position and return the hit NPC if it is within maxRange.
+ private isDashBlockedByTerrain(nextPos: Vec3): boolean {
+ const rigidbodySystem = (this.app.systems as any).rigidbody;
+ if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
+ return false;
+ }
+ const downRayStart = nextPos.clone();
+ downRayStart.y = nextPos.y + this.playerHeight;
+ const downRayEnd = nextPos.clone();
+ downRayEnd.y = nextPos.y - this.playerHeight * 0.5;
+ const downHit = rigidbodySystem.raycastFirst(downRayStart, downRayEnd) as
+ | { entity?: Entity | null; point?: Vec3; normal?: Vec3 }
+ | null;
+ if (!downHit?.point || !downHit?.entity) {
+ return false;
+ }
+ if (downHit.point.y > nextPos.y - this.playerHeight + 0.1) {
+ if (downHit.normal && this.isFiniteNumber(downHit.normal.x) && this.isFiniteNumber(downHit.normal.y) && this.isFiniteNumber(downHit.normal.z)) {
+ const dNormal = new Vec3(downHit.normal.x, downHit.normal.y, downHit.normal.z).normalize();
+ if (dNormal.y >= 0.3) {
+ return true;
+ }
+ } else {
+ return true;
+ }
+ }
+ return false;
+ }
+
+ // Raycast from click position and return the hit NPC if it is within maxRange.
     public getClickedNpcInRange(screenX: number, screenY: number, npcs: npc[], maxRange: number): npc | null {
         return Weapon.getClickedNpcInRange(this.app, this.entity, screenX, screenY, npcs, maxRange);
     }
@@ -1008,16 +1053,23 @@ export class FirstPersonCamera extends ScriptType {
 
         this.clampToMovementBounds(finalPos);
 
-        if (!this.hasGroundSupport(finalPos)) {
-            finalPos.x = lastCommittedPos.x;
-            finalPos.z = lastCommittedPos.z;
+ if (!this.hasGroundSupport(finalPos)) {
+ finalPos.x = lastCommittedPos.x;
+ finalPos.z = lastCommittedPos.z;
 
-            const fallbackGroundHeight = this.sampleGroundHeight(lastCommittedPos, Number.POSITIVE_INFINITY, this.groundHeight);
-            if (this.isFiniteNumber(fallbackGroundHeight)) {
-                this.groundHeight = fallbackGroundHeight;
-                finalPos.y = Math.max(finalPos.y, fallbackGroundHeight + this.playerHeight);
-            }
-        }
+ const fallbackGroundHeight = this.sampleGroundHeight(lastCommittedPos, Number.POSITIVE_INFINITY, this.groundHeight);
+ if (this.isFiniteNumber(fallbackGroundHeight)) {
+ this.groundHeight = fallbackGroundHeight;
+ finalPos.y = Math.max(finalPos.y, fallbackGroundHeight + this.playerHeight);
+ }
+ } else {
+ const finalGroundHeight = this.sampleGroundHeight(finalPos, Number.POSITIVE_INFINITY, this.groundHeight);
+ if (this.isFiniteNumber(finalGroundHeight) && finalGroundHeight + this.playerHeight > finalPos.y + 0.1) {
+ finalPos.x = lastCommittedPos.x;
+ finalPos.z = lastCommittedPos.z;
+ finalPos.y = Math.max(finalPos.y, finalGroundHeight + this.playerHeight);
+ }
+ }
 
         this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
         this.entity.setPosition(finalPos);
