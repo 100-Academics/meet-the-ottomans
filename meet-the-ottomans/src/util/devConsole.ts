@@ -22,8 +22,8 @@ import { npc } from '../world/npc/npc';
 // Types
 // ---------------------------------------------------------------------------
 
-/** A command handler receives the raw arg string (empty string if none). */
-type CommandHandler = (args: string) => string | void;
+/** A command handler receives the raw arg string (empty string if none). Can be async. */
+type CommandHandler = (args: string) => string | void | Promise<string | void>;
 
 interface CommandEntry {
   name: string;
@@ -263,7 +263,17 @@ export class DevConsole {
 
     try {
       const result = entry.handler(args);
-      if (typeof result === 'string' && result.length > 0) {
+      // Handle both sync and async command handlers
+      if (result instanceof Promise) {
+        void result.then((val) => {
+          if (typeof val === 'string' && val.length > 0) {
+            DevConsole.log(val);
+            DevConsole._scrollToBottom();
+          }
+        }).catch((err) => {
+          DevConsole.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
+        });
+      } else if (typeof result === 'string' && result.length > 0) {
         DevConsole.log(result);
       }
     } catch (err) {
@@ -496,6 +506,46 @@ export class DevConsole {
         return `Error: ${err instanceof Error ? err.message : String(err)}`;
       }
     }, '<expression>');
+
+    // ---- noclip ----
+    DevConsole.register('noclip', 'Toggle noclip (alias for fly mode — disable gravity on camera)', () => {
+      DevConsole._flyMode = !DevConsole._flyMode;
+      const player = DevConsole._player;
+      if (player) {
+        const controller = player.getCameraController();
+        if (controller && 'devFlyMode' in controller) {
+          (controller as Record<string, unknown>).devFlyMode = DevConsole._flyMode;
+        }
+      }
+      return DevConsole._flyMode ? 'Noclip ON' : 'Noclip OFF';
+    });
+
+    // ---- kill ----
+    DevConsole.register('kill', 'Kill the player (deal lethal damage)', () => {
+      const player = DevConsole._player;
+      if (!player) return 'No player reference available';
+      player.takeDamage(player.getHealth());
+      return 'Player killed';
+    });
+
+    // ---- give ----
+    DevConsole.register('give', 'Give/equip a weapon: sword=1, gun=2, bow=3, old gun=4', (args) => {
+      const player = DevConsole._player;
+      if (!player) return 'No player reference available';
+      const nameMap: Record<string, 1 | 2 | 3 | 4> = {
+        sword: 1, gun: 2, bow: 3, 'old gun': 4,
+      };
+      const slot = nameMap[args.trim().toLowerCase()];
+      if (!slot) return 'Usage: give <weapon>  (sword, gun, bow, old gun)';
+      player.equipWeapon(slot);
+      return `Equipped weapon slot ${slot}`;
+    }, '<weaponName>');
+
+    // ---- exit ----
+    DevConsole.register('exit', 'Close the dev console', () => {
+      DevConsole.toggle();
+      return '';
+    });
   }
 
   /** God mode flag — checked by damage handlers. */
@@ -507,5 +557,5 @@ export class DevConsole {
 
 // Expose on window for quick browser-console access: DevConsole.toggle()
 if (typeof window !== 'undefined') {
-  (window as Record<string, unknown>).DevConsole = DevConsole;
+  (window as unknown as Record<string, unknown>)['DevConsole'] = DevConsole;
 }
