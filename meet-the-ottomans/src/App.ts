@@ -8,6 +8,7 @@ import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScre
 import { Boss } from "./world/npc/bosses/boss.ts";
 import { unloadAll } from "./util/unloadall.ts";
 import { removeBattleHUD } from "./util/battleHUD";
+import { DevConsole } from "./util/devConsole";
 
 // Suppress unhandled promise rejections that can arise from async events in the game loop.
 // This prevents noisy "A listener indicated an asynchronous response..." errors in the console.
@@ -76,6 +77,8 @@ async function setupApp(
   
 
   const app = new AppBase(canvas);
+  DevConsole.init();
+  DevConsole.setApp(app);
   getSelectedTimePeriod(); // call this once to initialize the time period
   
   // If we're starting on the title screen, show it and wait for the user to start
@@ -95,15 +98,18 @@ async function setupApp(
 export { setupApp };
 
 export async function changeScene(
-  canvas: HTMLCanvasElement,
-  app: AppBase,
-  sceneNum: number,): Promise<unknown> {
-  // Clear transient UI and runtime listeners so a scene switch starts clean.
-  hideDeathScreen();
-  hideVictoryScreen();
-  removeBattleHUD();
-  Boss.setActiveBoss(null);
-  runSceneCleanupHandlers(app);
+ canvas: HTMLCanvasElement,
+ app: AppBase,
+ sceneNum: number,): Promise<unknown> {
+ // Clear transient UI and runtime listeners so a scene switch starts clean.
+ hideDeathScreen();
+ hideVictoryScreen();
+ removeBattleHUD();
+ Boss.setActiveBoss(null);
+ DevConsole.setPlayer(null);
+ DevConsole.setNpcs([]);
+ DevConsole.setApp(app);
+ runSceneCleanupHandlers(app);
   const overlay = ensureOverlayRoot();
   overlay.replaceChildren();
   app.mouse?.off();

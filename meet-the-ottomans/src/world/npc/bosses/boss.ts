@@ -84,10 +84,14 @@ export class Boss extends npc {
     }
 
   public static setActiveBoss(boss: Boss | null): void {
-    if (Boss.activeBoss && Boss.activeBoss !== boss) {
-      Boss.activeBoss.removeHealthBar();
-    }
-    Boss.activeBoss = boss;
+  	if (Boss.activeBoss && Boss.activeBoss !== boss) {
+  		Boss.activeBoss.removeHealthBar();
+  	}
+  	Boss.activeBoss = boss;
+  }
+
+  public static getActiveBoss(): Boss | null {
+  	return Boss.activeBoss;
   }
 
     public static getActiveDeathTaunt(): string | null {

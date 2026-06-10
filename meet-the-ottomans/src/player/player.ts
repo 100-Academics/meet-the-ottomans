@@ -83,6 +83,11 @@ export class Player{
     return;
     }
 
+    // Dev console god mode — skip all damage
+    if ((globalThis as any).__devConsoleGodMode) {
+    return;
+    }
+
     // Grace period: ignore damage for 3 seconds after reviving
     if (Date.now() < this.gracePeriodEnd) {
     return;

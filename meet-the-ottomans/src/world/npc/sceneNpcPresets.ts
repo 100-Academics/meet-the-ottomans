@@ -127,8 +127,13 @@ const VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const BIN_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+<<<<<<< HEAD
   modelPath: NPC_MODEL_PATHS.binLadin,
   modelRotation: new Vec3(-90, 0, 0),
+=======
+ modelPath: NPC_MODEL_PATHS.binLadin,
+ modelRotation: new Vec3(-90, 0, 0),
+>>>>>>> 866cb9041a7363508eb7c7a2cc5f7714836cf30e
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -817,11 +822,11 @@ export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", 
 
 // Pavia
 export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
- { id: 1, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 2, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 3, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 4, team: "foe", x: 0, z: 0, type: "italian" },
- { id: 5, team: "foe", x: 0, z: 0, type: "italian" },
+  { id: 1, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 2, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 3, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 4, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 5, team: "foe", x: -150, z: 100, type: "italian" },
 ];
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];
 

@@ -43,11 +43,11 @@ export class WilliamTheConquerer extends Boss {
  private readonly chargeSpeed = PLAYER_MOVE_SPEED * 2.6;
  private readonly chargeDurationSeconds = 0.6;
  private readonly chargeRecoverSeconds = 0.4;
- private readonly chargeCooldownSeconds = 5.0;
+ private readonly chargeCooldownSeconds = 3.5;
  private readonly chargeRangeMin = 8;
  private readonly chargeRangeMax = 35;
  private readonly chargeHitRadius = 3.6;
- private readonly chargeDamage = 18;
+ private readonly chargeDamage = 28;
  private nextChargeAtSeconds = 0;
 
  private readonly shieldBashRange = 5;
@@ -74,8 +74,8 @@ export class WilliamTheConquerer extends Boss {
   private readonly shockwaveWaveArcDegrees = 300;
   private readonly shockwaveWaveSegments = 42;
   private readonly shockwaveWaveSegmentScale = 1.1;
-  private readonly shockwaveKnockbackSpeed = 65;
-  private readonly shockwaveKnockbackDurationSeconds = 0.45;
+  private readonly shockwaveKnockbackSpeed = 180;
+  private readonly shockwaveKnockbackDurationSeconds = 1.2;
   private nextShockwaveAtSeconds = 0;
 
   private attackLockUntilSeconds = 0;

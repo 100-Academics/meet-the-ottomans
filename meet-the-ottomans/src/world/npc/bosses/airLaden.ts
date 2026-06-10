@@ -40,7 +40,7 @@ interface SuicideBombersState {
 	bombers: SuicideBomber[];
 }
 
-export class BinLadin extends Boss {
+export class AirLadin extends Boss {
 	private readonly ambushCooldownSeconds = 10.0;
 	private readonly ambushRange = 25;
 	private readonly ambushDamage = 5;
@@ -59,9 +59,9 @@ export class BinLadin extends Boss {
 	private readonly akRange = 35;
 	private nextAkAtSeconds = 0;
 
-	private readonly invisCooldownSeconds = 30.0;
-	private readonly invisDurationSeconds = 3.0;
-	private readonly invisRange = 30;
+  private readonly invisCooldownSeconds = 30.0;
+  private readonly invisDurationSeconds = 3.0;
+  private readonly invisRange = 30;
 	private nextInvisAtSeconds = 0;
 
 	private readonly bomberCount = 3;
@@ -82,7 +82,6 @@ export class BinLadin extends Boss {
 	private invisState: InvisibilityState | null = null;
 	private bombersState: SuicideBombersState | null = null;
 	private isCurrentlyInvisible = false;
-	private savedBlendTypes: Map<any, number> = new Map();
 	private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
 	private readonly iedMaterial = this.createEffectMaterial(
@@ -110,7 +109,7 @@ export class BinLadin extends Boss {
 	private readonly activeEffects = new Set<Entity>();
 
 	constructor(id: number, maxHealth: number, entity: Entity = new Entity("BinLadin")) {
-		super(id, maxHealth, entity, "Bin Ladin");
+		super(id, maxHealth, entity, "Air Ladin");
 		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
 		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
@@ -447,34 +446,24 @@ export class BinLadin extends Boss {
   const meshInstances = model.meshInstances;
   if (meshInstances) {
   for (const instance of meshInstances) {
-  if (visible) {
-  instance.visible = true;
+  instance.visible = visible;
   const mat = instance.material as StandardMaterial | undefined;
   if (mat) {
-  const savedOpacity = this.savedMaterialOpacities.get(mat);
-  if (savedOpacity !== undefined) {
-  mat.opacity = savedOpacity;
+  if (visible) {
+  const saved = this.savedMaterialOpacities.get(mat);
+  if (saved !== undefined) {
+  mat.opacity = saved;
   this.savedMaterialOpacities.delete(mat);
   }
-  const savedBlend = this.savedBlendTypes.get(mat);
-  if (savedBlend !== undefined) {
-  mat.blendType = savedBlend;
-  this.savedBlendTypes.delete(mat);
-  }
-  mat.update();
-  }
+  mat.blendType = (saved !== undefined && saved < 1) ? mat.blendType : 0;
   } else {
-  const mat = instance.material as StandardMaterial | undefined;
-  if (mat && !this.savedMaterialOpacities.has(mat)) {
+  if (!this.savedMaterialOpacities.has(mat)) {
   this.savedMaterialOpacities.set(mat, mat.opacity);
-  this.savedBlendTypes.set(mat, mat.blendType);
   }
-  instance.visible = false;
-  if (mat) {
   mat.opacity = 0;
   mat.blendType = BLEND_ADDITIVE;
-  mat.update();
   }
+  mat.update();
   }
   }
   }
@@ -678,59 +667,6 @@ export class BinLadin extends Boss {
 	private faceTarget(target: Entity, dt: number): void {
 		const myPos = this.getEntity().getPosition(); const targetPos = target.getPosition();
 		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, dt);
-		this.clampToGround();
-	}
-
-	/** Raycast down to find ground and snap Y so the boss never floats. */
-	private clampToGround(): void {
-		const pos = this.getEntity().getPosition();
-		const rigidbodySystem = (this.getEntity() as any).app
-			? ((this.getEntity() as any).app.systems as any)?.rigidbody
-			: ((globalThis as any).app?.systems as any)?.rigidbody;
-		if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') return;
-
-		const probeY = Math.max(pos.y + 300, 500);
-		const rayStart = new Vec3(pos.x, probeY, pos.z);
-		const rayEnd = new Vec3(pos.x, -500, pos.z);
-
-		let groundHitY: number | undefined;
-		if (typeof rigidbodySystem.raycastAll === 'function') {
-			const hits = rigidbodySystem.raycastAll(rayStart, rayEnd);
-			if (hits && hits.length > 0) {
-				let bestFraction = Number.POSITIVE_INFINITY;
-				for (const hit of hits) {
-					if (!hit?.point || !Number.isFinite(hit.point.y)) continue;
-					let e: Entity | null = hit.entity ?? null;
-					let tagged = false;
-					while (e) {
-						if (e.tags?.has('ground')) { tagged = true; break; }
-						e = (e.parent as Entity | null) ?? null;
-					}
-					if (!tagged) continue;
-					const hf = hit.hitFraction;
-					if (typeof hf === 'number' && Number.isFinite(hf) && hf < bestFraction) {
-						bestFraction = hf;
-						groundHitY = hit.point.y;
-					}
-				}
-			}
-		}
-		if (groundHitY === undefined) {
-			const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
-			if (hit?.point && Number.isFinite(hit.point.y)) {
-				let e: Entity | null = hit.entity ?? null;
-				while (e) {
-					if (e.tags?.has('ground')) { groundHitY = hit.point.y; break; }
-					e = (e.parent as Entity | null) ?? null;
-				}
-			}
-		}
-		if (groundHitY !== undefined) {
-			const targetY = groundHitY + 0.1;
-			if (Math.abs(pos.y - targetY) > 0.01) {
-				this.getEntity().setPosition(pos.x, targetY, pos.z);
-			}
-		}
 	}
 
 	private getFlatDistanceTo(target: Entity): number {
@@ -780,10 +716,9 @@ export class BinLadin extends Boss {
     this.activeEffects.clear(); this.caveAmbushState = null; this.iedBlastState = null; this.akSprayState = null;
     this.invisState = null; this.bombersState = null;
     if (this.isCurrentlyInvisible) {
-    this.isCurrentlyInvisible = false;
-    this.setBossModelVisible(true);
+      this.isCurrentlyInvisible = false;
+      this.setBossModelVisible(true);
     }
     this.savedMaterialOpacities.clear();
-    this.savedBlendTypes.clear();
-    }
+  }
 }
