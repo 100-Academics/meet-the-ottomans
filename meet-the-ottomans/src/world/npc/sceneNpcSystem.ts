@@ -25,7 +25,7 @@ import { KingGeorgeIII } from "./bosses/kingGeorgeIII";
 import { Lenin } from "./bosses/lenin";
 import { Stalin } from "./bosses/stalin";
 import { TowerBoss } from "./bosses/towerBoss";
-import { BinLadin } from "./bosses/airLaden";
+import { BinLadin } from "./bosses/binLaden";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 
 export type NpcSceneTeam = "friend" | "foe";
