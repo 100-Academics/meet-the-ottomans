@@ -229,6 +229,7 @@ export class Napoleon extends Boss {
     if (chosen === "cavalryCharge") { this.startCavalryCharge(targetEntity, currentTimeSeconds); return; }
     if (chosen === "imperialDecree") { this.startImperialDecree(targetEntity, currentTimeSeconds); return; }
 
+    // No attack chosen: chase the target on foot
     const myPos = this.getEntity().getPosition();
     const targetPos = targetEntity.getPosition();
     this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);

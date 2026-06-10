@@ -181,6 +181,7 @@ export class AirLadin extends Boss {
 		if (chosen === "goInvisible") { this.startInvisibility(currentTimeSeconds); return; }
 		if (chosen === "suicideBombers") { this.startSuicideBombers(targetEntity, currentTimeSeconds); return; }
 
+		// No attack chosen: chase the target on foot
 		const myPos = this.getEntity().getPosition();
 		const targetPos = targetEntity.getPosition();
 		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);

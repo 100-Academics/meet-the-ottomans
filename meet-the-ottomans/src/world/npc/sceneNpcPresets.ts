@@ -244,6 +244,11 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   italian: "models/npc/ItalianSoldier.glb"
   };
 
+const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0
+};
+
 const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(-90, 0, 0),
   facingYawOffsetDegrees: 0,
@@ -252,6 +257,7 @@ const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 // NPC type -> spawn overrides. Allows the spawn system to accept a type->overrides map.
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
+  mongol: MONGOL_SPAWN_OVERRIDES,
   templar: TEMPLAR_SPAWN_OVERRIDES,
   french: FRENCH_SPAWN_OVERRIDES,
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,

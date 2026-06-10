@@ -156,6 +156,7 @@ export class Moses extends Boss {
         if (chosen === "staffStrike") { this.startStaffStrike(targetEntity, currentTimeSeconds); return; }
         if (chosen === "mannaHail") { this.startMannaHail(currentTimeSeconds); return; }
 
+        // No attack chosen: chase the target on foot
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
         this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);

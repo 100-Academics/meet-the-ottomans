@@ -176,6 +176,7 @@ export class Baybars extends Boss {
         if (chosen === "dustStorm") { this.startDustStorm(currentTimeSeconds); return; }
         if (chosen === "groundSpikes") { this.startGroundSpikes(targetEntity, currentTimeSeconds); return; }
 
+        // No attack chosen: chase the target on foot
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
         this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);

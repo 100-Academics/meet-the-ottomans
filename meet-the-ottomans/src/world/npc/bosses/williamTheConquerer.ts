@@ -236,6 +236,7 @@ export class WilliamTheConquerer extends Boss {
       return;
     }
 
+    // No attack chosen: chase the target on foot
     const myPos = this.getEntity().getPosition();
     const targetPos = targetEntity.getPosition();
     this.moveToward(
