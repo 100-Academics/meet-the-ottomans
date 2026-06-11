@@ -250,7 +250,7 @@ const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0,
   detectionRange: -1
 };
