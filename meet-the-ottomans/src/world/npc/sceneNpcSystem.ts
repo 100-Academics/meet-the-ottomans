@@ -348,13 +348,17 @@ const groundTag = "ground";
             );
             console.log(`[NPC] spawnY=${npcSpawnY.toFixed(2)} (groundProbeH=${groundProbeHeight}, depth=${groundProbeDepth}), fallback=${groundYFallback?.toFixed(2) ?? "n/a"}`);
 
-            const npcModel = await loadNpcModelWithFallback(app, modelPath, {
-                rigidbodyType: "kinematic",
-                includeDescendants: true,
-                position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),
-                rotation: modelRotation,
-                scale: modelScale
-            });
+            const loadOptions: LoadModelOptions = {
+            rigidbodyType: "kinematic",
+            includeDescendants: true,
+            position: new Vec3(spawn.x, npcSpawnY + modelHeightOffset, spawn.z),
+            rotation: modelRotation,
+            scale: modelScale
+            };
+            if (spawn.type === "binLadin") {
+            loadOptions.autoCollision = false;
+            }
+            const npcModel = await loadNpcModelWithFallback(app, modelPath, loadOptions);
         npcModel.modelEntity.tags.add("npc");
         if (spawn.yaw !== undefined && Number.isFinite(spawn.yaw)) {
           const currentEuler = npcModel.modelEntity.getLocalEulerAngles();
