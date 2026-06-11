@@ -193,8 +193,12 @@ export class UncleSam extends Boss {
     }
 
     private updateMoney(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.moneyState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.moneyState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (state.throwsFired < this.moneyCount && now >= state.nextThrowAtSeconds) {
             state.throwsFired++; state.nextThrowAtSeconds = now + this.moneyIntervalSeconds;
             this.spawnMoneyProjectile(target);
@@ -237,8 +241,12 @@ export class UncleSam extends Boss {
     }
 
     private updateFireworks(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.fireworksState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.fireworksState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (state.shotsFired < this.fireworksCount && now >= state.nextShotAtSeconds) {
             state.shotsFired++; state.nextShotAtSeconds = now + this.fireworksIntervalSeconds;
             this.spawnFirework(target);
@@ -288,8 +296,12 @@ export class UncleSam extends Boss {
     }
 
     private updateAirstrike(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.airstrikeState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.airstrikeState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
 
         if (state.bombsDropped < this.airstrikeCount && now >= state.nextBombAtSeconds) {
             const pos = state.bombPositions[state.bombsDropped];

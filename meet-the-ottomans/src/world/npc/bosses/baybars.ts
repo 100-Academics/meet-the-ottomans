@@ -364,8 +364,12 @@ export class Baybars extends Boss {
     }
 
     private updateArrows(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.arrowsState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.arrowsState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (state.shotsFired < this.arrowCount && now >= state.nextShotAtSeconds) {
             state.shotsFired++; state.nextShotAtSeconds = now + this.arrowIntervalSeconds;
             const spreadDeg = (state.shotsFired - (this.arrowCount + 1) / 2) * (this.arrowSpreadDegrees / this.arrowCount);
@@ -438,8 +442,13 @@ export class Baybars extends Boss {
     }
 
     private updateDustStorm(_dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.dustStormState; if (!state) return;
-        const bossPos = this.getEntity().getPosition();
+    	const state = this.dustStormState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, _dt);
+    	}
+    	const bossPos = this.getEntity().getPosition();
         const elapsed = now - (this.lastAttackAtSeconds);
         const durationProgress = Math.min(1, elapsed / this.dustStormDurationSeconds);
 
@@ -623,8 +632,12 @@ export class Baybars extends Boss {
     }
 
     private updateGroundSpikes(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.groundSpikesState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.groundSpikesState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (state.spikesSpawned < this.spikeCount && now >= state.nextSpikeAtSeconds) {
             const pos = state.spikePositions[state.spikesSpawned];
             state.spikesSpawned++; state.nextSpikeAtSeconds = now + this.spikeIntervalSeconds;

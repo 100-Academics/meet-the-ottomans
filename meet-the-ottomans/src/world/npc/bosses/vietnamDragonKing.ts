@@ -209,8 +209,12 @@ export class VietnamDragonKing extends Boss {
     }
 
     private updateWaterBeam(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.waterBeamState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.waterBeamState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
 
         // Extend beam over time
         if (state.beamRoot) {
@@ -267,8 +271,12 @@ export class VietnamDragonKing extends Boss {
     }
 
     private updateThunder(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.thunderState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.thunderState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
 
         if (state.strikesFired < this.thunderCount && now >= state.nextStrikeAtSeconds) {
             state.strikesFired++; state.nextStrikeAtSeconds = now + this.thunderIntervalSeconds;

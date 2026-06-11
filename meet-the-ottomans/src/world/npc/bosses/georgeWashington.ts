@@ -188,8 +188,12 @@ export class GeorgeWashington extends Boss {
     }
 
     private updateTea(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.teaState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.teaState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         const myPos = this.getEntity().getPosition();
         const targetPos = target.getPosition();
 
@@ -250,8 +254,12 @@ export class GeorgeWashington extends Boss {
     }
 
     private updateMonument(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.monumentState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.monumentState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         const myPos = this.getEntity().getPosition();
         const targetPos = target.getPosition();
 
@@ -309,8 +317,12 @@ export class GeorgeWashington extends Boss {
     }
 
     private updateSword(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.swordState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.swordState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         const myPos = this.getEntity().getPosition();
         const targetPos = target.getPosition();
 

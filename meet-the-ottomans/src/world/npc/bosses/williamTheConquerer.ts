@@ -421,11 +421,15 @@ export class WilliamTheConquerer extends Boss {
     if (!state) {
       return;
     }
-    this.faceTarget(targetEntity, deltaTime);
+    {
+    	const myPos = this.getEntity().getPosition();
+    	const targetPos = targetEntity.getPosition();
+    	this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, deltaTime);
+    }
 
     if (!state.hasHit && nowSeconds >= state.impactTimeSeconds) {
-      state.hasHit = true;
-      if (this.getFlatDistanceTo(targetEntity) <= this.shieldBashRadius) {
+    	state.hasHit = true;
+    	if (this.getFlatDistanceTo(targetEntity) <= this.shieldBashRadius) {
         this.applyDamage(this.shieldBashDamage, onAttack);
       }
       this.spawnRingEffect(
@@ -487,11 +491,15 @@ export class WilliamTheConquerer extends Boss {
       return;
     }
 
-    this.faceTarget(targetEntity, deltaTime);
+    {
+    	const myPos = this.getEntity().getPosition();
+    	const targetPos = targetEntity.getPosition();
+    	this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, deltaTime);
+    }
 
     if (!state.hasHit && nowSeconds >= state.impactTimeSeconds) {
-      state.hasHit = true;
-      this.startGroundWave(targetEntity, nowSeconds);
+    	state.hasHit = true;
+    	this.startGroundWave(targetEntity, nowSeconds);
 
       this.spawnExpandingRing(
         this.getEntity().getPosition(),

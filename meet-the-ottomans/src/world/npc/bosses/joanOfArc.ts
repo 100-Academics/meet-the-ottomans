@@ -213,11 +213,13 @@ export class JoanOfArc extends Boss {
 
         // Fire rain runs its full sequence independently.
         if (this.fireRainState) {
-            this.updateFireRain(targetEntity, currentTimeSeconds, onAttack);
-            if (targetEntity) {
-                this.faceTarget(targetEntity, clampedDeltaTime);
-            }
-            return;
+        	this.updateFireRain(targetEntity, currentTimeSeconds, onAttack);
+        	if (targetEntity) {
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = targetEntity.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+        	}
+        	return;
         }
 
         if (!targetEntity) {
@@ -238,8 +240,12 @@ export class JoanOfArc extends Boss {
 
         // Wait for attack lock to expire before picking a new attack.
         if (currentTimeSeconds < this.attackLockUntilSeconds) {
-            this.faceTarget(targetEntity, clampedDeltaTime);
-            return;
+        	{
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = targetEntity.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+        	}
+        	return;
         }
 
         const distance = this.getFlatDistanceTo(targetEntity);
@@ -560,17 +566,21 @@ export class JoanOfArc extends Boss {
     }
 
     private updateFireStrike(
-        deltaTime: number,
-        targetEntity: Entity,
-        nowSeconds: number,
-        onAttack?: (attacker: npc) => void
+    	deltaTime: number,
+    	targetEntity: Entity,
+    	nowSeconds: number,
+    	onAttack?: (attacker: npc) => void
     ): void {
-        const state = this.fireStrikeState;
-        if (!state) {
-            return;
-        }
+    	const state = this.fireStrikeState;
+    	if (!state) {
+    		return;
+    	}
 
-        this.faceTarget(targetEntity, deltaTime);
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = targetEntity.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, deltaTime);
+    	}
 
         // Animate the charge orb during windup.
         if (state.charge) {
