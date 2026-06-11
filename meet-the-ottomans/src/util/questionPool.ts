@@ -25,13 +25,15 @@ export class questionPool{
 
     // map: timePeriod -> (questionId -> questionText)
     // time periods are:
-        // 0: N/A
-        // 1: 1200-1300
-        // 2: 1400-1500
-        // 3: 1500-1650
-        // 4: 1750-1900
-        // 5: 1900-1945
-        // 6: 1945-2026
+    // 0: N/A
+    // 1: 1200-1300
+    // 2: 1400-1500
+    // 3: 1500-1700
+    // 4: 1700-1900
+    // 5: 1900-1945
+    // 6: 1945-2000
+    // 7: 2000-2026
+    // 8: ∞
     private questions: Record<number, Record<number, LegacyQuestionEntry>> = {
         0: {
             // N/A
@@ -40,8 +42,8 @@ export class questionPool{
             2: { question: "Your end is nigh.", answer: "GET OUT" }
         },
 
-        1: {
-            0: { question: "What Mongol leader united the steppe nomads and launched conquests across Eurasia in the early 13th century?", answer: "Genghis Khan (Temujin)" },
+        1: { // 1200-1300
+ 0: { question: "What Mongol leader united the steppe nomads and launched conquests across Eurasia in the early 13th century?", answer: "Genghis Khan (Temujin)" },
             1: { question: "What Islamic empire dominated trade across the Middle East and North Africa during the 1200s, with Baghdad as its capital?", answer: "The Abbasid Caliphate" },
             2: { question: "What series of religiously-motivated military campaigns did European Christians wage to reclaim the Holy Land during this period?", answer: "The Crusades" },
             3: { question: "What Mongol destruction of Baghdad in 1258 effectively ended which caliphate?", answer: "The Abbasid Caliphate" },
@@ -63,8 +65,8 @@ export class questionPool{
             19: { question: "What technological innovations did the Mongols adopt from conquered peoples to enhance their empire?", answer: "Gunpowder weapons, siege engines, paper money, and administrative bureaucracy" }
         },
 
-        2: {
-            0: { question: "What Chinese admiral led massive treasure voyages across the Indian Ocean between 1405 and 1433?", answer: "Zheng He" },
+        2: { // 1400-1500
+        0: { question: "What Chinese admiral led massive treasure voyages across the Indian Ocean between 1405 and 1433?", answer: "Zheng He" },
             1: { question: "What event in 1453 ended the Byzantine Empire?", answer: "The Ottoman conquest of Constantinople" },
             2: { question: "What Portuguese-sponsored explorer reached the southern tip of Africa in 1488?", answer: "Bartolomeu Dias" },
             3: { question: "What Spanish-sponsored explorer reached the Caribbean in 1492, initiating sustained contact between the hemispheres?", answer: "Christopher Columbus" },
@@ -86,8 +88,8 @@ export class questionPool{
             19: { question: "What system of trading posts (feitorias) did the Portuguese establish along African and Asian coasts?", answer: "A maritime commercial empire based on fortified trading posts controlling key sea lanes" }
         },
 
-        3: {
-            0: { question: "What biological phenomenon caused the deaths of up to 90% of indigenous populations in the Americas after European contact?", answer: "The Columbian Exchange introduction of Old World diseases" },
+        3: { // 1500-1700
+ 0: { question: "What biological phenomenon caused the deaths of up to 90% of indigenous populations in the Americas after European contact?", answer: "The Columbian Exchange introduction of Old World diseases" },
             1: { question: "What system of forced indigenous labor did the Spanish use in the Americas to extract silver and resources?", answer: "The encomienda (and later mita) system" },
             2: { question: "What religious movement begun by Martin Luther in 1517 fractured the unity of the Catholic Church in Europe?", answer: "The Protestant Reformation" },
             3: { question: "What massive silver mining complex in Bolivia became the cornerstone of the Spanish colonial economy?", answer: "Potosí" },
@@ -109,7 +111,7 @@ export class questionPool{
             19: { question: "What Chinese dynasty replaced the Ming in 1644 and was founded by the Manchu people from the north?", answer: "The Qing Dynasty" }
         },
 
-        4: {
+        4: { // 1700-1900
             0: { question: "What economic transformation, beginning in Britain, shifted production from hand labor to machine-based manufacturing?", answer: "The Industrial Revolution" },
             1: { question: "What ideology, rooted in Enlightenment ideals, drove independence movements in the Americas and national unification in Europe?", answer: "Nationalism / liberalism" },
             2: { question: "What late 19th-century phenomenon saw European powers partition and colonize nearly all of Africa?", answer: "The Scramble for Africa / New Imperialism" },
@@ -132,8 +134,8 @@ export class questionPool{
             19: { question: "What Zulu king built a powerful military state in southern Africa that successfully resisted British expansion for decades?", answer: "Shaka Zulu" }
         },
 
-        5: {
-            0: { question: "What interconnected factors caused the outbreak of World War I in 1914?", answer: "MAIN causes: Militarism, Alliances, Imperialism, Nationalism" },
+        5: { // 1900-1945
+        0: { question: "What interconnected factors caused the outbreak of World War I in 1914?", answer: "MAIN causes: Militarism, Alliances, Imperialism, Nationalism" },
             1: { question: "What 1917 revolution brought the Bolsheviks to power in Russia under Lenin?", answer: "The Russian Revolution" },
             2: { question: "What economic catastrophe beginning in 1929 destabilized global economies and contributed to the rise of fascism?", answer: "The Great Depression" },
             3: { question: "What authoritarian ideology, emphasizing ultranationalism, militarism, and state supremacy, rose in Italy and Germany in the 1920s–30s?", answer: "Fascism" },
@@ -155,27 +157,44 @@ export class questionPool{
             19: { question: "What US decision to drop atomic bombs on Hiroshima and Nagasaki in 1945 ended WWII and inaugurated the nuclear age?", answer: "The atomic bombings of Japan" }
         },
 
-        6: { // 1945-2026
-            0: { question: "What ideological rivalry between the United States and Soviet Union defined global politics from 1945 to 1991?", answer: "The Cold War" },
-            1: { question: "What wave of political independence movements swept through Asia and Africa after World War II?", answer: "Decolonization" },
-            2: { question: "What economic and cultural process accelerated after the Cold War, connecting nations through trade, communication, and migration?", answer: "Globalization" },
-            3: { question: "What 1947 partition of British India created two independent states and triggered massive communal violence?", answer: "The partition of India and Pakistan" },
-            4: { question: "What military alliance, formed in 1949, committed Western democracies to mutual defense against Soviet aggression?", answer: "NATO (North Atlantic Treaty Organization)" },
-            5: { question: "What Korean War outcome established the ongoing division of the Korean peninsula along the 38th parallel?", answer: "The armistice of 1953 / division of North and South Korea" },
-            6: { question: "What 1955 conference of newly independent Asian and African nations promoted non-alignment and solidarity against colonialism?", answer: "The Bandung Conference" },
-            7: { question: "What Cuban Missile Crisis of 1962 brought the US and USSR closest to nuclear war during the Cold War?", answer: "The Cuban Missile Crisis" },
-            8: { question: "What South African system of institutionalized racial segregation and oppression lasted from 1948 to 1994?", answer: "Apartheid" },
-            9: { question: "What US foreign policy committed America to containing the spread of communism globally after 1947?", answer: "The Truman Doctrine / containment policy" },
-            10: { question: "What 1991 event marked the formal dissolution of the Soviet Union into 15 independent republics?", answer: "The collapse of the Soviet Union" },
-            11: { question: "What international economic institutions, created after WWII, governed global trade and finance?", answer: "The IMF, World Bank, and GATT (later WTO)" },
-            12: { question: "What term describes the post-Cold War surge in regional and ethnic conflicts as superpower restraint collapsed?", answer: "Ethnic nationalism / 'new wars' of the 1990s (e.g., Yugoslavia, Rwanda)" },
-            13: { question: "What 2001 terrorist attacks on the United States triggered wars in Afghanistan and Iraq and reshaped global geopolitics?", answer: "The September 11 attacks (al-Qaeda)" },
-            14: { question: "What economic rise of China transformed global manufacturing, trade, and geopolitical power after the 1990s?", answer: "China's economic liberalization and rise as a global power" },
-            15: { question: "What environmental crisis, caused by fossil fuel emissions, has become the defining long-term threat of the 21st century?", answer: "Climate change / global warming" },
-            16: { question: "What digital revolution transformed communication, commerce, and society beginning in the 1990s?", answer: "The rise of the internet and information technology" },
-            17: { question: "What 2008 global financial crisis exposed the risks of deregulated financial markets and triggered worldwide recession?", answer: "The Great Recession / 2008 financial crisis" },
-            18: { question: "What wave of pro-democracy uprisings swept across the Arab world beginning in 2010?", answer: "The Arab Spring" },
-            19: { question: "What 2020 global pandemic caused by COVID-19 disrupted economies, exposed global inequalities, and accelerated deglobalization trends?", answer: "The COVID-19 pandemic" }
+        6: { // 1945-2000
+        0: { question: "What ideological rivalry between the United States and Soviet Union defined global politics from 1945 to 1991?", answer: "The Cold War" },
+        1: { question: "What wave of political independence movements swept through Asia and Africa after World War II?", answer: "Decolonization" },
+        2: { question: "What 1947 partition of British India created two independent states and triggered massive communal violence?", answer: "The partition of India and Pakistan" },
+        3: { question: "What military alliance, formed in 1949, committed Western democracies to mutual defense against Soviet aggression?", answer: "NATO (North Atlantic Treaty Organization)" },
+        4: { question: "What Korean War outcome established the ongoing division of the Korean peninsula along the 38th parallel?", answer: "The armistice of 1953 / division of North and South Korea" },
+        5: { question: "What 1955 conference of newly independent Asian and African nations promoted non-alignment and solidarity against colonialism?", answer: "The Bandung Conference" },
+        6: { question: "What Cuban Missile Crisis of 1962 brought the US and USSR closest to nuclear war during the Cold War?", answer: "The Cuban Missile Crisis" },
+        7: { question: "What South African system of institutionalized racial segregation and oppression lasted from 1948 to 1994?", answer: "Apartheid" },
+        8: { question: "What US foreign policy committed America to containing the spread of communism globally after 1947?", answer: "The Truman Doctrine / containment policy" },
+        9: { question: "What 1991 event marked the formal dissolution of the Soviet Union into 15 independent republics?", answer: "The collapse of the Soviet Union" },
+        10: { question: "What international economic institutions, created after WWII, governed global trade and finance?", answer: "The IMF, World Bank, and GATT (later WTO)" },
+        11: { question: "What term describes the post-Cold War surge in regional and ethnic conflicts as superpower restraint collapsed?", answer: "Ethnic nationalism / 'new wars' of the 1990s (e.g., Yugoslavia, Rwanda)" },
+        12: { question: "What economic and cultural process accelerated after the Cold War, connecting nations through trade, communication, and migration?", answer: "Globalization" },
+        13: { question: "What digital revolution transformed communication, commerce, and society beginning in the 1990s?", answer: "The rise of the internet and information technology" },
+        14: { question: "What economic rise of China transformed global manufacturing, trade, and geopolitical power after the 1990s?", answer: "China's economic liberalization and rise as a global power" },
+        15: { question: "What 1994 genocide in Rwanda resulted in the deaths of approximately 800,000 people in just 100 days?", answer: "The Rwandan Genocide" }
+        },
+
+        7: { // 2000-2026
+        0: { question: "What 2001 terrorist attacks on the United States triggered wars in Afghanistan and Iraq and reshaped global geopolitics?", answer: "The September 11 attacks (al-Qaeda)" },
+        1: { question: "What environmental crisis, caused by fossil fuel emissions, has become the defining long-term threat of the 21st century?", answer: "Climate change / global warming" },
+        2: { question: "What 2008 global financial crisis exposed the risks of deregulated financial markets and triggered worldwide recession?", answer: "The Great Recession / 2008 financial crisis" },
+        3: { question: "What wave of pro-democracy uprisings swept across the Arab world beginning in 2010?", answer: "The Arab Spring" },
+        4: { question: "What 2020 global pandemic caused by COVID-19 disrupted economies, exposed global inequalities, and accelerated deglobalization trends?", answer: "The COVID-19 pandemic" },
+        5: { question: "What Russian invasion of Ukraine in 2022 triggered the largest European land war since WWII and reshaped NATO's strategic posture?", answer: "The 2022 Russian invasion of Ukraine" },
+        6: { question: "What rapid advances in artificial intelligence, particularly large language models, transformed industries and labor markets in the 2020s?", answer: "The AI revolution / generative AI boom" },
+        7: { question: "What social media platforms became dominant forces in global politics, elections, and information dissemination after 2010?", answer: "Platforms like Facebook, Twitter/X, and TikTok" },
+        8: { question: "What 2023 conflict between Israel and Hamas reignited widespread Middle Eastern tensions and humanitarian crises?", answer: "The Israel-Hamas war (2023-present)" },
+        9: { question: "What shift toward renewable energy sources accelerated in the 2020s as nations sought alternatives to fossil fuels?", answer: "The green energy transition (solar, wind, electric vehicles)" }
+        },
+
+        8: { // ∞
+        0: { question: "What concept describes the theoretical endpoint where artificial intelligence surpasses human intelligence across all domains?", answer: "The technological singularity" },
+        1: { question: "What paradox asks whether a simulated reality can be distinguished from base reality, and what are its implications for civilization?", answer: "The simulation hypothesis" },
+        2: { question: "What interstellar propulsion concept, requiring breakthroughs in physics, could enable travel between stars?", answer: "Warp drive / antimatter propulsion / fusion rockets" },
+        3: { question: "What Kardashev scale measures a civilization's advancement by its energy consumption?", answer: "The Kardashev scale (Type I, II, III)" },
+        4: { question: "What existential risks threaten the long-term survival of human civilization?", answer: "Nuclear war, engineered pandemics, unaligned AI, climate collapse, asteroid impact" }
         }
 
     };

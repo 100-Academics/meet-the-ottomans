@@ -67,10 +67,14 @@ export interface NpcSpawnOverrides {
 }
 
 export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
-  typeModelPaths?: Record<string, string>;
-  typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
-  groundProbeHeight?: number;
-  groundProbeDepth?: number;
+ typeModelPaths?: Record<string, string>;
+ typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
+ groundProbeHeight?: number;
+ groundProbeDepth?: number;
+ /** If provided, foe NPCs that would spawn within this horizontal distance of the player are skipped. */
+ playerSafeRadius?: number;
+ /** Called for each spawn point to check the player's current position. Required when playerSafeRadius is set. */
+ getPlayerPosition?: () => Vec3;
 }
 
 export interface NpcCombatLoopOptions {
@@ -296,10 +300,27 @@ const groundTag = "ground";
   const groundProbeDepth = options.groundProbeDepth ?? 300;
   const defaultGroundClearance = 0.1;
 
+    const playerSafeRadius = options.playerSafeRadius ?? 6;
+    const getPlayerPosition = options.getPlayerPosition
+    ?? (() => (globalThis as any).__devConsolePlayer?.getPosition?.() as Vec3 | undefined);
+
     const npcs: npc[] = [];
 
     for (const spawn of spawnPoints) {
-        try {
+    try {
+    // Skip foe spawns that would land on top of the player.
+    if (playerSafeRadius > 0 && spawn.team === "foe") {
+    const playerPos = getPlayerPosition();
+    if (playerPos) {
+    const pdx = spawn.x - playerPos.x;
+    const pdz = spawn.z - playerPos.z;
+    const playerDist = Math.sqrt((pdx * pdx) + (pdz * pdz));
+    if (playerDist < playerSafeRadius) {
+    console.log(`[NPC] Skipping spawn ID=${spawn.id} at (${spawn.x}, ${spawn.z}) — too close to player (${playerDist.toFixed(1)} < ${playerSafeRadius})`);
+    continue;
+    }
+    }
+    }
             const spawnOverrides = spawn.type ? typeSpawnOverrides[spawn.type] : undefined;
             const modelPath = spawnOverrides?.modelPath
                 ?? (spawn.type ? typeModelPaths[spawn.type] : undefined)
@@ -806,18 +827,34 @@ export function bindNpcCombatLoop(
         }
 
         if (!options.disableMongolHordeSpawn && Mongol.hasRetreatedOnce && !Mongol.hordeSpawned && Mongol.retreatPoint) {
-            Mongol.hordeSpawned = true;
-            const newPoints: NpcSpawnPoint[] = [];
-            for (let i = 0; i < 6; i++) {
-                newPoints.push({
-                    id: 200 + i + Math.floor(Math.random() * 1000),
-                    team: "foe",
-                    x: Mongol.retreatPoint.x + (Math.random() * 12 - 6),
-                    z: Mongol.retreatPoint.z + (Math.random() * 12 - 6),
-                    type: "mongol",
-                    maxHealth: 250 // Stronger horde
-                });
-            }
+        Mongol.hordeSpawned = true;
+        const playerEntity = getPlayerEntity();
+        const playerPos = playerEntity?.getPosition?.();
+        const hordeSafeRadius = 8; // Don't spawn horde members within this distance of the player
+        const newPoints: NpcSpawnPoint[] = [];
+        for (let i = 0; i < 6; i++) {
+        let spawnX = Mongol.retreatPoint.x + (Math.random() * 12 - 6);
+        let spawnZ = Mongol.retreatPoint.z + (Math.random() * 12 - 6);
+        // Push spawn away from the player if too close.
+        if (playerPos) {
+        const pdx = spawnX - playerPos.x;
+        const pdz = spawnZ - playerPos.z;
+        const pDist = Math.sqrt((pdx * pdx) + (pdz * pdz));
+        if (pDist < hordeSafeRadius) {
+        const angle = Math.atan2(pdz, pdx);
+        spawnX = playerPos.x + Math.cos(angle) * hordeSafeRadius;
+        spawnZ = playerPos.z + Math.sin(angle) * hordeSafeRadius;
+        }
+        }
+        newPoints.push({
+        id: 200 + i + Math.floor(Math.random() * 1000),
+        team: "foe",
+        x: spawnX,
+        z: spawnZ,
+        type: "mongol",
+        maxHealth: 250 // Stronger horde
+        });
+        }
             console.log("Spawning stronger Mongol horde for false retreat!");
             spawnSceneNpcs(app, rigidbodySystem, newPoints).then(newNpcs => {
                 for (const newNpc of newNpcs) {

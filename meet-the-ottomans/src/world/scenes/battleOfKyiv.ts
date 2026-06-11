@@ -330,7 +330,7 @@ export async function battleOfKyivScene(
   const player = new Player(app, playerSpawn);
   let respawnPosition = playerSpawn.clone();
   let respawnGroundY = 0;
-  player.setDeathQuizContext(1, () => {
+  player.setDeathQuizContext(7, () => {
     player.revive(respawnPosition);
     if (cameraController) cameraController.groundHeight = respawnGroundY;
     createBattleHUD();

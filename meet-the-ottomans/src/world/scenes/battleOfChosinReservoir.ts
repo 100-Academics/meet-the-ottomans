@@ -335,7 +335,7 @@ export async function battleOfChosinReservoirScene(
   const player = new Player(app, playerSpawn);
   let respawnPosition = playerSpawn.clone();
   let respawnGroundY = 0;
-  player.setDeathQuizContext(1, () => {
+  player.setDeathQuizContext(6, () => {
     player.revive(respawnPosition);
     if (cameraController) cameraController.groundHeight = respawnGroundY;
     createBattleHUD();
