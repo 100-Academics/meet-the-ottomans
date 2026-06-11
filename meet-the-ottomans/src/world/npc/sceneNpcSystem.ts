@@ -26,6 +26,7 @@ import { Lenin } from "./bosses/lenin";
 import { Stalin } from "./bosses/stalin";
 import { TowerBoss } from "./bosses/towerBoss";
 import { BinLadin } from "./bosses/binLaden";
+import { AirLadin } from "./bosses/airLaden";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 import { DevConsole } from "../../util/devConsole";
 
@@ -355,8 +356,8 @@ const groundTag = "ground";
             rotation: modelRotation,
             scale: modelScale
             };
-            if (spawn.type === "binLadin") {
-            loadOptions.autoCollision = false;
+            if (spawn.type === "AirLadin") {
+                loadOptions.autoCollision = false;
             }
             const npcModel = await loadNpcModelWithFallback(app, modelPath, loadOptions);
         npcModel.modelEntity.tags.add("npc");
@@ -365,9 +366,9 @@ const groundTag = "ground";
           npcModel.modelEntity.setLocalEulerAngles(currentEuler.x, currentEuler.y + spawn.yaw, currentEuler.z);
         }
         const modelMinY = getEntityMinY(npcModel.modelEntity);
-            console.log(`[NPC] modelMinY=${modelMinY?.toFixed(2) ?? "n/a"}, targetMinY=${(npcSpawnY + defaultGroundClearance).toFixed(2)}, scaleY=${scaleY}`);
-            if (modelMinY !== undefined) {
-                const targetMinY = npcSpawnY + defaultGroundClearance;
+        console.log(`[NPC] modelMinY=${modelMinY?.toFixed(2) ?? "n/a"}, targetMinY=${(npcSpawnY + defaultGroundClearance).toFixed(2)}, scaleY=${scaleY}`);
+        if (modelMinY !== undefined && spawn.type !== "AirLadin") {
+        const targetMinY = npcSpawnY + defaultGroundClearance;
                 const deltaY = targetMinY - modelMinY;
                 if (Math.abs(deltaY) > 0.001) {
                     const currentPos = npcModel.modelEntity.getPosition();
@@ -557,7 +558,15 @@ const groundTag = "ground";
 			boss.drawHealthBar();
 			Boss.setActiveBoss(boss);
 			npcs.push(boss);
-    } else {
+    } else if (spawn.type === "AirLadin") {
+			console.log(`Spawning Air Ladin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+			const boss = new AirLadin(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+			boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+			boss.setHitboxRadius(hitboxRadius);
+			boss.drawHealthBar();
+			Boss.setActiveBoss(boss);
+			npcs.push(boss);
+    }else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 spawnedNpc.setHitboxRadius(hitboxRadius);
