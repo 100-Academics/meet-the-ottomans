@@ -251,8 +251,12 @@ export class GenghisKhan extends Boss {
         }
 
         if (this.isPullingPlayer) {
-            this.faceTarget(targetEntity, clampedDeltaTime);
-            return;
+        	{
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = targetEntity.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+        	}
+        	return;
         }
 
         if (this.pendingMeleeAtSeconds !== null) {
@@ -261,8 +265,12 @@ export class GenghisKhan extends Boss {
         }
 
         if (currentTimeSeconds < this.attackLockUntilSeconds) {
-            this.faceTarget(targetEntity, clampedDeltaTime);
-            return;
+        	{
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = targetEntity.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+        	}
+        	return;
         }
 
         const distance = this.getFlatDistanceTo(targetEntity);
@@ -448,12 +456,16 @@ export class GenghisKhan extends Boss {
         nowSeconds: number,
         _onAttack?: (attacker: npc) => void
     ): void {
-        const state = this.poundState;
-        if (!state) {
-            return;
-        }
+    	const state = this.poundState;
+    	if (!state) {
+    		return;
+    	}
 
-        this.faceTarget(targetEntity, deltaTime);
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = targetEntity.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, deltaTime);
+    	}
 
         if (!state.hasHit && nowSeconds >= state.impactTimeSeconds) {
             state.hasHit = true;
@@ -710,15 +722,19 @@ export class GenghisKhan extends Boss {
     }
 
     private updateBow(targetEntity: Entity, nowSeconds: number): void {
-        const state = this.bowState;
-        if (!state) {
-            return;
-        }
+    	const state = this.bowState;
+    	if (!state) {
+    		return;
+    	}
 
-        if (nowSeconds < state.releaseTimeSeconds) {
-            this.faceTarget(targetEntity, 0);
-            return;
-        }
+    	if (nowSeconds < state.releaseTimeSeconds) {
+    		{
+    			const myPos = this.getEntity().getPosition();
+    			const targetPos = targetEntity.getPosition();
+    			this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, 0.016);
+    		}
+    		return;
+    	}
 
         this.destroyEffect(state.glow);
         this.bowState = null;
@@ -728,11 +744,15 @@ export class GenghisKhan extends Boss {
     }
 
     private updateMeleeWindup(
-        targetEntity: Entity,
-        nowSeconds: number,
-        onAttack?: (attacker: npc) => void
+    	targetEntity: Entity,
+    	nowSeconds: number,
+    	onAttack?: (attacker: npc) => void
     ): void {
-        this.faceTarget(targetEntity, 0);
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = targetEntity.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, 0.016);
+    	}
         if (this.pendingMeleeAtSeconds === null || nowSeconds < this.pendingMeleeAtSeconds) {
             return;
         }

@@ -429,8 +429,12 @@ export class CainAndAbel extends Boss {
             const newPos = new Vec3(targetPos.x + offset.x, myPos.y, targetPos.z + offset.z);
             this.getEntity().setPosition(newPos.x, newPos.y, newPos.z);
             this.applyDamage(this.aerialDamage, onAttack);
-        }
-        this.faceTarget(target, dt);  // just face after repositioning
+            }
+            {
+            	const myPos = this.getEntity().getPosition();
+            	const targetPos = target.getPosition();
+            	this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+            }
         if (now >= state.endTimeSeconds) { this.aerialState = null; this.nextAerialAtSeconds = now + this.aerialCooldownSeconds; }
     }
 

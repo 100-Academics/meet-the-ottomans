@@ -242,11 +242,13 @@ export class KingGeser extends Boss {
         }
 
         if (this.lightningState) {
-            this.updateLightning(targetEntity, currentTimeSeconds, onAttack);
-            if (targetEntity) {
-                this.faceTarget(targetEntity, clampedDeltaTime);
-            }
-            return;
+        	this.updateLightning(targetEntity, currentTimeSeconds, onAttack);
+        	if (targetEntity) {
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = targetEntity.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+        	}
+        	return;
         }
 
         if (!targetEntity) {
@@ -265,8 +267,12 @@ export class KingGeser extends Boss {
         }
 
         if (currentTimeSeconds < this.attackLockUntilSeconds) {
-            this.faceTarget(targetEntity, clampedDeltaTime);
-            return;
+        	{
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = targetEntity.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, clampedDeltaTime);
+        	}
+        	return;
         }
 
         const distance = this.getFlatDistanceTo(targetEntity);
@@ -422,17 +428,21 @@ export class KingGeser extends Boss {
     }
 
     private updateSpear(
-        deltaTime: number,
-        targetEntity: Entity,
-        nowSeconds: number,
-        onAttack?: (attacker: npc) => void
+    	deltaTime: number,
+    	targetEntity: Entity,
+    	nowSeconds: number,
+    	onAttack?: (attacker: npc) => void
     ): void {
-        const state = this.spearState;
-        if (!state) {
-            return;
-        }
+    	const state = this.spearState;
+    	if (!state) {
+    		return;
+    	}
 
-        this.faceTarget(targetEntity, deltaTime);
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = targetEntity.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, deltaTime);
+    	}
         if (state.charge) {
             const windupProgress = Math.min(1, Math.max(0, (nowSeconds - state.windupStartSeconds) / this.spearWindupSeconds));
             this.updateSpearCharge(state.charge, windupProgress);
