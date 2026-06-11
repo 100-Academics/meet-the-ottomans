@@ -211,15 +211,25 @@ export class Napoleon extends Boss {
     this.updateCavalryPatches(targetEntity, currentTimeSeconds, onAttack);
 
     if (this.decreeState) {
-      this.updateImperialDecree(targetEntity, currentTimeSeconds, onAttack);
-      if (targetEntity) this.faceTarget(targetEntity, dt);
-      return;
+    	this.updateImperialDecree(targetEntity, currentTimeSeconds, onAttack);
+    	if (targetEntity) {
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = targetEntity.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
+    	return;
     }
 
     if (!targetEntity) { super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride); return; }
 
-    if (this.cannonadeState) { this.updateImperialCannonade(dt, targetEntity, currentTimeSeconds, onAttack); return; }
-    if (this.cavalryState) { this.updateCavalryCharge(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+    if (this.cannonadeState) { this.updateImperialCannonade(dt, targetEntity, currentTimeSeconds, onAttack);
+ {
+ 	const myPos = this.getEntity().getPosition();
+ 	const targetPos = targetEntity.getPosition();
+ 	this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+ }
+ return; }
+ if (this.cavalryState) { this.updateCavalryCharge(dt, targetEntity, currentTimeSeconds, onAttack); return; }
 
     if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
 
@@ -317,12 +327,14 @@ export class Napoleon extends Boss {
   }
 
   private updateImperialCannonade(
-    dt: number, targetEntity: Entity, nowSeconds: number, onAttack?: (attacker: npc) => void
+  	dt: number, targetEntity: Entity, nowSeconds: number, onAttack?: (attacker: npc) => void
   ): void {
-    const state = this.cannonadeState;
-    if (!state) return;
+  	const state = this.cannonadeState;
+  	if (!state) return;
 
-    this.faceTarget(targetEntity, dt);
+  	const myPos = this.getEntity().getPosition();
+  	const targetPos = targetEntity.getPosition();
+  	this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
 
     if (state.charge) {
       const progress = Math.min(1, Math.max(0, (nowSeconds - state.startTimeSeconds) / this.cannonadeWindupSeconds));

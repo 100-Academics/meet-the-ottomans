@@ -188,8 +188,12 @@ export class Caesar extends Boss {
     }
 
     private updateMonument(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.monumentState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.monumentState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
 
         if (state.blocksSpawned < this.monumentBlockCount && now >= state.nextBlockAtSeconds) {
             const pos = state.blockPositions[state.blocksSpawned];
@@ -248,8 +252,12 @@ export class Caesar extends Boss {
     }
 
     private updateBow(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.bowState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.bowState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasFired && now >= state.endTimeSeconds - 0.15) {
             state.hasFired = true;
             this.spawnArrowProjectile(target);

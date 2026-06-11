@@ -204,8 +204,12 @@ export class Stalin extends Boss {
     }
 
     private updateSurge(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.surgeState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.surgeState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
 
         if (state.currentWave < state.totalWaves && now >= state.nextWaveAtSeconds) {
             state.currentWave++;
@@ -273,8 +277,12 @@ export class Stalin extends Boss {
     }
 
     private updateCurtain(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.curtainState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.curtainState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
 
         if (!state.hasSpawned) {
             state.hasSpawned = true;
@@ -341,8 +349,12 @@ export class Stalin extends Boss {
     }
 
     private updateWinter(dt: number, target: Entity, now: number): void {
-        const state = this.winterState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.winterState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasApplied) {
             state.hasApplied = true;
             this.winterActive = true;

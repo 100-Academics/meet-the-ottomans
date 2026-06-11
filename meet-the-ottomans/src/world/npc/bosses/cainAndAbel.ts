@@ -232,8 +232,12 @@ export class CainAndAbel extends Boss {
     }
 
     private updateCleave(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.cleaveState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.cleaveState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasHit && now >= state.endTimeSeconds - 0.15) {
             state.hasHit = true;
             // Cleave arc VFX
@@ -284,7 +288,11 @@ export class CainAndAbel extends Boss {
         const state = this.jumpShockwaveState; if (!state) return;
 
         if (state.phase === "jumping") {
-            this.faceTarget(target, dt);
+        	{
+        		const myPos = this.getEntity().getPosition();
+        		const targetPos = target.getPosition();
+        		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+        	}
             if (now >= state.jumpEndTimeSeconds) {
                 state.phase = "shockwave";
                 // Shockwave ring
@@ -346,8 +354,12 @@ export class CainAndAbel extends Boss {
     }
 
     private updateShield(dt: number, target: Entity, now: number): void {
-        const state = this.shieldState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.shieldState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (now >= state.endTimeSeconds) {
             this.shieldState = null;
             this.nextShieldAtSeconds = now + this.shieldCooldownSeconds;
@@ -365,8 +377,12 @@ export class CainAndAbel extends Boss {
     }
 
     private updateLightning(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.lightningState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.lightningState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasStruck && now >= state.endTimeSeconds - 0.1) {
             state.hasStruck = true;
             const targetPos = target.getPosition();
@@ -414,7 +430,7 @@ export class CainAndAbel extends Boss {
             this.getEntity().setPosition(newPos.x, newPos.y, newPos.z);
             this.applyDamage(this.aerialDamage, onAttack);
         }
-        this.faceTarget(target, dt);
+        this.faceTarget(target, dt);  // just face after repositioning
         if (now >= state.endTimeSeconds) { this.aerialState = null; this.nextAerialAtSeconds = now + this.aerialCooldownSeconds; }
     }
 

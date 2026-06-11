@@ -215,7 +215,12 @@ export class Moses extends Boss {
     }
 
     private updatePlague(_dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.plagueState; if (!state) return;
+    	const state = this.plagueState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, _dt);
+    	}
         if (state.cloud) {
             const pos = this.getEntity().getPosition();
             state.cloud.setPosition(pos.x, pos.y + 2, pos.z);
@@ -262,8 +267,12 @@ export class Moses extends Boss {
     }
 
     private updatePartingWave(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.partingWaveState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.partingWaveState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasCrashed && now >= state.endTimeSeconds - 0.2) {
             state.hasCrashed = true;
             if (this.getFlatDistanceTo(target) <= this.partingWaveHitRadius) {
@@ -362,8 +371,12 @@ export class Moses extends Boss {
     }
 
     private updateMannaHail(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.mannaHailState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.mannaHailState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (state.impactsSpawned < this.mannaCount && now >= state.nextImpactAtSeconds) {
             state.impactsSpawned++;
             state.nextImpactAtSeconds = now + this.mannaIntervalSeconds;

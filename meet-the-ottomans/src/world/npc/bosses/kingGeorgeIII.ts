@@ -192,8 +192,12 @@ export class KingGeorgeIII extends Boss {
     }
 
     private updateGuardWall(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.guardWallState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.guardWallState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasSpawned) {
             state.hasSpawned = true;
             const myPos = this.getEntity().getPosition();
@@ -263,9 +267,13 @@ export class KingGeorgeIII extends Boss {
     }
 
     private updateCrown(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.crownState; if (!state) return;
-        this.faceTarget(target, dt);
-        const myPos = this.getEntity().getPosition();
+    	const state = this.crownState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
+    	const myPos = this.getEntity().getPosition();
         const elapsed = state.endTimeSeconds - now;
         const totalDuration = 1.6;
         const progress = 1 - (elapsed / totalDuration);

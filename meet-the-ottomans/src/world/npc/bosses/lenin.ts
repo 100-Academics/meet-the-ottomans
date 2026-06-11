@@ -200,8 +200,12 @@ export class Lenin extends Boss {
     }
 
     private updateHammerSickle(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.hammerSickleState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.hammerSickleState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         const myPos = this.getEntity().getPosition();
         const targetPos = target.getPosition();
 
@@ -281,8 +285,12 @@ export class Lenin extends Boss {
     }
 
     private updateWinter(dt: number, target: Entity, now: number): void {
-        const state = this.winterState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.winterState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasApplied) {
             state.hasApplied = true;
             this.winterActive = true;
@@ -331,8 +339,12 @@ export class Lenin extends Boss {
     }
 
     private updateRedSoldiers(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.redSoldiersState; if (!state) return;
-        this.faceTarget(target, dt);
+    	const state = this.redSoldiersState; if (!state) return;
+    	{
+    		const myPos = this.getEntity().getPosition();
+    		const targetPos = target.getPosition();
+    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+    	}
         if (!state.hasSpawned) {
             state.hasSpawned = true;
             const myPos = this.getEntity().getPosition();
