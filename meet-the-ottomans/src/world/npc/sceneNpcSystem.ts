@@ -27,6 +27,7 @@ import { Stalin } from "./bosses/stalin";
 import { TowerBoss } from "./bosses/towerBoss";
 import { BinLadin } from "./bosses/binLaden";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
+import { DevConsole } from "../../util/devConsole";
 
 export type NpcSceneTeam = "friend" | "foe";
 
@@ -552,12 +553,15 @@ const groundTag = "ground";
 }
 
 export function bindNpcCombatLoop(
-    app: AppBase,
-    npcs: npc[],
-    getPlayerEntity: () => Entity,
-    options: NpcCombatLoopOptions = {}
+ app: AppBase,
+ npcs: npc[],
+ getPlayerEntity: () => Entity,
+ options: NpcCombatLoopOptions = {}
 ): () => void {
-    const updateKey = options.updateKey ?? "__sceneNpcUpdate";
+ // Register NPC list with dev console so commands like killall/heal work
+ DevConsole.setNpcs(npcs);
+
+ const updateKey = options.updateKey ?? "__sceneNpcUpdate";
     const keyedApp = app as AppBase & Record<string, unknown>;
 
     const existingHandler = keyedApp[updateKey];

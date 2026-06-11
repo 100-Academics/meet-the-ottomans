@@ -72,6 +72,8 @@ export class FirstPersonCamera extends ScriptType {
     public velocity = new Vec3();
     public playerHeight = 2;
     public groundHeight = 0;
+    /** Dev console fly mode — when true, gravity and ground collision are disabled, Space/Shift move vertically */
+    public devFlyMode = false;
     public groundTag = 'ground';
     public groundedEpsilon = 0.05;
     public groundRayHeight = 400;
@@ -788,11 +790,34 @@ export class FirstPersonCamera extends ScriptType {
         
         const entityPos = this.entity.getPosition();
         if (this.movementLocked) {
-            this.velocity.set(0, 0, 0);
-            this.basePosition.copy(entityPos);
-            this.basePositionReady = true;
-            this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
-            return;
+        this.velocity.set(0, 0, 0);
+        this.basePosition.copy(entityPos);
+        this.basePositionReady = true;
+        this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
+        return;
+        }
+
+        // ---- Dev Console Fly Mode ----
+        // When active, disable gravity/ground-collision and move freely in 3D.
+        if (this.devFlyMode) {
+        this.stopWallRun();
+        this.stopSlide();
+        const flyPos = entityPos.clone();
+        if (hasMoveInput) {
+        flyPos.add(moveDir.clone().mulScalar(this.moveSpeed * dt));
+        }
+        // Space = ascend, Shift = descend
+        if (isSpace) flyPos.y += this.moveSpeed * dt;
+        if (isShift) flyPos.y -= this.moveSpeed * dt;
+        this.velocity.set(0, 0, 0);
+        this.clampToMovementBounds(flyPos);
+        this.entity.setLocalEulerAngles(this.eulers.x, this.eulers.y, this.eulers.z);
+        this.entity.setPosition(flyPos);
+        this.basePosition.copy(flyPos);
+        this.basePositionReady = true;
+        this.wasJumpHeld = !!isSpace;
+        this.wasDashHeld = !!isShift;
+        return;
         }
         const lastCommittedPos = entityPos.clone();
         if (!this.basePositionReady) {

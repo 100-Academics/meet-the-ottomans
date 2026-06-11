@@ -27,9 +27,12 @@ export class Player{
  private gracePeriodEnd = 0; // Timestamp (ms) until which player is invulnerable after reviving
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
-        this.app = app;
+    this.app = app;
 
-        // Create the camera entity
+    // Register this player with the dev console (via globalThis to avoid circular import)
+    (globalThis as any).__devConsolePlayer = this;
+
+    // Create the camera entity
         this.cameraEntity = new Entity('camera');
         this.cameraEntity.addComponent('camera', {
             clearColor: new Color(0.14117647, 0.14117647, 0.14117647),  // Dark gray background
@@ -84,6 +87,8 @@ export class Player{
     }
 
     // Dev console god mode — skip all damage
+    // Reads from globalThis to avoid circular dependency with DevConsole.
+    // DevConsole.god command keeps this in sync.
     if ((globalThis as any).__devConsoleGodMode) {
     return;
     }
