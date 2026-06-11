@@ -109,6 +109,7 @@ export async function changeScene(
  DevConsole.setPlayer(null);
  DevConsole.setNpcs([]);
  DevConsole.setApp(app);
+ (globalThis as any).__devConsolePlayer = null;
  runSceneCleanupHandlers(app);
   const overlay = ensureOverlayRoot();
   overlay.replaceChildren();

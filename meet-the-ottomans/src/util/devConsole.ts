@@ -108,17 +108,22 @@ export class DevConsole {
 
   /** Set the current Player reference. Scenes call this after creating the player. */
   static setPlayer(player: Player | null): void {
-    DevConsole._player = player;
+  DevConsole._player = player;
   }
 
   /** Set the current NPC list reference. Scenes call this after spawning NPCs. */
   static setNpcs(npcs: npc[]): void {
-    DevConsole._npcs = npcs;
+  DevConsole._npcs = npcs;
   }
 
   /** Set the current AppBase reference. Scenes call this during setup. */
   static setApp(app: AppBase | null): void {
-    DevConsole._app = app;
+  DevConsole._app = app;
+  }
+
+  /** Get the current player — checks explicit ref first, then globalThis bridge from Player constructor. */
+  private static getPlayer(): Player | null {
+  return DevConsole._player ?? (globalThis as any).__devConsolePlayer ?? null;
   }
 
   // ---- internals ----------------------------------------------------------
@@ -379,13 +384,15 @@ export class DevConsole {
 
     // ---- god ----
     DevConsole.register('god', 'Toggle god mode (invincibility)', () => {
-      DevConsole._godMode = !DevConsole._godMode;
-      return DevConsole._godMode ? 'God mode ON' : 'God mode OFF';
+    DevConsole._godMode = !DevConsole._godMode;
+    // Keep globalThis in sync so Player.takeDamage can read it without importing DevConsole
+    (globalThis as any).__devConsoleGodMode = DevConsole._godMode;
+    return DevConsole._godMode ? 'God mode ON' : 'God mode OFF';
     });
 
     // ---- heal ----
     DevConsole.register('heal', 'Fully heal the player', () => {
-      const player = DevConsole._player;
+      const player = DevConsole.getPlayer();
       if (!player) return 'No player in current scene';
       // Player has no public setHealth, but we can use revive
       player.revive(player.getPosition());
@@ -408,7 +415,7 @@ export class DevConsole {
 
     // ---- pos ----
     DevConsole.register('pos', 'Print player position and camera direction', () => {
-      const player = DevConsole._player;
+      const player = DevConsole.getPlayer();
       if (!player) return 'No player in current scene';
       const state = player.getDebugState();
       return `pos: (${state.position.x.toFixed(2)}, ${state.position.y.toFixed(2)}, ${state.position.z.toFixed(2)})\nfwd: (${state.forward.x.toFixed(2)}, ${state.forward.y.toFixed(2)}, ${state.forward.z.toFixed(2)})\nhealth: ${state.health}/${state.maxHealth}\nweapon: ${state.weapon}`;
@@ -440,7 +447,7 @@ export class DevConsole {
 
     // ---- weapon ----
     DevConsole.register('weapon', 'Equip a weapon: 1=sword, 2=gun, 3=bow, 4=old gun', (args) => {
-      const player = DevConsole._player;
+      const player = DevConsole.getPlayer();
       if (!player) return 'No player in current scene';
       const slot = parseInt(args, 10) as 1 | 2 | 3 | 4;
       if (slot < 1 || slot > 4 || !Number.isFinite(slot)) {
@@ -465,18 +472,16 @@ export class DevConsole {
     }, '[damage]');
 
     // ---- fly ----
-    DevConsole.register('fly', 'Toggle fly mode (disable gravity on player camera)', () => {
-      const player = DevConsole._player;
-      if (!player) return 'No player in current scene';
-      const controller = player.getCameraController();
-      if (!controller) return 'No camera controller available';
-      DevConsole._flyMode = !DevConsole._flyMode;
-      // Access the fly mode flag on the FirstPersonCamera
-      if ('devFlyMode' in controller) {
-        (controller as Record<string, unknown>).devFlyMode = DevConsole._flyMode;
-        return DevConsole._flyMode ? 'Fly mode ON' : 'Fly mode OFF';
-      }
-      return 'Fly mode is not supported by the current camera controller';
+    DevConsole.register('fly', 'Toggle fly mode (disable gravity, move freely with Space/Shift)', () => {
+    const player = DevConsole.getPlayer();
+    if (!player) return 'No player in current scene';
+    const controller = player.getCameraController();
+    if (!controller) return 'No camera controller available';
+    DevConsole._flyMode = !DevConsole._flyMode;
+    if ('devFlyMode' in controller) {
+    (controller as unknown as Record<string, unknown>).devFlyMode = DevConsole._flyMode;
+    }
+    return DevConsole._flyMode ? 'Fly mode ON (Space=up, Shift=down)' : 'Fly mode OFF';
     });
 
     // ---- timescale ----
@@ -508,21 +513,21 @@ export class DevConsole {
     }, '<expression>');
 
     // ---- noclip ----
-    DevConsole.register('noclip', 'Toggle noclip (alias for fly mode — disable gravity on camera)', () => {
-      DevConsole._flyMode = !DevConsole._flyMode;
-      const player = DevConsole._player;
-      if (player) {
-        const controller = player.getCameraController();
-        if (controller && 'devFlyMode' in controller) {
-          (controller as Record<string, unknown>).devFlyMode = DevConsole._flyMode;
-        }
-      }
-      return DevConsole._flyMode ? 'Noclip ON' : 'Noclip OFF';
+    DevConsole.register('noclip', 'Toggle noclip (alias for fly mode — disable gravity, move freely)', () => {
+    DevConsole._flyMode = !DevConsole._flyMode;
+    const player = DevConsole.getPlayer();
+    if (player) {
+    const controller = player.getCameraController();
+    if (controller && 'devFlyMode' in controller) {
+    (controller as unknown as Record<string, unknown>).devFlyMode = DevConsole._flyMode;
+    }
+    }
+    return DevConsole._flyMode ? 'Noclip ON (Space=up, Shift=down)' : 'Noclip OFF';
     });
 
     // ---- kill ----
     DevConsole.register('kill', 'Kill the player (deal lethal damage)', () => {
-      const player = DevConsole._player;
+      const player = DevConsole.getPlayer();
       if (!player) return 'No player reference available';
       player.takeDamage(player.getHealth());
       return 'Player killed';
@@ -530,7 +535,7 @@ export class DevConsole {
 
     // ---- give ----
     DevConsole.register('give', 'Give/equip a weapon: sword=1, gun=2, bow=3, old gun=4', (args) => {
-      const player = DevConsole._player;
+      const player = DevConsole.getPlayer();
       if (!player) return 'No player reference available';
       const nameMap: Record<string, 1 | 2 | 3 | 4> = {
         sword: 1, gun: 2, bow: 3, 'old gun': 4,
