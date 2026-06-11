@@ -3,7 +3,7 @@ import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } 
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
-type BinLadinAttackType = "caveAmbush" | "iedBlast" | "akSpray" | "goInvisible" | "suicideBombers";
+type AirLadinAttackType = "caveAmbush" | "iedBlast" | "akSpray" | "goInvisible" | "suicideBombers";
 
 interface CaveAmbushState {
 	endTimeSeconds: number;
@@ -74,7 +74,7 @@ export class AirLadin extends Boss {
 	private nextBomberAtSeconds = 0;
 
 	private attackLockUntilSeconds = 0;
-	private lastAttackType: BinLadinAttackType | null = null;
+	private lastAttackType: AirLadinAttackType | null = null;
 	private lastAttackAtSeconds = -Infinity;
 	private caveAmbushState: CaveAmbushState | null = null;
 	private iedBlastState: IedBlastState | null = null;
@@ -108,13 +108,13 @@ export class AirLadin extends Boss {
 
 	private readonly activeEffects = new Set<Entity>();
 
-	constructor(id: number, maxHealth: number, entity: Entity = new Entity("BinLadin")) {
+	constructor(id: number, maxHealth: number, entity: Entity = new Entity("AirLadin")) {
 		super(id, maxHealth, entity, "Air Ladin");
 		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
 		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
 		this.setIntroTaunt("لن تجدني أبداً!", "You will never find me!");
-		this.setIntroNameTranslation("أسامة بن لادن", "Usama bin Ladin");
+		this.setIntroNameTranslation("إير لادن", "Air Ladin");
 		
         this.setTauntSet({
 			highHealth: [
@@ -198,8 +198,8 @@ export class AirLadin extends Boss {
 		return { ...base, attackDamage: this.akDamage, attackRange: this.akRange, attackCooldown: this.akCooldownSeconds, detectionRange: Number.MAX_VALUE };
 	}
 
-	private pickNextAttack(distance: number, now: number): BinLadinAttackType | null {
-		const choices: Array<{ type: BinLadinAttackType; score: number }> = [];
+	private pickNextAttack(distance: number, now: number): AirLadinAttackType | null {
+		const choices: Array<{ type: AirLadinAttackType; score: number }> = [];
 		if (now >= this.nextAmbushAtSeconds && distance <= this.ambushRange) {
 			choices.push({ type: "caveAmbush", score: 1.0 });
 		}
@@ -240,7 +240,7 @@ export class AirLadin extends Boss {
 		this.faceTarget(target, dt);
 		if (!state.hasAmbushed) {
 			state.hasAmbushed = true;
-			this.spawnRingEffect(this.getEntity().getPosition(), 4, 1200, this.ambushRingMaterial, "binladin-ambush-ring", 0.5);
+			this.spawnRingEffect(this.getEntity().getPosition(), 4, 1200, this.ambushRingMaterial, "airladin-ambush-ring", 0.5);
 			this.applyDamage(this.ambushDamage, onAttack);
 		}
 		if (now >= state.endTimeSeconds) {
@@ -287,7 +287,7 @@ export class AirLadin extends Boss {
 			state.cratersSpawned++;
 			state.nextCraterAtSeconds = now + this.iedIntervalSeconds;
 
-			const crater = new Entity("binladin-ied-crater");
+			const crater = new Entity("airladin-ied-crater");
 			crater.addComponent("render", { type: "box", material: this.iedMaterial });
 			crater.setLocalScale(1.5, 0.1, 1.5);
 			crater.setPosition(pos.x, pos.y, pos.z);
@@ -361,7 +361,7 @@ export class AirLadin extends Boss {
 
 		for (let i = 0; i < 3; i++) {
 			const spreadDeg = (i - 1) * 5;
-			const bullet = new Entity("binladin-bullet");
+			const bullet = new Entity("airladin-bullet");
 			bullet.addComponent("render", { type: "cone", material: this.bulletMaterial });
 			bullet.setLocalScale(0.1, 0.1, 1.2);
 			const yaw = baseYaw + spreadDeg;
@@ -407,7 +407,7 @@ export class AirLadin extends Boss {
 			this.isCurrentlyInvisible = true;
 			this.setBossModelVisible(false);
 			this.spawnSmokeCloud(this.getEntity().getPosition());
-			this.showStatusText("Bin Ladin has vanished!", 2000);
+			this.showStatusText("Air Ladin has vanished!", 2000);
 		}
 
 		if (now >= state.endTimeSeconds - 0.5 && !state.hasReappeared) {
@@ -415,7 +415,7 @@ export class AirLadin extends Boss {
 			this.isCurrentlyInvisible = false;
 			this.setBossModelVisible(true);
 			this.spawnSmokeCloud(this.getEntity().getPosition());
-			this.showStatusText("Bin Ladin reappears!", 1500);
+			this.showStatusText("Air Ladin reappears!", 1500);
 		}
 
 		if (now < state.endTimeSeconds - 0.5) {
@@ -484,7 +484,7 @@ export class AirLadin extends Boss {
 				(Math.random() - 0.5) * 3
 			);
 			const pos = new Vec3(origin.x + offset.x, origin.y + 0.5, origin.z + offset.z);
-			const puff = new Entity("binladin-smoke-puff");
+			const puff = new Entity("airladin-smoke-puff");
 			puff.addComponent("render", { type: "sphere", material: this.invisSmokeMaterial });
 			puff.setLocalScale(0.5, 0.5, 0.5);
 			puff.setPosition(pos.x, pos.y, pos.z);
@@ -532,14 +532,14 @@ export class AirLadin extends Boss {
 			const spawnZ = myPos.z + Math.cos(angle) * spawnDist;
 			const startPos = new Vec3(spawnX, myPos.y, spawnZ);
 
-			const bomber = new Entity("binladin-suicide-bomber");
+			const bomber = new Entity("airladin-suicide-bomber");
 			bomber.addComponent("render", { type: "capsule", material: this.bomberBodyMaterial });
 			bomber.setLocalScale(0.8, 1.2, 0.8);
 			bomber.setPosition(spawnX, startPos.y + 1, spawnZ);
 			parent.addChild(bomber);
 			this.activeEffects.add(bomber);
 
-			const bomb = new Entity("binladin-bomb-glow");
+			const bomb = new Entity("airladin-bomb-glow");
 			bomb.addComponent("render", { type: "sphere", material: this.bombGlowMaterial });
 			bomb.setLocalScale(0.4, 0.4, 0.4);
 			bomb.setPosition(0, 0.8, 0.3);
@@ -626,14 +626,14 @@ export class AirLadin extends Boss {
 	private spawnExplosion(origin: Vec3): void {
 		const parent = this.getEntity().parent ?? this.getEntity();
 
-		const core = new Entity("binladin-explosion-core");
+		const core = new Entity("airladin-explosion-core");
 		core.addComponent("render", { type: "sphere", material: this.explosionMaterial });
 		core.setLocalScale(0.5, 0.5, 0.5);
 		core.setPosition(origin.x, origin.y + 1, origin.z);
 		parent.addChild(core);
 		this.activeEffects.add(core);
 
-		const ring = new Entity("binladin-explosion-ring");
+		const ring = new Entity("airladin-explosion-ring");
 		ring.addComponent("render", { type: "torus", material: this.explosionMaterial });
 		ring.setPosition(origin.x, origin.y + 0.2, origin.z);
 		ring.setLocalScale(1, 0.15, 1);
