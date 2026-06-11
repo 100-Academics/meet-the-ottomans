@@ -187,7 +187,7 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(0, 0, 0),
+  modelRotation: new Vec3(-90, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
@@ -202,7 +202,7 @@ const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
