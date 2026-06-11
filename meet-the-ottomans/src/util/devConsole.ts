@@ -1284,14 +1284,12 @@ export class DevConsole {
       if (!spawnPos) return 'Could not determine spawn position. No player and no position given.';
 
       try {
-        await loadModel(modelPath, app, {
-          rigidbodyType: 'dynamic',
-          mass: 1,
-          autoCollision: true,
-          position: spawnPos,
-          rotation: new Vec3(0, 0, 0),
-          scale: new Vec3(1, 1, 1),
-        });
+           await loadModel(modelPath, app, {
+             rigidbodyType: 'dynamic',
+             mass: 1,
+             autoCollision: true,
+             position: spawnPos,
+           });
         return `Model loaded: "${modelPath}" at (${spawnPos.x.toFixed(1)}, ${spawnPos.y.toFixed(1)}, ${spawnPos.z.toFixed(1)})`;
       } catch (err) {
         return `Failed to load model "${modelPath}": ${err instanceof Error ? err.message : String(err)}`;

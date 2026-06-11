@@ -46,6 +46,7 @@ import {
   NORTHWOOD_HIGH_SPAWN_POINT,
 } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
+import { DevConsole } from "../../util/devConsole";
 
 /**
  * Battle of Northwood High School — a white, featureless room with a single tower.
@@ -346,10 +347,10 @@ export async function battleOfNorthwoodHighScene(
       (currentNpc: any) =>
         currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
     );
-    if (remainingFoes.length === 0) {
-      victoryHandled = true;
-      removeBattleHUD();
-      changeScene(canvas, app, 777);
+    if (remainingFoes.length === 0 && !DevConsole._roundLock) {
+    	victoryHandled = true;
+    	removeBattleHUD();
+    	changeScene(canvas, app, 777);
     }
   });
 
