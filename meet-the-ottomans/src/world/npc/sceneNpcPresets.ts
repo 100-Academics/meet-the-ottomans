@@ -110,7 +110,7 @@ const NAPOLEON_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const UNCLE_SAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.uncleSam,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -187,7 +187,7 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
