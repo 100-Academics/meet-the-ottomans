@@ -93,7 +93,7 @@ const BAYBARS_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const CAESAR_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.caesar,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -216,7 +216,7 @@ const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const ITALIAN_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 

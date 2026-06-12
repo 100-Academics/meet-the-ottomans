@@ -42,6 +42,7 @@ import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { AIN_JALUT_BOSS_SPAWN_POINT, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
+import { DevConsole } from "../../util/devConsole";
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
 
@@ -727,6 +728,7 @@ await waitForAmmoReady(app, "ground");
         return;
       }
 
+      if (DevConsole._roundLock) return;
       removeBattleHUD();
       victoryHandled = true;
       changeScene(canvas, app, 777);

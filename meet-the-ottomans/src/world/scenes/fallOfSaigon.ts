@@ -52,6 +52,7 @@ import {
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
+import { DevConsole } from "../../util/devConsole";
 
 const groundModelPath = "/world/battlefields/Saigon.glb";
 
@@ -574,7 +575,7 @@ export async function fallOfSaigonScene(
     const remainingFoes = npcs.filter(
       (currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
     );
-    if (remainingFoes.length === 0 && isBossSpawned) {
+    if (remainingFoes.length === 0 && isBossSpawned && !DevConsole._roundLock) {
       victoryHandled = true;
       removeBattleHUD();
       changeScene(canvas, app, 777);

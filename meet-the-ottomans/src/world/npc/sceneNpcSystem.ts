@@ -79,6 +79,7 @@ export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
 }
 
 export interface NpcCombatLoopOptions {
+    /** Optional custom key for storing the update handler on the app. */
     updateKey?: string;
     onNpcAttack?: (attacker: npc, target: npc, damage: number) => void;
     onPlayerAttack?: (attacker: npc, damage: number) => void;
@@ -94,6 +95,7 @@ export interface NpcCombatLoopOptions {
     obstacleProbePadding?: number;
     obstacleMinMove?: number;
     obstacleIgnoreTags?: string[];
+    /** When true, prevents spawning the stronger Mongol horde after a false retreat. */
     disableMongolHordeSpawn?: boolean;
     battleStatus?: {
         getCameraEntity?: () => Entity | null | undefined;
@@ -301,15 +303,17 @@ const groundTag = "ground";
   const groundProbeDepth = options.groundProbeDepth ?? 300;
   const defaultGroundClearance = 0.1;
 
-    const playerSafeRadius = options.playerSafeRadius ?? 6;
+    const playerSafeRadius = options.playerSafeRadius ?? 20;
     const getPlayerPosition = options.getPlayerPosition
     ?? (() => (globalThis as any).__devConsolePlayer?.getPosition?.() as Vec3 | undefined);
 
+
     const npcs: npc[] = [];
 
-    for (const spawn of spawnPoints) {
+    for (let spawnIndex = 0; spawnIndex < spawnPoints.length; spawnIndex++) {
+    let spawn = spawnPoints[spawnIndex];
     try {
-    // Skip foe spawns that would land on top of the player.
+    // Push foe spawns away from the player if they would land too close.
     if (playerSafeRadius > 0 && spawn.team === "foe") {
     const playerPos = getPlayerPosition();
     if (playerPos) {
@@ -317,8 +321,11 @@ const groundTag = "ground";
     const pdz = spawn.z - playerPos.z;
     const playerDist = Math.sqrt((pdx * pdx) + (pdz * pdz));
     if (playerDist < playerSafeRadius) {
-    console.log(`[NPC] Skipping spawn ID=${spawn.id} at (${spawn.x}, ${spawn.z}) — too close to player (${playerDist.toFixed(1)} < ${playerSafeRadius})`);
-    continue;
+    const angle = Math.atan2(pdz, pdx);
+    const pushedX = playerPos.x + Math.cos(angle) * playerSafeRadius;
+    const pushedZ = playerPos.z + Math.sin(angle) * playerSafeRadius;
+    console.log(`[NPC] Pushing spawn ID=${spawn.id} from (${spawn.x.toFixed(1)}, ${spawn.z.toFixed(1)}) → (${pushedX.toFixed(1)}, ${pushedZ.toFixed(1)}) — was ${playerDist.toFixed(1)} from player (safe radius ${playerSafeRadius})`);
+    spawn = { ...spawn, x: pushedX, z: pushedZ };
     }
     }
     }
@@ -566,7 +573,7 @@ const groundTag = "ground";
 			boss.drawHealthBar();
 			Boss.setActiveBoss(boss);
 			npcs.push(boss);
-    }else {
+    } else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 spawnedNpc.setHitboxRadius(hitboxRadius);
@@ -843,7 +850,7 @@ export function bindNpcCombatLoop(
         Mongol.hordeSpawned = true;
         const playerEntity = getPlayerEntity();
         const playerPos = playerEntity?.getPosition?.();
-        const hordeSafeRadius = 8; // Don't spawn horde members within this distance of the player
+        const hordeSafeRadius = 20; // Don't spawn horde members within this distance of the player
         const newPoints: NpcSpawnPoint[] = [];
         for (let i = 0; i < 6; i++) {
         let spawnX = Mongol.retreatPoint.x + (Math.random() * 12 - 6);

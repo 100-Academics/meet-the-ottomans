@@ -42,6 +42,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, RIDANIYA_BOSS_SPAWN_POINT, RIDANIYA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { changeScene } from "../../App";
+import { DevConsole } from "../../util/devConsole";
 
 const groundModelPath = '/world/battlefields/Ridaniya.glb';
 
@@ -546,7 +547,7 @@ await waitForAmmoReady(app, "ground");
 			baybarsSpawnFrame += 1;
 		}
 
-		if (remainingFoes.length === 0 && baybarsSpawned && (baybarsSpawnFrame ?? 0) > 2) {
+		if (remainingFoes.length === 0 && baybarsSpawned && (baybarsSpawnFrame ?? 0) > 2 && !DevConsole._roundLock) {
 			removeBattleHUD();
 			victoryHandled = true;
 			changeScene(canvas, app, 777);
