@@ -858,7 +858,7 @@ export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 4, team: "foe", x: 15, z: -6, type: "americanRevolutionist" },
   { id: 5, team: "foe", x: 18, z: -6, type: "americanRevolutionist" },
 ];
-export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "georgeWashington" }];
+export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "georgeWashington" }];
 
 // Saigon
 export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
