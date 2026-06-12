@@ -35,7 +35,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Siege of Constantinople": {
     name: "Siege of Constantinople",
-    date: "April 12 – April 13, 1204",
+    date: "April 12 - April 13, 1204",
     location: "Constantinople (modern Istanbul, Turkey)",
     historicalContext: "The Crusaders of the Forth Crusade sieged Constantinople, which was then under control of the Byzantines. The Crusaders sacked Constantinople, and crowned Baldwin IX of Flanders as the king of a new empire",
     combatants: {
@@ -57,7 +57,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Siege of Orléans": {
     name: "Siege of Orléans",
-    date: "October 1428 – May 1429",
+    date: "October 1428 - May 1429",
     location: "Orléans, France",
     historicalContext: "The turning point of the Hundred Years' War. Joan of Arc led the French to lift the English siege, boosting French morale and paving the way for Charles VII's coronation.",
     combatants: {
@@ -68,7 +68,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Fall of Constantinople": {
     name: "Fall of Constantinople",
-    date: "April 6 – May 29, 1453",
+    date: "April 6 - May 29, 1453",
     location: "Constantinople (modern Istanbul, Turkey)",
     historicalContext: "The Ottoman Empire under Sultan Mehmed II conquered the Byzantine capital, ending the Eastern Roman Empire after 1,100 years. The fall of Constantinople marked a turning point in world history.",
     combatants: {
@@ -101,7 +101,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Siege of Vienna": {
     name: "Siege of Vienna",
-    date: "July 17 – September 12, 1683",
+    date: "July 17 - September 12, 1683",
     location: "Vienna, Austria",
     historicalContext: "The Ottoman Empire's second siege of Vienna was repelled by a coalition led by Polish King John III Sobieski. The defeat marked the beginning of Ottoman decline in Europe.",
     combatants: {
@@ -112,7 +112,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Yorktown": {
     name: "Battle of Yorktown",
-    date: "September 28 – October 19, 1781",
+    date: "September 28 - October 19, 1781",
     location: "Yorktown, Virginia, USA",
     historicalContext: "The decisive battle of the American Revolutionary War. American and French forces under Washington and Rochambeau trapped Cornwallis's British army, leading to British surrender and eventual American independence.",
     combatants: {
@@ -134,7 +134,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Gettysburg": {
     name: "Battle of Gettysburg",
-    date: "July 1–3, 1863",
+    date: "July 1-3, 1863",
     location: "Gettysburg, Pennsylvania, USA",
     historicalContext: "The turning point of the American Civil War. Lee's Confederate Army of Northern Virginia was repelled by Union forces under Meade, ending the Confederate invasion of the North and beginning the long retreat to eventual surrender.",
     combatants: {
@@ -145,7 +145,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Verdun": {
     name: "Battle of Verdun",
-    date: "February 21 – December 18, 1916",
+    date: "February 21 - December 18, 1916",
     location: "Verdun, France",
     historicalContext: "One of the longest and bloodiest battles of World War I. Germany sought to 'bleed France white' through attrition. The battle became a symbol of French determination with the motto 'They shall not pass.'",
     combatants: {
@@ -156,7 +156,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Gallipoli": {
     name: "Battle of Gallipoli",
-    date: "February 19, 1915 – January 9, 1916",
+    date: "February 19, 1915 - January 9, 1916",
     location: "Gallipoli Peninsula, Ottoman Empire (modern Turkey)",
     historicalContext: "An Allied amphibious assault to capture the Ottoman capital and secure a sea route to Russia. The campaign failed disastrously, costing over 500,000 casualties and becoming a defining moment for Australian and Turkish national identity.",
     combatants: {
@@ -167,7 +167,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Stalingrad": {
     name: "Battle of Stalingrad",
-    date: "August 23, 1942 – February 2, 1943",
+    date: "August 23, 1942 - February 2, 1943",
     location: "Stalingrad, Soviet Union (modern Volgograd, Russia)",
     historicalContext: "The deadliest battle in history with over 2 million casualties. The Soviet victory marked the turning point of World War II in Europe, destroying the German 6th Army and beginning the long Soviet push westward to Berlin.",
     combatants: {
@@ -178,7 +178,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Chosin Reservoir": {
     name: "Battle of Chosin Reservoir",
-    date: "November 26 – December 13, 1960",
+    date: "November 26 - December 13, 1960",
     location: "Chosin Reservoir, North Korea",
     historicalContext: "A decisive battle of the Korean War where UN forces, surrounded by massive Chinese forces in brutal winter conditions, fought their way out in a fighting retreat. Despite heavy losses, the evacuation preserved UN fighting strength.",
     combatants: {
@@ -189,7 +189,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Fall of Saigon": {
     name: "Fall of Saigon",
-    date: "April 28–30, 1975",
+    date: "April 28-30, 1975",
     location: "Saigon, South Vietnam (modern Ho Chi Minh City, Vietnam)",
     historicalContext: "The capture of South Vietnam's capital by North Vietnamese forces, marking the end of the Vietnam War. The dramatic helicopter evacuations from the US Embassy became an iconic moment of the war's conclusion.",
     combatants: {
@@ -200,7 +200,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Operation Abirey-Halev": {
     name: "Operation Abirey-Halev",
-    date: "October 15–24, 1973",
+    date: "October 15-24, 1973",
     location: "Sinai Peninsula, Egypt/Suez Canal",
     historicalContext: "Also known as Operation Valiant, this was the Israeli counter-crossing of the Suez Canal during the Yom Kippur War. Israeli forces under Sharon crossed the canal, encircling the Egyptian Third Army and turning the tide of the war.",
     combatants: {
@@ -211,7 +211,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Operation Anaconda": {
     name: "Operation Anaconda",
-    date: "March 2–18, 2002",
+    date: "March 2-18, 2002",
     location: "Shah-i-Kot Valley, Afghanistan",
     historicalContext: "The largest battle of the War in Afghanistan's initial phase. US and coalition forces launched a major offensive against Al-Qaeda and Taliban fighters entrenched in mountain caves, establishing the pattern for future counterinsurgency operations.",
     combatants: {
@@ -222,7 +222,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Battle of Kyiv": {
     name: "Battle of Kyiv",
-    date: "February 26 – April 1, 2022",
+    date: "February 26 - April 1, 2022",
     location: "Kyiv, Ukraine",
     historicalContext: "The opening battle of the 2022 Russian invasion of Ukraine. Ukrainian forces successfully defended the capital against a much larger Russian assault, inflicting heavy losses and forcing Russian withdrawal. A symbol of Ukrainian resistance.",
     combatants: {
