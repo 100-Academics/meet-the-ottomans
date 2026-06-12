@@ -3,333 +3,365 @@ import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } 
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
-// Attack types for Caesar (summon removed)
-type CaesarAttackType = "buildMonument" | "bowShot";
+type CaesarAttackType = "fireDash" | "buildFromGround";
 
-interface MonumentState {
-    endTimeSeconds: number;
-    nextBlockAtSeconds: number;
-    blocksSpawned: number;
-    blockPositions: Vec3[];
+interface FireDashState {
+	endTimeSeconds: number;
+	direction: Vec3;
+	hasHit: boolean;
 }
 
-interface BowState {
-    endTimeSeconds: number;
-    hasFired: boolean;
+interface BuildFromGroundState {
+	endTimeSeconds: number;
+	nextBlockAtSeconds: number;
+	blocksSpawned: number;
+	blockPositions: Vec3[];
 }
 
 export class Caesar extends Boss {
+	private readonly fireDashSpeed = PLAYER_MOVE_SPEED * 2.8;
+	private readonly fireDashDurationSeconds = 0.6;
+	private readonly fireDashCooldownSeconds = 5.0;
+	private readonly fireDashRange = 20;
+	private readonly fireDashDamage = 18;
+	private readonly fireDashHitRadius = 3.0;
+	private nextFireDashAtSeconds = 0;
 
-    // Build monuments from ground
-  private readonly monumentBlockCount = 25;
-  private readonly monumentIntervalSeconds = 0.05;
-  private readonly monumentCooldownSeconds = 0.15;
-  private readonly monumentRange = 200;
-  private readonly monumentDamage = 25;
-  private readonly monumentHitRadius = 8.0;
-    private nextMonumentAtSeconds = 0;
+	private readonly buildBlockCount = 20;
+	private readonly buildIntervalSeconds = 0.08;
+	private readonly buildCooldownSeconds = 6.0;
+	private readonly buildRange = 30;
+	private readonly buildDamage = 25;
+	private readonly buildHitRadius = 6.0;
+	private nextBuildAtSeconds = 0;
 
-    // Bow & arrow
-    private readonly bowDamage = 5;
-    private readonly bowCooldownSeconds = 0.5;
-    private readonly bowRange = 35;
-    private nextBowAtSeconds = 0;
+	private attackLockUntilSeconds = 0;
+	private lastAttackType: CaesarAttackType | null = null;
+	private lastAttackAtSeconds = -Infinity;
+	private fireDashState: FireDashState | null = null;
+	private buildState: BuildFromGroundState | null = null;
+	private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
-    // Runtime state
-    private attackLockUntilSeconds = 0;
-    private lastAttackType: CaesarAttackType | null = null;
-    private lastAttackAtSeconds = -Infinity;
-    private monumentState: MonumentState | null = null;
-    private bowState: BowState | null = null;
-    private onPlayerAttack?: (attacker: npc, damage: number) => void;
+	private readonly fireDashMaterial = this.createEffectMaterial(
+		new Color(1.0, 0.5, 0.1), new Color(1.0, 0.7, 0.2), 4.5, 0.85
+	);
+	private readonly buildingMaterial = this.createEffectMaterial(
+		new Color(0.75, 0.7, 0.55), new Color(0.9, 0.85, 0.7), 2.0, 0.85
+	);
 
-    // VFX materials
-    private readonly monumentMaterial = this.createEffectMaterial(
-        new Color(0.75, 0.7, 0.55), new Color(0.9, 0.85, 0.7), 2.0, 0.8
-    );
-    private readonly arrowMaterial = this.createEffectMaterial(
-        new Color(0.85, 0.75, 0.3), new Color(1, 0.9, 0.4), 3.0, 0.7
-    );
+	private readonly activeEffects = new Set<Entity>();
 
-    private readonly activeEffects = new Set<Entity>();
+	constructor(id: number, maxHealth: number, entity: Entity = new Entity("Caesar")) {
+		super(id, maxHealth, entity, "Julius Caesar");
+		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.5;
+		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.8;
 
-    constructor(id: number, maxHealth: number, entity: Entity = new Entity("Caesar")) {
-        super(id, maxHealth, entity, "Julius Caesar");
-    this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.5;
-    this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.8;
+		this.setIntroTaunt("Veni, vidi, vici!", "I came, I saw, I conquered!");
+		this.setIntroNameTranslation("Gaius Iulius Caesar", "Julius Caesar");
+		this.setTauntSet({
+			highHealth: [
+				"Rome's legions stand behind me.",
+				"You face the dictator of the Roman Republic.",
+				"The Senate has decreed your defeat."
+			],
+			bossLowPlayerHigh: [
+				"Alea iacta est! The die is cast!",
+				"Rome does not fall to barbarians!",
+				"My legions will avenge every wound!"
+			],
+			playerLowBossHigh: [
+				"Yield, and Rome may show mercy.",
+				"You are outmatched, barbarian.",
+				"Kneel before the eagle of Rome."
+			],
+			bothLow: [
+				"Et tu? Then fall, challenger!",
+				"Rome's fate hangs by a thread."
+			],
+			death: [
+				"Et tu, Brute…",
+				"The Republic… falls with me."
+			],
+			bossDeath: [
+				"The eagles… fall.",
+				"Rome… endures without me.",
+				" Pizza Pizza."
+			]
+		});
+	}
 
-        this.setIntroTaunt("Veni, vidi, vici!", "I came, I saw, I conquered!");
-        this.setIntroNameTranslation("Gaius Iulius Caesar", "Julius Caesar");
-        this.setTauntSet({
-            highHealth: [
-                "Rome's legions stand behind me.",
-                "You face the dictator of the Roman Republic.",
-                "The Senate has decreed your defeat."
-            ],
-            bossLowPlayerHigh: [
-                "Alea iacta est! The die is cast!",
-                "Rome does not fall to barbarians!",
-                "My legions will avenge every wound!"
-            ],
-            playerLowBossHigh: [
-                "Yield, and Rome may show mercy.",
-                "You are outmatched, barbarian.",
-                "Kneel before the eagle of Rome."
-            ],
-            bothLow: [
-                "Et tu? Then fall, challenger!",
-                "Rome's fate hangs by a thread."
-            ],
-            death: [
-                "Et tu, Brute…",
-                "The Republic… falls with me."
-            ],
-            bossDeath: [
-                "The eagles… fall.",
-                "Rome… endures without me.",
-                " Pizza Pizza."
-            ]
-    });
-  }
+	public override updateCombatAI(
+		deltaTime: number, currentTimeSeconds: number, allNpcs: npc[],
+		onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
+		playerEntity?: Entity | null,
+		onPlayerAttack?: (attacker: npc, damage: number) => void
+	): void {
+		this.onPlayerAttack = onPlayerAttack;
+		super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
+	}
 
-    public override updateCombatAI(
-        deltaTime: number, currentTimeSeconds: number, allNpcs: npc[],
-        onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
-        playerEntity?: Entity | null,
-        onPlayerAttack?: (attacker: npc, damage: number) => void
-    ): void {
-        this.onPlayerAttack = onPlayerAttack;
-        super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
-    }
+	public override updateAI(
+		deltaTime: number, targetEntity: Entity | null, currentTimeSeconds: number,
+		onAttack?: (attacker: npc) => void,
+		profileOverride?: { attackDamage: number; attackRange: number; attackCooldown: number; detectionRange: number; }
+	): void {
+		if (!this.isAlive()) return;
+		const dt = Math.max(0, Math.min(deltaTime, 0.05));
+		if (!targetEntity) { super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride); return; }
 
-    public override updateAI(
-        deltaTime: number, targetEntity: Entity | null, currentTimeSeconds: number,
-        onAttack?: (attacker: npc) => void,
-        profileOverride?: { attackDamage: number; attackRange: number; attackCooldown: number; detectionRange: number; }
-    ): void {
-        if (!this.isAlive()) return;
-        const dt = Math.max(0, Math.min(deltaTime, 0.05));
-        if (!targetEntity) { super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride); return; }
+		if (this.fireDashState) { this.updateFireDash(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+		if (this.buildState) { this.updateBuildFromGround(dt, targetEntity, currentTimeSeconds, onAttack); return; }
 
-        if (this.monumentState) { this.updateMonument(dt, targetEntity, currentTimeSeconds, onAttack); return; }
-        if (this.bowState) { this.updateBow(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+		if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
 
-        if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
+		const distance = this.getFlatDistanceTo(targetEntity);
+		const chosen = this.pickNextAttack(distance, currentTimeSeconds);
+		if (chosen === "fireDash") { this.startFireDash(targetEntity, currentTimeSeconds); return; }
+		if (chosen === "buildFromGround") { this.startBuildFromGround(targetEntity, currentTimeSeconds); return; }
 
-        const distance = this.getFlatDistanceTo(targetEntity);
-        const chosen = this.pickNextAttack(distance, currentTimeSeconds);
-        if (chosen === "buildMonument") { this.startMonument(targetEntity, currentTimeSeconds); return; }
-        if (chosen === "bowShot") { this.startBow(currentTimeSeconds); return; }
+		const myPos = this.getEntity().getPosition();
+		const targetPos = targetEntity.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+	}
 
-        // No attack chosen: chase the target on foot
-        const myPos = this.getEntity().getPosition();
-        const targetPos = targetEntity.getPosition();
-        this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
-    }
+	public override kill(): boolean {
+		const didKill = super.kill();
+		if (didKill) this.cleanupEffects();
+		return didKill;
+	}
 
-  public override kill(): boolean {
-    const didKill = super.kill();
-    if (didKill) this.cleanupEffects();
-    return didKill;
-  }
+	protected override getCombatProfile() {
+		const base = super.getCombatProfile();
+		return { ...base, attackDamage: this.buildDamage, attackRange: this.buildRange, attackCooldown: Math.min(this.fireDashCooldownSeconds, this.buildCooldownSeconds), detectionRange: Number.MAX_VALUE };
+	}
 
-    protected override getCombatProfile() {
-        const base = super.getCombatProfile();
-        return { ...base, attackDamage: this.bowDamage, attackRange: this.bowRange, attackCooldown: this.bowCooldownSeconds, detectionRange: Number.MAX_VALUE };
-    }
+	private pickNextAttack(distance: number, now: number): CaesarAttackType | null {
+		const choices: Array<{ type: CaesarAttackType; score: number }> = [];
 
-    // ── Attack selection ──
-    private pickNextAttack(distance: number, now: number): CaesarAttackType | null {
-        const choices: Array<{ type: CaesarAttackType; score: number }> = [];
-        if (now >= this.nextMonumentAtSeconds && distance <= this.monumentRange) {
-            const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.monumentRange));
-            choices.push({ type: "buildMonument", score: 1.2 + closeness });
-        }
-        if (now >= this.nextBowAtSeconds && distance <= this.bowRange) {
-            choices.push({ type: "bowShot", score: 1.0 + (distance / Math.max(0.001, this.bowRange)) });
-        }
-        if (choices.length === 0) return null;
-        if (this.lastAttackType && (now - this.lastAttackAtSeconds) < 1.8) {
-            for (const c of choices) { if (c.type === this.lastAttackType) c.score *= 0.55; }
-        }
-        let best = choices[0];
-        for (let i = 1; i < choices.length; i++) { if (choices[i].score > best.score) best = choices[i]; }
-        const tied = choices.filter(c => Math.abs(c.score - best.score) < 0.05);
-        if (tied.length > 1) return tied[Math.floor(Math.random() * tied.length)].type;
-        return best.type;
-    }
+		if (now >= this.nextFireDashAtSeconds && distance <= this.fireDashRange) {
+			const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.fireDashRange));
+			choices.push({ type: "fireDash", score: 1.0 + closeness });
+		}
 
-    // ── Build monuments from ground ──
-    private startMonument(target: Entity, now: number): void {
-        this.lastAttackType = "buildMonument"; this.lastAttackAtSeconds = now;
-        const myPos = this.getEntity().getPosition();
-        const targetPos = target.getPosition();
-        const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z);
-        if (dir.lengthSq() <= 0.0001) return; dir.normalize();
+		if (now >= this.nextBuildAtSeconds && distance <= this.buildRange) {
+			choices.push({ type: "buildFromGround", score: 1.3 });
+		}
 
-        const blockPositions: Vec3[] = [];
-        for (let i = 0; i < this.monumentBlockCount; i++) {
-    const forwardDist = i * 4.5 + 3;
-    const lateralOffset = (i % 2 === 0 ? 1 : -1) * 3.0;
-            blockPositions.push(new Vec3(
-                myPos.x + dir.x * forwardDist + (-dir.z) * lateralOffset,
-                myPos.y,
-                myPos.z + dir.z * forwardDist + dir.x * lateralOffset
-            ));
-        }
+		if (choices.length === 0) return null;
 
-        this.monumentState = {
-            endTimeSeconds: now + this.monumentBlockCount * this.monumentIntervalSeconds + 1.0,
-            nextBlockAtSeconds: now,
-            blocksSpawned: 0,
-            blockPositions
-        };
-        this.attackLockUntilSeconds = this.monumentState.endTimeSeconds;
-    }
+		if (this.lastAttackType && (now - this.lastAttackAtSeconds) < 2.0) {
+			for (const c of choices) { if (c.type === this.lastAttackType) c.score *= 0.3; }
+		}
 
-    private updateMonument(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-    	const state = this.monumentState; if (!state) return;
-    	{
-    		const myPos = this.getEntity().getPosition();
-    		const targetPos = target.getPosition();
-    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
-    	}
+		let best = choices[0];
+		for (let i = 1; i < choices.length; i++) { if (choices[i].score > best.score) best = choices[i]; }
+		const tied = choices.filter(c => Math.abs(c.score - best.score) < 0.05);
+		if (tied.length > 1) return tied[Math.floor(Math.random() * tied.length)].type;
+		return best.type;
+	}
 
-        if (state.blocksSpawned < this.monumentBlockCount && now >= state.nextBlockAtSeconds) {
-            const pos = state.blockPositions[state.blocksSpawned];
-            state.blocksSpawned++;
-            state.nextBlockAtSeconds = now + this.monumentIntervalSeconds;
+	private startFireDash(target: Entity, now: number): void {
+		this.lastAttackType = "fireDash";
+		this.lastAttackAtSeconds = now;
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
 
-            const block = new Entity("caesar-monument-block");
-            block.addComponent("render", { type: "box", material: this.monumentMaterial });
-            block.setLocalScale(1.5, 0.1, 1.5);
-            block.setPosition(pos.x, pos.y, pos.z);
-            this.getEntity().parent?.addChild(block) ?? this.getEntity().addChild(block);
-            this.activeEffects.add(block);
+		this.fireDashState = {
+			endTimeSeconds: now + this.fireDashDurationSeconds,
+			direction: dir,
+			hasHit: false
+		};
+		this.attackLockUntilSeconds = this.fireDashState.endTimeSeconds + 0.2;
+		this.spawnFireDashVFX();
+	}
 
-            // Animate rising
-            const startMs = Date.now();
-      const riseMs = 40;
-      const holdMs = 80;
-            const totalMs = riseMs + holdMs;
-            const tick = () => {
-                const elapsed = Date.now() - startMs;
-                if (elapsed >= totalMs || !block.parent) { this.destroyEffect(block); return; }
-                if (elapsed < riseMs) {
-                    const t = elapsed / riseMs;
-                    block.setLocalScale(1.5, 4.0 * t, 1.5);
-                    block.setPosition(pos.x, pos.y + 2.0 * t, pos.z);
-                }
-                const mat = block.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
-                if (mat && elapsed > riseMs) {
-                    mat.opacity = 0.8 * (1 - (elapsed - riseMs) / holdMs);
-                    mat.update();
-                }
-                requestAnimationFrame(tick);
-            };
-            requestAnimationFrame(tick);
+	private updateFireDash(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+		const state = this.fireDashState;
+		if (!state) return;
 
-            // Check hit
-            const targetPos = target.getPosition();
-            const dx = targetPos.x - pos.x;
-            const dz = targetPos.z - pos.z;
-            if (Math.sqrt(dx * dx + dz * dz) <= this.monumentHitRadius) {
-                this.applyDamage(this.monumentDamage, onAttack);
-            }
-        }
+		this.moveToward(state.direction.x, state.direction.z, this.fireDashSpeed, dt);
 
-        if (now >= state.endTimeSeconds) {
-            this.monumentState = null;
-            this.nextMonumentAtSeconds = now + this.monumentCooldownSeconds;
-        }
-    }
+		if (!state.hasHit && this.getFlatDistanceTo(target) <= this.fireDashHitRadius) {
+			state.hasHit = true;
+			this.applyDamage(this.fireDashDamage, onAttack);
+		}
 
-    // ── Bow & arrow ──
-    private startBow(now: number): void {
-        this.lastAttackType = "bowShot"; this.lastAttackAtSeconds = now;
-        this.bowState = { endTimeSeconds: now + 0.6, hasFired: false };
-        this.attackLockUntilSeconds = this.bowState.endTimeSeconds;
-    }
+		if (now >= state.endTimeSeconds) {
+			this.fireDashState = null;
+			this.nextFireDashAtSeconds = now + this.fireDashCooldownSeconds;
+		}
+	}
 
-    private updateBow(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-    	const state = this.bowState; if (!state) return;
-    	{
-    		const myPos = this.getEntity().getPosition();
-    		const targetPos = target.getPosition();
-    		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
-    	}
-        if (!state.hasFired && now >= state.endTimeSeconds - 0.15) {
-            state.hasFired = true;
-            this.spawnArrowProjectile(target);
-            if (this.getFlatDistanceTo(target) <= this.bowRange) {
-                this.applyDamage(this.bowDamage, onAttack);
-            }
-        }
-        if (now >= state.endTimeSeconds) {
-            this.bowState = null;
-            this.nextBowAtSeconds = now + this.bowCooldownSeconds;
-        }
-    }
+	private spawnFireDashVFX(): void {
+		const sceneApp = this.resolveSceneApp();
+		if (!sceneApp?.root) return;
 
-    private spawnArrowProjectile(target: Entity): void {
-        const myPos = this.getEntity().getPosition();
-        const targetPos = target.getPosition();
-        const arrow = new Entity("caesar-arrow");
-        arrow.addComponent("render", { type: "cone", material: this.arrowMaterial });
-        arrow.setLocalScale(0.15, 0.15, 1.5);
-        const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
-        const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
-        arrow.setLocalEulerAngles(0, yaw, 0);
-        arrow.setPosition(myPos.x + dir.x * 2, myPos.y + 1.5, myPos.z + dir.z * 2);
-        this.getEntity().parent?.addChild(arrow) ?? this.getEntity().addChild(arrow);
-        this.activeEffects.add(arrow);
-        const startPos = arrow.getPosition().clone();
-        const speed = 45; const startMs = Date.now(); const maxMs = 1200;
-        const tick = () => {
-            const elapsed = Date.now() - startMs;
-            if (elapsed >= maxMs || !arrow.parent) { this.destroyEffect(arrow); return; }
-            const t = elapsed / 1000;
-            arrow.setPosition(startPos.x + dir.x * speed * t, startPos.y, startPos.z + dir.z * speed * t);
-            const mat = arrow.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
-            if (mat) { mat.opacity = 0.7 * (1 - elapsed / maxMs); mat.update(); }
-            requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
-    }
+		const bossPos = this.getEntity().getPosition();
+		const fireVFX = new Entity("caesar-fire-dash-vfx");
+		fireVFX.addComponent("render", { type: "sphere", material: this.fireDashMaterial });
+		fireVFX.setLocalScale(1.5, 1.5, 1.5);
+		fireVFX.setPosition(bossPos);
+		sceneApp.root.addChild(fireVFX);
+		this.activeEffects.add(fireVFX);
 
-    // ── Helpers ──
-    private faceTarget(target: Entity, dt: number): void {
-        const myPos = this.getEntity().getPosition(); const targetPos = target.getPosition();
-        this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, dt);
-    }
+		const startMs = Date.now();
+		const durationMs = 600;
+		const tick = () => {
+			const elapsed = Date.now() - startMs;
+			if (elapsed >= durationMs || !fireVFX.parent) { this.destroyEffect(fireVFX); return; }
+			const t = elapsed / durationMs;
+			const scale = 1.5 + t * 1.5;
+			fireVFX.setLocalScale(scale, scale * 0.3, scale);
+			const mat = fireVFX.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+			if (mat) { mat.opacity = 0.85 * (1 - t); mat.update(); }
+			requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
+	}
 
-    private getFlatDistanceTo(target: Entity): number {
-        const myPos = this.getEntity().getPosition(); const targetPos = target.getPosition();
-        const dx = targetPos.x - myPos.x; const dz = targetPos.z - myPos.z;
-        return Math.sqrt(dx * dx + dz * dz);
-    }
+	private startBuildFromGround(target: Entity, now: number): void {
+		this.lastAttackType = "buildFromGround";
+		this.lastAttackAtSeconds = now;
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z);
+		if (dir.lengthSq() <= 0.0001) return;
+		dir.normalize();
 
-    private applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
-        if (this.onPlayerAttack) this.onPlayerAttack(this, damage);
-        if (onAttack) onAttack(this);
-    }
+		const blockPositions: Vec3[] = [];
+		for (let i = 0; i < this.buildBlockCount; i++) {
+			const forwardDist = i * 3.5 + 2;
+			const lateralOffset = (i % 2 === 0 ? 1 : -1) * 2.5;
+			blockPositions.push(new Vec3(
+				myPos.x + dir.x * forwardDist + (-dir.z) * lateralOffset,
+				myPos.y,
+				myPos.z + dir.z * forwardDist + dir.x * lateralOffset
+			));
+		}
 
-    private createEffectMaterial(emissiveColor: Color, diffuseColor: Color, emissiveIntensity: number, opacity: number): StandardMaterial {
-        const mat = new StandardMaterial();
-        mat.emissive = emissiveColor; mat.emissiveIntensity = emissiveIntensity;
-        mat.diffuse = diffuseColor; mat.opacity = opacity;
-        mat.blendType = BLEND_ADDITIVE; mat.cull = CULLFACE_NONE; mat.depthWrite = false;
-        mat.update(); return mat;
-    }
+		this.buildState = {
+			endTimeSeconds: now + this.buildBlockCount * this.buildIntervalSeconds + 0.8,
+			nextBlockAtSeconds: now,
+			blocksSpawned: 0,
+			blockPositions
+		};
+		this.attackLockUntilSeconds = this.buildState.endTimeSeconds;
+	}
 
+	private updateBuildFromGround(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+		const state = this.buildState;
+		if (!state) return;
 
-    private destroyEffect(entity: Entity | null | undefined): void {
-        if (!entity) return; this.activeEffects.delete(entity);
-        if (entity.parent) entity.parent.removeChild(entity); entity.destroy();
-    }
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed * 0.5, dt);
 
-  private cleanupEffects(): void {
-    for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
-    this.activeEffects.clear(); this.monumentState = null; this.bowState = null;
-  }
+		if (state.blocksSpawned < this.buildBlockCount && now >= state.nextBlockAtSeconds) {
+			const pos = state.blockPositions[state.blocksSpawned];
+			state.blocksSpawned++;
+			state.nextBlockAtSeconds = now + this.buildIntervalSeconds;
+
+			const block = new Entity("caesar-building-block");
+			block.addComponent("render", { type: "box", material: this.buildingMaterial });
+			block.setLocalScale(2.0, 0.1, 2.0);
+			block.setPosition(pos.x, pos.y, pos.z);
+			this.getEntity().parent?.addChild(block) ?? this.getEntity().addChild(block);
+			this.activeEffects.add(block);
+
+			const startMs = Date.now();
+			const riseMs = 50;
+			const holdMs = 100;
+			const totalMs = riseMs + holdMs;
+
+			const tick = () => {
+				const elapsed = Date.now() - startMs;
+				if (elapsed >= totalMs || !block.parent) { this.destroyEffect(block); return; }
+				if (elapsed < riseMs) {
+					const t = elapsed / riseMs;
+					block.setLocalScale(2.0, 5.0 * t, 2.0);
+					block.setPosition(pos.x, pos.y + 2.5 * t, pos.z);
+				}
+				const mat = block.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+				if (mat && elapsed > riseMs) {
+					mat.opacity = 0.85 * (1 - (elapsed - riseMs) / holdMs);
+					mat.update();
+				}
+				requestAnimationFrame(tick);
+			};
+			requestAnimationFrame(tick);
+
+			const targetPos = target.getPosition();
+			const dx = targetPos.x - pos.x;
+			const dz = targetPos.z - pos.z;
+			if (Math.sqrt(dx * dx + dz * dz) <= this.buildHitRadius) {
+				this.applyDamage(this.buildDamage, onAttack);
+			}
+		}
+
+		if (now >= state.endTimeSeconds) {
+			this.buildState = null;
+			this.nextBuildAtSeconds = now + this.buildCooldownSeconds;
+		}
+	}
+
+	private faceTarget(target: Entity, dt: number): void {
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, dt);
+	}
+
+	private getFlatDistanceTo(target: Entity): number {
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		const dx = targetPos.x - myPos.x;
+		const dz = targetPos.z - myPos.z;
+		return Math.sqrt(dx * dx + dz * dz);
+	}
+
+	private applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
+		if (this.onPlayerAttack) this.onPlayerAttack(this, damage);
+		if (onAttack) onAttack(this);
+	}
+
+	private createEffectMaterial(emissiveColor: Color, diffuseColor: Color, emissiveIntensity: number, opacity: number): StandardMaterial {
+		const mat = new StandardMaterial();
+		mat.emissive = emissiveColor;
+		mat.emissiveIntensity = emissiveIntensity;
+		mat.diffuse = diffuseColor;
+		mat.opacity = opacity;
+		mat.blendType = BLEND_ADDITIVE;
+		mat.cull = CULLFACE_NONE;
+		mat.depthWrite = false;
+		mat.update();
+		return mat;
+	}
+
+	private destroyEffect(entity: Entity | null | undefined): void {
+		if (!entity) return;
+		this.activeEffects.delete(entity);
+		if (entity.parent) entity.parent.removeChild(entity);
+		entity.destroy();
+	}
+
+	private cleanupEffects(): void {
+		for (const effect of this.activeEffects) {
+			try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ }
+		}
+		this.activeEffects.clear();
+		this.fireDashState = null;
+		this.buildState = null;
+	}
+
+	private resolveSceneApp(targetEntity?: Entity): import("playcanvas").AppBase | undefined {
+		const selfEntity = this.getEntity() as any;
+		const selfApp = (selfEntity?.app ?? selfEntity?._app) as import("playcanvas").AppBase | undefined;
+		if (selfApp?.root) return selfApp;
+		const targetAny = targetEntity as any;
+		const targetApp = (targetAny?.app ?? targetAny?._app) as import("playcanvas").AppBase | undefined;
+		if (targetApp?.root) return targetApp;
+		const globalApp = (globalThis as any)?.app as import("playcanvas").AppBase | undefined;
+		if (globalApp?.root) return globalApp;
+		return undefined;
+	}
 }
