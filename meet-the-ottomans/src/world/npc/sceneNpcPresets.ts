@@ -27,6 +27,7 @@ const NPC_MODEL_PATHS = {
   uncleSam: "models/npc/boss/UncleSam.glb",
   vietnamDragonKing: "models/npc/boss/VietnamDragonKing.glb",
   binLadin: "models/npc/boss/osama_bin_laden.glb",
+  airLadin: "models/npc/boss/osama_bin_laden.glb",
   cainAndAbel: "models/npc/boss/CainAndAbel.glb",
   kingGeorgeIII: "models/npc/boss/KingGeorgeIII.glb",
   lenin: "models/npc/boss/Lenin.glb",
@@ -134,6 +135,14 @@ const BIN_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   facingYawOffsetDegrees: 0,
   hitboxRadius: 2.4
 };
+export const AIR_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+ modelPath: NPC_MODEL_PATHS.airLadin,
+ modelRotation: new Vec3(0, 0, 0),
+ modelScale: new Vec3(4, 4, 4),
+ modelHeightOffset: 11,
+ facingYawOffsetDegrees: 0,
+ hitboxRadius: 2.4
+};
 
 const CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.cainAndAbel,
@@ -187,7 +196,7 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(0, 0, 0),
+  modelRotation: new Vec3(-90, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
@@ -202,7 +211,7 @@ const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
@@ -241,6 +250,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   stalin: NPC_MODEL_PATHS.stalin,
   unionSoldier: NPC_MODEL_PATHS.unionSoldier,
   towerBoss: NPC_MODEL_PATHS.towerBoss,
+  airLadin: NPC_MODEL_PATHS.airLadin,
   italian: "models/npc/ItalianSoldier.glb"
   };
 
@@ -275,7 +285,8 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
   lenin: LENIN_BOSS_SPAWN_OVERRIDES,
   stalin: STALIN_BOSS_SPAWN_OVERRIDES,
-  towerBoss: TOWER_BOSS_SPAWN_OVERRIDES
+  towerBoss: TOWER_BOSS_SPAWN_OVERRIDES,
+ airLadin: AIR_LADIN_BOSS_SPAWN_OVERRIDES
 };
 
 // Shared battle options applied in scenes.
@@ -832,6 +843,9 @@ export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];
 
 // Northwood High School — do not investigate further
-export const NORTHWOOD_HIGH_SPAWN_POINT: NpcSpawnPoint[] = [
-  { id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "towerBoss" }
+export const NORTHWOOD_HIGH_AIR_LADIN_SPAWN_POINT: NpcSpawnPoint[] = [
+ { id: 98, team: "foe", x: 0, z: 0, maxHealth: 500, type: "AirLadin" }
+];
+export const NORTHWOOD_HIGH_TOWER_SPAWN_POINT: NpcSpawnPoint[] = [
+ { id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "towerBoss" }
 ];
