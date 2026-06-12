@@ -640,33 +640,33 @@ export const RIDANIYA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe"
 
 // Gettysburg
 export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: -6, type: "unionSoldier" },
-  { id: 2, team: "foe", x: 9, z: -6, type: "unionSoldier" },
-  { id: 3, team: "foe", x: 12, z: -6, type: "unionSoldier" },
-  { id: 4, team: "foe", x: 15, z: -6, type: "unionSoldier" },
-  { id: 5, team: "foe", x: 18, z: -6, type: "unionSoldier" },
-  { id: 6, team: "foe", x: 6, z: -10, type: "unionSoldier" },
-  { id: 7, team: "foe", x: 9, z: -10, type: "unionSoldier" },
-  { id: 8, team: "foe", x: 12, z: -10, type: "unionSoldier" },
-  { id: 9, team: "foe", x: 15, z: -10, type: "unionSoldier" },
-  { id: 10, team: "foe", x: 18, z: -10, type: "unionSoldier" },
-  { id: 11, team: "foe", x: -6, z: -6, type: "unionSoldier" },
-  { id: 12, team: "foe", x: -9, z: -6, type: "unionSoldier" },
-  { id: 13, team: "foe", x: -6, z: -10, type: "unionSoldier" },
-  { id: 14, team: "foe", x: -9, z: -10, type: "unionSoldier" },
-  { id: 15, team: "foe", x: 6, z: -2, type: "unionSoldier" },
-  { id: 16, team: "foe", x: 9, z: -2, type: "unionSoldier" },
-  { id: 17, team: "foe", x: 12, z: -2, type: "unionSoldier" },
-  { id: 18, team: "foe", x: -6, z: -2, type: "unionSoldier" },
-  { id: 19, team: "foe", x: -9, z: -2, type: "unionSoldier" },
-  { id: 20, team: "foe", x: 0, z: -6, type: "unionSoldier" },
-  { id: 21, team: "foe", x: 3, z: -6, type: "unionSoldier" },
-  { id: 22, team: "foe", x: -3, z: -6, type: "unionSoldier" },
-  { id: 23, team: "foe", x: 0, z: -10, type: "unionSoldier" },
-  { id: 24, team: "foe", x: 3, z: -10, type: "unionSoldier" },
-  { id: 25, team: "foe", x: -3, z: -10, type: "unionSoldier" },
+  { id: 1, team: "foe", x: 50, z: -50, type: "unionSoldier" },
+  { id: 2, team: "foe", x: 55, z: -50, type: "unionSoldier" },
+  { id: 3, team: "foe", x: 60, z: -50, type: "unionSoldier" },
+  { id: 4, team: "foe", x: 65, z: -50, type: "unionSoldier" },
+  { id: 5, team: "foe", x: 70, z: -50, type: "unionSoldier" },
+  { id: 6, team: "foe", x: 50, z: -60, type: "unionSoldier" },
+  { id: 7, team: "foe", x: 55, z: -60, type: "unionSoldier" },
+  { id: 8, team: "foe", x: 60, z: -60, type: "unionSoldier" },
+  { id: 9, team: "foe", x: 65, z: -60, type: "unionSoldier" },
+  { id: 10, team: "foe", x: 70, z: -60, type: "unionSoldier" },
+  { id: 11, team: "foe", x: -50, z: -50, type: "unionSoldier" },
+  { id: 12, team: "foe", x: -55, z: -50, type: "unionSoldier" },
+  { id: 13, team: "foe", x: -50, z: -60, type: "unionSoldier" },
+  { id: 14, team: "foe", x: -55, z: -60, type: "unionSoldier" },
+  { id: 15, team: "foe", x: 50, z: -40, type: "unionSoldier" },
+  { id: 16, team: "foe", x: 55, z: -40, type: "unionSoldier" },
+  { id: 17, team: "foe", x: 60, z: -40, type: "unionSoldier" },
+  { id: 18, team: "foe", x: -50, z: -40, type: "unionSoldier" },
+  { id: 19, team: "foe", x: -55, z: -40, type: "unionSoldier" },
+  { id: 20, team: "foe", x: 0, z: -50, type: "unionSoldier" },
+  { id: 21, team: "foe", x: 10, z: -50, type: "unionSoldier" },
+  { id: 22, team: "foe", x: -10, z: -50, type: "unionSoldier" },
+  { id: 23, team: "foe", x: 0, z: -60, type: "unionSoldier" },
+  { id: 24, team: "foe", x: 10, z: -60, type: "unionSoldier" },
+  { id: 25, team: "foe", x: -10, z: -60, type: "unionSoldier" },
 ];
-export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "uncleSam" }];
+export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 80, maxHealth: 500, type: "uncleSam" }];
 
 // Kyiv
 export const KYIV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -855,7 +855,7 @@ export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 4, team: "foe", x: -150, z: 100, type: "italian" },
   { id: 5, team: "foe", x: -150, z: 100, type: "italian" },
 ];
-export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "caesar" }];
+export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 80, maxHealth: 500, type: "caesar" }];
 
 // Northwood High School — do not investigate further
 export const NORTHWOOD_HIGH_AIR_LADIN_SPAWN_POINT: NpcSpawnPoint[] = [
