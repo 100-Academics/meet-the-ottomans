@@ -883,7 +883,17 @@ export function bindNpcCombatLoop(
         });
         }
             console.log("Spawning stronger Mongol horde for false retreat!");
-            spawnSceneNpcs(app, rigidbodySystem, newPoints).then(newNpcs => {
+            // Reuse the same spawn options as the initial wave so the horde uses the correct model and rotation.
+            const hordeSpawnOptions: NpcSceneSpawnOptions = {
+                typeModelPaths: { mongol: "models/npc/MongolHorseman.glb" },
+                typeSpawnOverrides: { 
+                    mongol: { 
+                        modelRotation: new Vec3(0, 0, 0),
+                        facingYawOffsetDegrees: 0
+                    }
+                }
+            };
+            spawnSceneNpcs(app, rigidbodySystem, newPoints, hordeSpawnOptions).then(newNpcs => {
                 for (const newNpc of newNpcs) {
                     if (groundCollisionEnabled && rigidbodySystem) {
                         const position = newNpc.getEntity().getPosition();
