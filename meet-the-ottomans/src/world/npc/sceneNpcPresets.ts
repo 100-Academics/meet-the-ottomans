@@ -196,6 +196,11 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   facingYawOffsetDegrees: 0
 };
 
+const HUNTING_RIFLE_DUDE_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0
+};
+
 const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
@@ -280,9 +285,10 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   french: FRENCH_SPAWN_OVERRIDES,
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
   americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
-    unionSoldier: UNION_SOLDIER_SPAWN_OVERRIDES,
-    russianSoldier: RUSSIAN_SOLDIER_SPAWN_OVERRIDES,
-    italian: ITALIAN_SPAWN_OVERRIDES,
+  unionSoldier: UNION_SOLDIER_SPAWN_OVERRIDES,
+  russianSoldier: RUSSIAN_SOLDIER_SPAWN_OVERRIDES,
+  italian: ITALIAN_SPAWN_OVERRIDES,
+  huntingrifledude: HUNTING_RIFLE_DUDE_SPAWN_OVERRIDES,
   mamlukIthink: MAMLUK_SPAWN_OVERRIDES,
   baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
   caesar: CAESAR_BOSS_SPAWN_OVERRIDES,

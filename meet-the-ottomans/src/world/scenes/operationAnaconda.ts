@@ -817,8 +817,10 @@ getPlayerHealth: () => ({
 current: player.getHealth(),
 max: player.getDebugState().maxHealth,
 }),
-obstacleCollisionEnabled: true,
+obstacleCollisionEnabled: false,
 obstacleIgnoreTags: ['ground'],
+groundProbeHeight: 5000,
+groundProbeDepth: 5000,
 disableMongolHordeSpawn: true,
 battleStatus: {
 getCameraEntity: () => player.getCameraEntity(),
@@ -878,8 +880,8 @@ async function spawnBoss(
     const bossSpawnOptions = {
       ...DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS,
       groundYFallback,
-      groundProbeHeight: 500,
-      groundProbeDepth: 500
+      groundProbeHeight: 5000,
+      groundProbeDepth: 5000
     };
     const spawned = await spawnSceneNpcs(
       app,
