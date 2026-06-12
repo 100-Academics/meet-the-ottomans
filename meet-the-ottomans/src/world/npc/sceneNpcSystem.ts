@@ -303,7 +303,7 @@ const groundTag = "ground";
 
     const playerSafeRadius = options.playerSafeRadius ?? 20;
     const getPlayerPosition = options.getPlayerPosition
-    ?? (() => (globalThis as any).__devConsolePlayer?.getPosition?.() as Vec3 | undefined));
+    ?? (() => (globalThis as any).__devConsolePlayer?.getPosition?.() as Vec3 | undefined);
 
     const npcs: npc[] = [];
 
