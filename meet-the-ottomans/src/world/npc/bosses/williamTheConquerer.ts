@@ -74,7 +74,7 @@ export class WilliamTheConquerer extends Boss {
   private readonly shockwaveWaveArcDegrees = 300;
   private readonly shockwaveWaveSegments = 42;
   private readonly shockwaveWaveSegmentScale = 1.1;
-  private readonly shockwaveKnockbackSpeed = 180;
+  private readonly shockwaveKnockbackSpeed = 42;
   private readonly shockwaveKnockbackDurationSeconds = 1.2;
   private nextShockwaveAtSeconds = 0;
 

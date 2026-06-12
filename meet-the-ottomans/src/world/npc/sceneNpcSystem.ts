@@ -10,6 +10,7 @@ import { UnionSoldier } from "./troops/unionSoldier";
 import { RussianSoldier } from "./troops/russianSoldier";
 import { ItalianSoldier } from "./troops/italianSoldier";
 import { HuntingRifleDude } from "./troops/huntingRifleDude";
+import { PolishHussar } from "./troops/polishHussar";
 import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
@@ -29,6 +30,7 @@ import { Stalin } from "./bosses/stalin";
 import { TowerBoss } from "./bosses/towerBoss";
 import { BinLadin } from "./bosses/binLaden";
 import { AirLadin } from "./bosses/airLaden";
+import { WingedHussarBoss } from "./bosses/wingedHussarBoss";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 import { DevConsole } from "../../util/devConsole";
 
@@ -436,6 +438,12 @@ const groundTag = "ground";
         hunter.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
         hunter.setHitboxRadius(hitboxRadius);
         npcs.push(hunter);
+	} else if (spawn.type === "polishHussar") {
+		console.log(`Spawning Polish Hussar NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+		const hussar = new PolishHussar(spawn.id, npcModel.modelEntity);
+		hussar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+		hussar.setHitboxRadius(hitboxRadius);
+		npcs.push(hussar);
 	} else if (spawn.type === "genghisKhan") {
       console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new GenghisKhan(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
@@ -511,6 +519,14 @@ const groundTag = "ground";
     } else if (spawn.type === "uncleSam") {
       console.log(`Spawning Uncle Sam Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new UncleSam(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+      boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      boss.setHitboxRadius(hitboxRadius);
+      boss.drawHealthBar();
+      Boss.setActiveBoss(boss);
+      npcs.push(boss);
+    } else if (spawn.type === "wingedHussarBoss") {
+      console.log(`Spawning Winged Hussar Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const boss = new WingedHussarBoss(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
       boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       boss.setHitboxRadius(hitboxRadius);
       boss.drawHealthBar();

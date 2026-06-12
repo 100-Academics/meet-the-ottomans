@@ -34,7 +34,9 @@ const NPC_MODEL_PATHS = {
   stalin: "models/npc/boss/Stalin.glb",
   unionSoldier: "models/npc/UnionSoldier.glb",
   germanLookingSoldier: "models/npc/GermanLookingSoldier.glb",
-  towerBoss: "models/npc/boss/Tower_00001_.glb"
+  towerBoss: "models/npc/boss/Tower_00001_.glb",
+  polishHussar: "models/npc/polish_hussar.glb",
+  wingedHussarBoss: "models/npc/polish_hussar.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -190,6 +192,20 @@ export const TOWER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   hitboxRadius: 2.4
 };
 
+const WINGED_HUSSAR_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.wingedHussarBoss,
+  modelRotation: new Vec3(-90, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+
+const POLISH_HUSSAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(-90, 0, 0),
+  facingYawOffsetDegrees: 0
+};
+
 // Non-boss per-type overrides (used in typeSpawnOverrides below).
 const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(-90, 0, 0),
@@ -264,8 +280,10 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   russianSoldier: NPC_MODEL_PATHS.germanLookingSoldier,
   towerBoss: NPC_MODEL_PATHS.towerBoss,
   airLadin: NPC_MODEL_PATHS.airLadin,
-  italian: "models/npc/ItalianSoldier.glb"
-  };
+  italian: "models/npc/ItalianSoldier.glb",
+  polishHussar: NPC_MODEL_PATHS.polishHussar,
+  wingedHussarBoss: NPC_MODEL_PATHS.wingedHussarBoss
+};
 
 const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
@@ -301,7 +319,9 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   lenin: LENIN_BOSS_SPAWN_OVERRIDES,
   stalin: STALIN_BOSS_SPAWN_OVERRIDES,
   towerBoss: TOWER_BOSS_SPAWN_OVERRIDES,
- airLadin: AIR_LADIN_BOSS_SPAWN_OVERRIDES
+  airLadin: AIR_LADIN_BOSS_SPAWN_OVERRIDES,
+  polishHussar: POLISH_HUSSAR_SPAWN_OVERRIDES,
+  wingedHussarBoss: WINGED_HUSSAR_BOSS_SPAWN_OVERRIDES
 };
 
 // Shared battle options applied in scenes.
@@ -363,6 +383,12 @@ export const DEFAULT_NAPOLEON_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
 
 export const DEFAULT_UNCLE_SAM_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
   ...UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...WINGED_HUSSAR_BOSS_SPAWN_OVERRIDES,
   typeModelPaths: NPC_TYPE_MODEL_PATHS,
   typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
@@ -843,9 +869,13 @@ export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe
 
 // Vienna
 export const VIENNA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+  { id: 1, team: "foe", x: 6, z: 1, type: "polishHussar" },
+  { id: 2, team: "foe", x: -5, z: 3, type: "polishHussar" },
+  { id: 3, team: "foe", x: 4, z: -4, type: "polishHussar" },
+  { id: 4, team: "foe", x: -3, z: -5, type: "polishHussar" },
+  { id: 5, team: "foe", x: 8, z: 2, type: "polishHussar" },
 ];
-export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "wingedHussarBoss" }];
 
 // Pavia
 export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
