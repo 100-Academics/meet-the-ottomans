@@ -71,12 +71,12 @@ export class GenghisKhan extends Boss {
     private readonly groundPoundWaveSegments = 36;
     private readonly groundPoundWaveSegmentScale = 0.9;
 
-    private readonly bowRange = 42;
-    private readonly bowMinRange = 8;
-    private readonly bowCooldownSeconds = 7.0;
+    private readonly bowRange = 100;
+    private readonly bowMinRange = 40;
+    private readonly bowCooldownSeconds = 4.0;
     private readonly bowWindupSeconds = 0.55;
     private readonly bowRecoverSeconds = 0.35;
-    private readonly bowDamage = 10;
+    private readonly bowDamage = 15;
     private readonly bowPullStopDistance = 3.2;
     private readonly bowPullSpeed = 48;
     private readonly pullTetherRadius = 0.22;
@@ -1023,11 +1023,6 @@ export class GenghisKhan extends Boss {
         root.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
     }
 
-    private faceTarget(targetEntity: Entity, deltaTime: number): void {
-        const myPos = this.getEntity().getPosition();
-        const targetPos = targetEntity.getPosition();
-        this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, deltaTime);
-    }
 
     private getFlatDistanceTo(targetEntity: Entity): number {
         const myPos = this.getEntity().getPosition();

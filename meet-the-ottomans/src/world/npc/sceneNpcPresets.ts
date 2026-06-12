@@ -66,7 +66,7 @@ const CHRIST_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const WILLIAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.willieconquer,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -75,7 +75,7 @@ const WILLIAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const GEORGE_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.georgeWashington,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -84,7 +84,7 @@ const GEORGE_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const BAYBARS_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.baybars,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -196,7 +196,7 @@ const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const FRENCH_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
@@ -206,7 +206,7 @@ const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
