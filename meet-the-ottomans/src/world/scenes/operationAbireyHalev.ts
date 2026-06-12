@@ -576,13 +576,36 @@ async function spawnBoss(
       ...DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
       groundYFallback,
     };
-    const spawned = await spawnSceneNpcs(
+    // Spawn Cain and Abel as TWO separate bosses
+    const cainSpawnPoint = ABIREY_HALEV_BOSS_SPAWN_POINT.map(p => ({
+      ...p,
+      x: p.x - 3, // Position Cain slightly to the left
+      id: p.id * 2 // Unique ID for Cain
+    }));
+    const abelSpawnPoint = ABIREY_HALEV_BOSS_SPAWN_POINT.map(p => ({
+      ...p,
+      x: p.x + 3, // Position Abel slightly to the right
+      id: p.id * 2 + 1 // Unique ID for Abel
+    }));
+    
+    // Spawn Cain first
+    const cainSpawned = await spawnSceneNpcs(
       app,
       rigidbodySystem,
-      ABIREY_HALEV_BOSS_SPAWN_POINT,
-      bossSpawnOptions,
+      cainSpawnPoint,
+      { ...bossSpawnOptions, groundYFallback },
     );
-    for (const s of spawned) {
+    
+    // Spawn Abel second
+    const abelSpawned = await spawnSceneNpcs(
+      app,
+      rigidbodySystem,
+      abelSpawnPoint,
+      { ...bossSpawnOptions, groundYFallback },
+    );
+    
+    const allSpawned = [...cainSpawned, ...abelSpawned];
+    for (const s of allSpawned) {
       npcs.push(s);
       if (s instanceof Boss) {
         s.drawHealthBar();

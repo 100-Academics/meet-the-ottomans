@@ -36,7 +36,9 @@ const NPC_MODEL_PATHS = {
   germanLookingSoldier: "models/npc/GermanLookingSoldier.glb",
   towerBoss: "models/npc/boss/Tower_00001_.glb",
   polishHussar: "models/npc/polish_hussar.glb",
-  wingedHussarBoss: "models/npc/polish_hussar.glb"
+  wingedHussarBoss: "models/npc/polish_hussar.glb",
+  moses: "models/npc/boss/Moses.glb",
+  nineTailedFox: "models/npc/boss/NineTailedFox.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -183,10 +185,29 @@ const STALIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   hitboxRadius: 2.4
 };
 
-export const TOWER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+const TOWER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.towerBoss,
   modelRotation: new Vec3(-90, 0, 0),
   modelScale: new Vec3(3, 3, 3),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+export { TOWER_BOSS_SPAWN_OVERRIDES };
+
+const MOSES_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.moses,
+  modelRotation: new Vec3(-90, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+
+const NINE_TAILED_FOX_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.nineTailedFox,
+  modelRotation: new Vec3(-90, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
   hitboxRadius: 2.4
@@ -282,7 +303,8 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   airLadin: NPC_MODEL_PATHS.airLadin,
   italian: "models/npc/ItalianSoldier.glb",
   polishHussar: NPC_MODEL_PATHS.polishHussar,
-  wingedHussarBoss: NPC_MODEL_PATHS.wingedHussarBoss
+  wingedHussarBoss: NPC_MODEL_PATHS.wingedHussarBoss,
+  nineTailedFox: "models/npc/boss/NineTailedFox.glb"
 };
 
 const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
@@ -321,7 +343,9 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   towerBoss: TOWER_BOSS_SPAWN_OVERRIDES,
   airLadin: AIR_LADIN_BOSS_SPAWN_OVERRIDES,
   polishHussar: POLISH_HUSSAR_SPAWN_OVERRIDES,
-  wingedHussarBoss: WINGED_HUSSAR_BOSS_SPAWN_OVERRIDES
+  wingedHussarBoss: WINGED_HUSSAR_BOSS_SPAWN_OVERRIDES,
+  nineTailedFox: NINE_TAILED_FOX_BOSS_SPAWN_OVERRIDES,
+  moses: MOSES_BOSS_SPAWN_OVERRIDES
 };
 
 // Shared battle options applied in scenes.
@@ -431,6 +455,18 @@ export const DEFAULT_STALIN_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
 
 export const DEFAULT_TOWER_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
   ...TOWER_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_NINE_TAILED_FOX_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...NINE_TAILED_FOX_BOSS_SPAWN_OVERRIDES,
+  typeModelPaths: NPC_TYPE_MODEL_PATHS,
+  typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
+};
+
+export const DEFAULT_MOSES_BOSS_SPAWN_OPTIONS: NpcSceneSpawnOptions = {
+  ...MOSES_BOSS_SPAWN_OVERRIDES,
   typeModelPaths: NPC_TYPE_MODEL_PATHS,
   typeSpawnOverrides: NPC_TYPE_SPAWN_OVERRIDES
 };
@@ -584,7 +620,7 @@ export const CHOSIN_RESERVOIR_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
   { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
 ];
-export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "genghisKhan" }];
+export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "nineTailedFox" }];
 
 // Gallipoli
 export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -812,7 +848,7 @@ export const VERDUN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
   { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
 ];
-export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "napoleon" }];
 
 // Yorktown
 export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -846,7 +882,7 @@ export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe"
 export const ARNON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
 ];
-export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "moses" }];
 
 // Agincourt
 export const AGINCOURT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [

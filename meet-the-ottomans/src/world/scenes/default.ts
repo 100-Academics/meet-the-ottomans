@@ -39,6 +39,7 @@ import { throttle } from '../../utils';
 import textureUrl from '../../assets/world/earth_texture.jpg'
 import { Battle } from '../Battle';
 import { Question } from '../../util/question';
+import { battleSummaries } from './battleSummaries';
 
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js';
@@ -511,6 +512,25 @@ app.once('destroy', cleanupHoverLabel);
 (keyedAppForCleanup[cleanupKey] as (() => void)[]).push(cleanupHoverLabel);
 (keyedAppForCleanup[cleanupKey] as (() => void)[]).push(() => { overlay.replaceChildren(); });
 
+  // Create briefing screen overlay
+  const briefingOverlay = document.createElement('div');
+  briefingOverlay.id = 'briefing-overlay';
+  briefingOverlay.style.position = 'fixed';
+  briefingOverlay.style.top = '0';
+  briefingOverlay.style.left = '0';
+  briefingOverlay.style.width = '100%';
+  briefingOverlay.style.height = '100%';
+  briefingOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+  briefingOverlay.style.display = 'none';
+  briefingOverlay.style.zIndex = '1000';
+  briefingOverlay.style.pointerEvents = 'auto';
+  document.body.appendChild(briefingOverlay);
+  const cleanupBriefingOverlay = () => {
+    try { briefingOverlay.remove(); } catch(e) { /* ignore */ }
+  };
+app.once('destroy', cleanupBriefingOverlay);
+(keyedAppForCleanup[cleanupKey] as (() => void)[]).push(cleanupBriefingOverlay);
+
   let isDragging = false;
   let currentBattle: Battle | null = null;
 
@@ -533,6 +553,245 @@ app.once('destroy', cleanupHoverLabel);
   let battleMaterials: Map<Entity, StandardMaterial> = new Map();
   let entityToBattle: Map<Entity, Battle> = new Map();
   let hoveredBattle: Entity | null = null;
+
+  // Function to show briefing screen when a battle is clicked
+  const showBriefing = (battle: Battle, onConfirm: () => void) => {
+    const summary = battleSummaries[battle.getName()];
+    
+    if (!summary) {
+      console.warn('No briefing found for battle:', battle.getName());
+      // If no briefing, just call the scene directly
+      onConfirm();
+      return;
+    }
+    
+    // Build the briefing HTML
+    briefingOverlay.innerHTML = `
+      <div style="
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 900px;
+        max-height: 85vh;
+        overflow-y: auto;
+        background: linear-gradient(145deg, rgba(30, 20, 10, 0.95), rgba(15, 10, 5, 0.98));
+        border: 2px solid rgba(255, 200, 100, 0.4);
+        border-radius: 12px;
+        padding: 32px 40px;
+        color: #f0e0c0;
+        font-family: 'Georgia', serif;
+        box-shadow: 0 0 60px rgba(255, 200, 100, 0.2), inset 0 0 100px rgba(0, 0, 0, 0.7);
+      ">
+        <div style="
+          font-size: 2.5em;
+          font-weight: bold;
+          text-align: center;
+          margin-bottom: 8px;
+          color: #ffd700;
+          text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+          border-bottom: 2px solid rgba(255, 200, 100, 0.3);
+          padding-bottom: 16px;
+        ">
+          ${summary.name}
+        </div>
+        
+        <div style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+          gap: 20px;
+          margin: 24px 0;
+          font-size: 0.95em;
+          line-height: 1.6;
+        ">
+          <div style="
+            background: rgba(255, 200, 100, 0.05);
+            border: 1px solid rgba(255, 200, 100, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+          ">
+            <div style="
+              font-size: 0.85em;
+              color: #cca352;
+              font-weight: bold;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            ">Date</div>
+            <div style="color: #f0e0c0;">${summary.date}</div>
+          </div>
+          
+          <div style="
+            background: rgba(255, 200, 100, 0.05);
+            border: 1px solid rgba(255, 200, 100, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+          ">
+            <div style="
+              font-size: 0.85em;
+              color: #cca352;
+              font-weight: bold;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            ">Location</div>
+            <div style="color: #f0e0c0;">${summary.location}</div>
+          </div>
+        </div>
+        
+        <div style="margin: 24px 0;">
+          <div style="
+            font-size: 0.85em;
+            color: #cca352;
+            font-weight: bold;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255, 200, 100, 0.2);
+            padding-bottom: 8px;
+          ">Historical Context</div>
+          <div style="
+            line-height: 1.8;
+            text-align: justify;
+            font-size: 1em;
+          ">${summary.historicalContext}</div>
+        </div>
+        
+        <div style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+          gap: 24px;
+          margin: 24px 0;
+          padding: 24px;
+          background: rgba(255, 200, 100, 0.03);
+          border: 2px solid rgba(255, 200, 100, 0.15);
+          border-radius: 10px;
+        ">
+          <div style="text-align: center;">
+            <div style="
+              font-size: 0.85em;
+              color: #ff6b6b;
+              font-weight: bold;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            ">Side A</div>
+            <div style="font-size: 1.1em; margin-bottom: 6px; color: #f0e0c0;">${summary.combatants.sideA.name}</div>
+            <div style="font-size: 1.4em; font-weight: bold; color: #ff9999;">${summary.combatants.sideA.strength.toLocaleString()}</div>
+            <div style="font-size: 0.85em; color: #b8860b;">troops</div>
+          </div>
+          
+          <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            color: #b8860b;
+            font-weight: bold;
+          ">VS</div>
+          
+          <div style="text-align: center;">
+            <div style="
+              font-size: 0.85em;
+              color: #6b9fff;
+              font-weight: bold;
+              margin-bottom: 8px;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            ">Side B</div>
+            <div style="font-size: 1.1em; margin-bottom: 6px; color: #f0e0c0;">${summary.combatants.sideB.name}</div>
+            <div style="font-size: 1.4em; font-weight: bold; color: #99bbff;">${summary.combatants.sideB.strength.toLocaleString()}</div>
+            <div style="font-size: 0.85em; color: #b8860b;">troops</div>
+          </div>
+        </div>
+        
+        <div style="
+          margin: 24px 0;
+          padding: 24px;
+          background: linear-gradient(135deg, rgba(255, 200, 100, 0.08), rgba(255, 200, 100, 0.02));
+          border-left: 4px solid #ffd700;
+          border-radius: 8px;
+          font-style: italic;
+          font-size: 1.1em;
+          line-height: 1.7;
+          color: #ffe4a0;
+        ">
+          <div style="font-size: 0.75em; color: #b8860b; margin-bottom: 8px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">Commander's Briefing</div>
+          ${summary.briefingMessage && summary.briefingMessage !== '[Your briefing message here - to be written]' ? summary.briefingMessage : '<em style="color: #b8860b;">[Awaiting commander\'s briefing - to be written]</em>'}
+        </div>
+        
+        <div style="
+          display: flex;
+          justify-content: center;
+          gap: 24px;
+          margin-top: 32px;
+          padding-top: 24px;
+          border-top: 2px solid rgba(255, 200, 100, 0.3);
+        ">
+          <button id="briefing-cancel-btn" style="
+            padding: 14px 40px;
+            font-size: 1.1em;
+            background: rgba(100, 50, 30, 0.6);
+            color: #f0e0c0;
+            border: 2px solid rgba(200, 100, 80, 0.5);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+          ">Return to Map</button>
+          
+          <button id="briefing-confirm-btn" style="
+            padding: 14px 40px;
+            font-size: 1.1em;
+            background: linear-gradient(135deg, rgba(255, 200, 100, 0.3), rgba(255, 150, 50, 0.4));
+            color: #fff8e0;
+            border: 2px solid rgba(255, 200, 100, 0.6);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(255, 200, 100, 0.3);
+          ">Engage Battle</button>
+        </div>
+      </div>
+    `;
+    
+    // Add hover effects to buttons
+    const cancelBtn = document.getElementById('briefing-cancel-btn');
+    const confirmBtn = document.getElementById('briefing-confirm-btn');
+    
+    if (cancelBtn) {
+      cancelBtn.addEventListener('mouseenter', () => {
+        cancelBtn.style.background = 'rgba(150, 80, 50, 0.8)';
+        cancelBtn.style.borderColor = 'rgba(255, 150, 100, 0.7)';
+      });
+      cancelBtn.addEventListener('mouseleave', () => {
+        cancelBtn.style.background = 'rgba(100, 50, 30, 0.6)';
+        cancelBtn.style.borderColor = 'rgba(200, 100, 80, 0.5)';
+      });
+      cancelBtn.addEventListener('click', () => {
+        briefingOverlay.style.display = 'none';
+      });
+    }
+    
+    if (confirmBtn) {
+      confirmBtn.addEventListener('mouseenter', () => {
+        confirmBtn.style.background = 'linear-gradient(135deg, rgba(255, 220, 120, 0.5), rgba(255, 180, 80, 0.6))';
+        confirmBtn.style.boxShadow = '0 0 40px rgba(255, 200, 100, 0.6)';
+      });
+      confirmBtn.addEventListener('mouseleave', () => {
+        confirmBtn.style.background = 'linear-gradient(135deg, rgba(255, 200, 100, 0.3), rgba(255, 150, 50, 0.4))';
+        confirmBtn.style.boxShadow = '0 0 20px rgba(255, 200, 100, 0.3)';
+      });
+      confirmBtn.addEventListener('click', () => {
+        briefingOverlay.style.display = 'none';
+        onConfirm();
+      });
+    }
+    
+    // Show the briefing overlay
+    briefingOverlay.style.display = 'block';
+  };
 
   // Helper function to check if mouse intersects a battle entity
   const checkBattleIntersection = async (x: number, y: number): Promise<Entity | null> => {
@@ -607,79 +866,83 @@ app.once('destroy', cleanupHoverLabel);
       const battle = entityToBattle.get(intersectedEntity);
       if (!battle) return;
 
-      // @ChaosMaster8673: implement scene switching here
+      // Show briefing screen before loading the scene
       console.log('Clicked on battle:', battle.getName());
-      if (battle.getName() === 'Battle of Legnica') {
-        battleOfLegnicaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-        // ^^^ scene functions should always be defined as HTMLCanvasElement, AppBase, onClick callback, sceneNum
-      }
-      else if (battle.getName() === 'Battle of Ain Jalut') {
-        battleOfAinJalutScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());  
-      }
-      else if (battle.getName() === 'Siege of Constantinople') {
-        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Agincourt') {
-        battleOfAgincourtScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Siege of Orléans') {
-        siegeOfOrleansScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Fall of Constantinople') {
-        siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Ridaniya') {
-        battleOfRidaniyaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Pavia (Italian Wars)') {
-        battleOfPaviaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Siege of Vienna') {
-        siegeOfViennaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Yorktown') {
-        battleOfYorktownScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Three Emperors') {
-        battleOfThreeEmperorsScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Gettysburg') {
-        battleOfGettysburgScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Verdun') {
-        battleOfVerdunScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Gallipoli') {
-        battleOfGallipoliScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Stalingrad') {
-        battleOfStalingradScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Chosin Reservoir') {
-        battleOfChosinReservoirScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Fall of Saigon') {
-        fallOfSaigonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Operation Abirey-Halev') {
-        operationAbireyHalevScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Operation Anaconda') {
-        operationAnacondaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Battle of Kyiv') {
-        battleOfKyivScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Operation Arnon') {
-        operationArnonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Northwood High School') {
-        battleOfNorthwoodHighScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      else if (battle.getName() === 'Northwood High School') {
-        battleOfNorthwoodHighScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
-      }
-      onClickWithCounter(battle);
+      
+      // Create a wrapper function to load the scene
+      const loadScene = () => {
+        if (battle.getName() === 'Battle of Legnica') {
+          battleOfLegnicaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+          // ^^^ scene functions should always be defined as HTMLCanvasElement, AppBase, onClick callback, sceneNum
+        }
+        else if (battle.getName() === 'Battle of Ain Jalut') {
+          battleOfAinJalutScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());  
+        }
+        else if (battle.getName() === 'Siege of Constantinople') {
+          siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Agincourt') {
+          battleOfAgincourtScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Siege of Orléans') {
+          siegeOfOrleansScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Fall of Constantinople') {
+          siegeOfConstantinopleScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Ridaniya') {
+          battleOfRidaniyaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Pavia (Italian Wars)') {
+          battleOfPaviaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Siege of Vienna') {
+          siegeOfViennaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Yorktown') {
+          battleOfYorktownScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Three Emperors') {
+          battleOfThreeEmperorsScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Gettysburg') {
+          battleOfGettysburgScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Verdun') {
+          battleOfVerdunScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Gallipoli') {
+          battleOfGallipoliScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Stalingrad') {
+          battleOfStalingradScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Chosin Reservoir') {
+          battleOfChosinReservoirScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Fall of Saigon') {
+          fallOfSaigonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Operation Abirey-Halev') {
+          operationAbireyHalevScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Operation Anaconda') {
+          operationAnacondaScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Battle of Kyiv') {
+          battleOfKyivScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Operation Arnon') {
+          operationArnonScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        else if (battle.getName() === 'Northwood High School') {
+          battleOfNorthwoodHighScene(canvas, app, onClickWithCounter, sceneNum, battle.getSpawnPoint());
+        }
+        onClickWithCounter(battle);
+      };
+      
+      // Show the briefing screen
+      showBriefing(battle, loadScene);
     });
   });
   await applySphereTexture(sphere, textureUrl, device);
