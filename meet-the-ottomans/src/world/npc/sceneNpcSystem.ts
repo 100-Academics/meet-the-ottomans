@@ -79,6 +79,7 @@ export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
 }
 
 export interface NpcCombatLoopOptions {
+    /** Optional custom key for storing the update handler on the app. */
     updateKey?: string;
     onNpcAttack?: (attacker: npc, target: npc, damage: number) => void;
     onPlayerAttack?: (attacker: npc, damage: number) => void;
@@ -94,6 +95,7 @@ export interface NpcCombatLoopOptions {
     obstacleProbePadding?: number;
     obstacleMinMove?: number;
     obstacleIgnoreTags?: string[];
+    /** When true, prevents spawning the stronger Mongol horde after a false retreat. */
     disableMongolHordeSpawn?: boolean;
     battleStatus?: {
         getCameraEntity?: () => Entity | null | undefined;
@@ -303,7 +305,7 @@ const groundTag = "ground";
 
     const playerSafeRadius = options.playerSafeRadius ?? 20;
     const getPlayerPosition = options.getPlayerPosition
-    ?? (() => (globalThis as any).__devConsolePlayer?.getPosition?.() as Vec3 | undefined));
+    ?? (() => (globalThis as any).__devConsolePlayer?.getPosition?.() as Vec3 | undefined)};
 
     const npcs: npc[] = [];
 
@@ -570,7 +572,7 @@ const groundTag = "ground";
 			boss.drawHealthBar();
 			Boss.setActiveBoss(boss);
 			npcs.push(boss);
-    }else {
+    } else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 spawnedNpc.setHitboxRadius(hitboxRadius);
