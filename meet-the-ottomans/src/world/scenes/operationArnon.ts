@@ -47,7 +47,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import {
   DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
-  DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+  DEFAULT_MOSES_BOSS_SPAWN_OPTIONS,
   ARNON_BOSS_SPAWN_POINT,
   ARNON_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
@@ -599,7 +599,7 @@ async function spawnBoss(
   isBossSpawning = true;
   try {
     const bossSpawnOptions = {
-      ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+      ...DEFAULT_MOSES_BOSS_SPAWN_OPTIONS,
       groundYFallback,
     };
     const spawned = await spawnSceneNpcs(
