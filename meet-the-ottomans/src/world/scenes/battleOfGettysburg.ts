@@ -54,7 +54,6 @@ import {
 } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
-import { DevConsole } from "../../util/devConsole";
 
 const groundModelPath = "/world/battlefields/Gettysburg.glb";
 
@@ -630,7 +629,7 @@ export async function battleOfGettysburgScene(
     const remainingFoes = npcs.filter(
       (currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
     );
-    if (remainingFoes.length === 0 && isBossSpawned && !DevConsole._roundLock) {
+    if (remainingFoes.length === 0 && isBossSpawned) {
       victoryHandled = true;
       removeBattleHUD();
       changeScene(canvas, app, 777);

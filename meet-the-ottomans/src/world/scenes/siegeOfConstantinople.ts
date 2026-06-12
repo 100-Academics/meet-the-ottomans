@@ -44,7 +44,6 @@ import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_BOSS_SPAWN_POINT, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
-import { DevConsole } from "../../util/devConsole";
 import { Smoke } from "../doSmoke";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
@@ -1071,7 +1070,6 @@ export async function siegeOfConstantinopleScene(
 				return;
 			}
 
-			if (DevConsole._roundLock) return;
 			victoryHandled = true;
 			removeBattleHUD();
 			changeScene(canvas, app, 777);

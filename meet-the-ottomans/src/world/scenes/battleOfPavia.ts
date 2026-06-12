@@ -42,7 +42,6 @@ import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sc
 import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { changeScene } from "../../App";
-import { DevConsole } from "../../util/devConsole";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
 
@@ -617,7 +616,7 @@ const victoryCheck = async () => {
     caesarSpawnFrame += 1;
   }
 
-  if (remainingFoes.length === 0 && caesarSpawned && (caesarSpawnFrame ?? 0) > 2 && !DevConsole._roundLock) {
+  if (remainingFoes.length === 0 && caesarSpawned && (caesarSpawnFrame ?? 0) > 2) {
     removeBattleHUD();
     victoryHandled = true;
     changeScene(canvas, app, 777);
