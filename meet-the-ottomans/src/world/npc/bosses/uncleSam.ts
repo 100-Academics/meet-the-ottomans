@@ -2,469 +2,428 @@ import { Boss } from "./boss";
 import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
-import { loadModel, type Model, type LoadModelOptions } from "../../../util/loadModel";
 
-type UncleSamAttackType = "throwMoney" | "fireworks" | "airstrike";
+type UncleSamAttackType = "dash" | "fireball" | "groundSlam";
 
-interface MoneyState {
- endTimeSeconds: number;
- nextThrowAtSeconds: number;
- throwsFired: number;
+interface DashState {
+	endTimeSeconds: number;
+	direction: Vec3;
+	hasHit: boolean;
 }
 
-interface FireworksState {
- endTimeSeconds: number;
- nextShotAtSeconds: number;
- shotsFired: number;
+interface FireballState {
+	endTimeSeconds: number;
+	fireballEntity: Entity | null;
+	hasHit: boolean;
 }
 
-interface AirstrikeState {
- endTimeSeconds: number;
- nextBombAtSeconds: number;
- bombsDropped: number;
- bombPositions: Vec3[];
+interface GroundSlamState {
+	glowStartTimeSeconds: number;
+	glowDurationSeconds: number;
+	damageTimeSeconds: number;
+	glowRadius: number;
+	glowPosition: Vec3;
+	glowEntity: Entity | null;
+	hasDealtDamage: boolean;
 }
 
 export class UncleSam extends Boss {
- // Throws money
- private readonly moneyDamage = 7;
- private readonly moneyCount = 4;
- private readonly moneyIntervalSeconds = 0.3;
- private readonly moneyCooldownSeconds = 4.0;
- private readonly moneyRange = 22;
- private nextMoneyAtSeconds = 0;
+	private readonly dashSpeed = PLAYER_MOVE_SPEED * 2.5;
+	private readonly dashDurationSeconds = 0.5;
+	private readonly dashCooldownSeconds = 1.0;
+	private readonly dashRange = 35;
+	private readonly dashDamage = 20;
+	private readonly dashHitRadius = 10.0;
 
- // Firework projectiles
- private readonly fireworksDamage = 12;
- private readonly fireworksCount = 3;
- private readonly fireworksIntervalSeconds = 0.4;
- private readonly fireworksCooldownSeconds = 5.5;
- private readonly fireworksRange = 30;
- private nextFireworksAtSeconds = 0;
+	private readonly fireballSpeed = 35;
+	private readonly fireballCooldownSeconds = 3.0;
+	private readonly fireballRange = 100;
+	private readonly fireballDamage = 15;
+	private readonly fireballRadius = 20.0;
 
- // Air strike
- private readonly airstrikeDamage = 18;
- private readonly airstrikeCount = 4;
- private readonly airstrikeIntervalSeconds = 0.5;
- private readonly airstrikeCooldownSeconds = 10.0;
- private readonly airstrikeRange = 35;
- private readonly airstrikeHitRadius = 4.0;
- private nextAirstrikeAtSeconds = 0;
+	private readonly groundSlamCooldownSeconds = 2.0;
+	private readonly groundSlamGlowDurationSeconds = 10.0;
+	private readonly groundSlamDamageDelaySeconds = 2.5;
+	private readonly groundSlamRadius = 25.0;
+	private readonly groundSlamDamage = 30;
 
- // Runtime state
- private attackLockUntilSeconds = 0;
- private lastAttackType: UncleSamAttackType | null = null;
- private lastAttackAtSeconds = -Infinity;
- private moneyState: MoneyState | null = null;
- private fireworksState: FireworksState | null = null;
- private airstrikeState: AirstrikeState | null = null;
- private onPlayerAttack?: (attacker: npc, damage: number) => void;
+	private attackLockUntilSeconds = 0;
+	private lastAttackType: UncleSamAttackType | null = null;
+	private lastAttackAtSeconds = -Infinity;
+	private nextDashAtSeconds = 0;
+	private nextFireballAtSeconds = 0;
+	private nextGroundSlamAtSeconds = 0;
 
- // VFX materials
- private readonly moneyMaterial = this.createEffectMaterial(
- new Color(0.2, 0.7, 0.2), new Color(0.3, 0.9, 0.3), 2.5, 0.8
- );
- private readonly fireworksMaterial = this.createEffectMaterial(
- new Color(1, 0.3, 0.1), new Color(1, 0.5, 0.2), 4.0, 0.9
- );
- private readonly airstrikeMaterial = this.createEffectMaterial(
- new Color(1, 0.8, 0.2), new Color(1, 0.9, 0.4), 5.0, 0.85
- );
- private readonly airstrikeRingMaterial = this.createEffectMaterial(
- new Color(1, 0.5, 0.1), new Color(1, 0.6, 0.2), 3.5, 0.7
- );
+	private dashState: DashState | null = null;
+	private fireballState: FireballState | null = null;
+	private groundSlamState: GroundSlamState | null = null;
+	private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
- private readonly activeEffects = new Set<Entity>();
+	private readonly fireballMaterial = this.createEffectMaterial(
+		new Color(1.0, 0.4, 0.1), new Color(1.0, 0.6, 0.2), 4.5, 0.9
+	);
+	private readonly groundSlamGlowMaterial = this.createEffectMaterial(
+		new Color(1.0, 0.3, 0.1), new Color(1.0, 0.5, 0.2), 5.0, 0.7
+	);
 
- // Weapon model templates (preloaded GLB, cloned per projectile)
- private moneyBillTemplate: Entity | null = null;
- private fireworkRocketTemplate: Entity | null = null;
- private bombTemplate: Entity | null = null;
+	private readonly activeEffects = new Set<Entity>();
 
- constructor(id: number, maxHealth: number, entity: Entity = new Entity("Uncle Sam")) {
- super(id, maxHealth, entity, "Uncle Sam");
- this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
- this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
+constructor(id: number, maxHealth: number, entity: Entity = new Entity("Uncle Sam")) {
+		super(id, maxHealth, entity, "Uncle Sam");
+		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
+		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
- this.setIntroTaunt("I WANT YOU!", "I WANT YOU!");
- this.setIntroNameTranslation("Uncle Sam", "Uncle Sam");
- this.setIntroSkipTranslation(true);
- this.setTauntSet({
- highHealth: [
- "I want YOU… to surrender!",
- "Freedom isn't free, and neither is your defeat.",
- "Pay up, or pay the price!"
- ],
- bossLowPlayerHigh: [
- "The land of the free fights back!",
- "Don't tread on me!",
- "Liberty or death!"
- ],
- playerLowBossHigh: [
- "Your debt to freedom is past due.",
- "You can't afford to fight me.",
- "The price of defeat is steep."
- ],
- bothLow: [
- "For liberty, I give my all!",
- "One nation, under fire!"
- ],
- death: [
- "Freedom… carries a heavy cost.",
- "The dream… lives on."
- ],
- bossDeath: [
- "I gave… my all for liberty.",
- "Old Glory… still waves."
- ]
- });
+		this.setIntroTaunt("I WANT YOU!", "I WANT YOU!");
+		this.setIntroNameTranslation("Uncle Sam", "Uncle Sam");
+		this.setIntroSkipTranslation(true);
+		this.setTauntSet({
+			highHealth: [
+				"I want YOU… to surrender!",
+				"Freedom isn't free, and neither is your defeat.",
+				"Pay up, or pay the price!"
+			],
+			bossLowPlayerHigh: [
+				"The land of the free fights back!",
+				"Don't tread on me!",
+				"Liberty or death!"
+			],
+			playerLowBossHigh: [
+				"Your debt to freedom is past due.",
+				"You can't afford to fight me.",
+				"The price of defeat is steep."
+			],
+			bothLow: [
+				"For liberty, I give my all!",
+				"One nation, under fire!"
+			],
+			death: [
+				"Freedom… carries a heavy cost.",
+				"The dream… lives on."
+			],
+			bossDeath: [
+				"I gave… my all for liberty.",
+				"Old Glory… still waves."
+			]
+		});
+	}
 
- this.preloadWeaponTemplates();
- }
+public override updateCombatAI(
+		deltaTime: number, currentTimeSeconds: number, allNpcs: npc[],
+		onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
+		playerEntity?: Entity | null,
+		onPlayerAttack?: (attacker: npc, damage: number) => void
+	): void {
+		this.onPlayerAttack = onPlayerAttack;
+		super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
+	}
 
- // ── Weapon template preloading ──
- private preloadWeaponTemplates(): void {
- const loadOpts: LoadModelOptions = {
- autoCollision: false,
- scale: new Vec3(1, 1, 1),
- rotation: new Vec3(0, 0, 0),
- position: new Vec3(0, -9999, 0) // offscreen until needed
- };
+	public override updateAI(
+		deltaTime: number, targetEntity: Entity | null, currentTimeSeconds: number,
+		onAttack?: (attacker: npc) => void,
+		profileOverride?: { attackDamage: number; attackRange: number; attackCooldown: number; detectionRange: number; }
+	): void {
+		if (!this.isAlive()) return;
+		const dt = Math.max(0, Math.min(deltaTime, 0.05));
+		if (!targetEntity) { super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride); return; }
 
- loadModel("models/npc/boss/UncleSamJunk/one_dollar_bill.glb", undefined, { ...loadOpts })
- .then((m: Model) => {
- this.moneyBillTemplate = m.modelEntity;
- m.modelEntity.enabled = false; // hide template
- })
- .catch((e: unknown) => { console.warn("[UncleSam] Failed to load dollar bill model:", e); });
+		if (this.dashState) { this.updateDash(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+		if (this.fireballState) { this.updateFireball(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+		if (this.groundSlamState) { this.updateGroundSlam(dt, targetEntity, currentTimeSeconds, onAttack); return; }
 
- loadModel("models/npc/boss/UncleSamJunk/firework_red_rocket.glb", undefined, { ...loadOpts })
- .then((m: Model) => {
- this.fireworkRocketTemplate = m.modelEntity;
- m.modelEntity.enabled = false; // hide template
- })
- .catch((e: unknown) => { console.warn("[UncleSam] Failed to load firework rocket model:", e); });
+		if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
 
- loadModel("models/npc/boss/UncleSamJunk/bomb.glb", undefined, { ...loadOpts })
- .then((m: Model) => {
- this.bombTemplate = m.modelEntity;
- m.modelEntity.enabled = false; // hide template
- })
- .catch((e: unknown) => { console.warn("[UncleSam] Failed to load bomb model:", e); });
- }
+		const distance = this.getFlatDistanceTo(targetEntity);
+		const chosen = this.pickNextAttack(distance, currentTimeSeconds);
+		if (chosen === "dash") { this.startDash(targetEntity, currentTimeSeconds); return; }
+		if (chosen === "fireball") { this.startFireball(targetEntity, currentTimeSeconds); return; }
+		if (chosen === "groundSlam") { this.startGroundSlam(targetEntity, currentTimeSeconds); return; }
 
- public override updateCombatAI(
- deltaTime: number, currentTimeSeconds: number, allNpcs: npc[],
- onNpcAttack?: (attacker: npc, target: npc, damage: number) => void,
- playerEntity?: Entity | null,
- onPlayerAttack?: (attacker: npc, damage: number) => void
- ): void {
- this.onPlayerAttack = onPlayerAttack;
- super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
- }
+		const myPos = this.getEntity().getPosition();
+		const targetPos = targetEntity.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
+	}
 
- public override updateAI(
- deltaTime: number, targetEntity: Entity | null, currentTimeSeconds: number,
- onAttack?: (attacker: npc) => void,
- profileOverride?: { attackDamage: number; attackRange: number; attackCooldown: number; detectionRange: number; }
- ): void {
- if (!this.isAlive()) return;
- const dt = Math.max(0, Math.min(deltaTime, 0.05));
- if (!targetEntity) { super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride); return; }
+	public override kill(): boolean {
+		const didKill = super.kill();
+		if (didKill) this.cleanupEffects();
+		return didKill;
+	}
 
- if (this.moneyState) { this.updateMoney(dt, targetEntity, currentTimeSeconds, onAttack); return; }
- if (this.fireworksState) { this.updateFireworks(dt, targetEntity, currentTimeSeconds, onAttack); return; }
- if (this.airstrikeState) { this.updateAirstrike(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+	protected override getCombatProfile() {
+		const base = super.getCombatProfile();
+		return { ...base, attackDamage: this.groundSlamDamage, attackRange: this.fireballRange, attackCooldown: this.dashCooldownSeconds, detectionRange: Number.MAX_VALUE };
+	}
 
- if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
+// ── Attack selection ──
+	private pickNextAttack(distance: number, now: number): UncleSamAttackType | null {
+		const choices: Array<{ type: UncleSamAttackType; score: number }> = [];
 
- const distance = this.getFlatDistanceTo(targetEntity);
- const chosen = this.pickNextAttack(distance, currentTimeSeconds);
- if (chosen === "throwMoney") { this.startMoney(currentTimeSeconds); return; }
- if (chosen === "fireworks") { this.startFireworks(currentTimeSeconds); return; }
- if (chosen === "airstrike") { this.startAirstrike(targetEntity, currentTimeSeconds); return; }
+		if (now >= this.nextDashAtSeconds && distance <= this.dashRange) {
+			const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.dashRange));
+			choices.push({ type: "dash", score: 0.9 + closeness });
+		}
 
- const myPos = this.getEntity().getPosition();
- const targetPos = targetEntity.getPosition();
- this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
- }
+		if (now >= this.nextFireballAtSeconds && distance <= this.fireballRange) {
+			choices.push({ type: "fireball", score: 1.0 });
+		}
 
- public override kill(): boolean {
- const didKill = super.kill();
- if (didKill) this.cleanupEffects();
- return didKill;
- }
+		if (now >= this.nextGroundSlamAtSeconds) {
+			choices.push({ type: "groundSlam", score: 1.5 });
+		}
 
- protected override getCombatProfile() {
- const base = super.getCombatProfile();
- return { ...base, attackDamage: this.airstrikeDamage, attackRange: this.airstrikeRange, attackCooldown: this.airstrikeCooldownSeconds, detectionRange: Number.MAX_VALUE };
- }
+		if (choices.length === 0) return null;
 
- // ── Attack selection ──
- private pickNextAttack(distance: number, now: number): UncleSamAttackType | null {
- const choices: Array<{ type: UncleSamAttackType; score: number }> = [];
- if (now >= this.nextMoneyAtSeconds && distance <= this.moneyRange) {
- const closeness = 1 - Math.min(1, distance / Math.max(0.001, this.moneyRange));
- choices.push({ type: "throwMoney", score: 0.9 + closeness });
- }
- if (now >= this.nextFireworksAtSeconds && distance <= this.fireworksRange) {
- choices.push({ type: "fireworks", score: 1.1 + (distance / Math.max(0.001, this.fireworksRange)) });
- }
- if (now >= this.nextAirstrikeAtSeconds && distance <= this.airstrikeRange) {
- choices.push({ type: "airstrike", score: 1.3 });
- }
- if (choices.length === 0) return null;
- if (this.lastAttackType && (now - this.lastAttackAtSeconds) < 1.8) {
- for (const c of choices) { if (c.type === this.lastAttackType) c.score *= 0.55; }
- }
- let best = choices[0];
- for (let i = 1; i < choices.length; i++) { if (choices[i].score > best.score) best = choices[i]; }
- const tied = choices.filter(c => Math.abs(c.score - best.score) < 0.05);
- if (tied.length > 1) return tied[Math.floor(Math.random() * tied.length)].type;
- return best.type;
- }
+		if (this.lastAttackType && (now - this.lastAttackAtSeconds) < 1.8) {
+			for (const c of choices) { if (c.type === this.lastAttackType) c.score *= 0.55; }
+		}
 
- // ── Throw money ──
- private startMoney(now: number): void {
- this.lastAttackType = "throwMoney"; this.lastAttackAtSeconds = now;
- this.moneyState = { endTimeSeconds: now + this.moneyCount * this.moneyIntervalSeconds + 0.2, nextThrowAtSeconds: now, throwsFired: 0 };
- this.attackLockUntilSeconds = this.moneyState.endTimeSeconds;
- }
+		let best = choices[0];
+		for (let i = 1; i < choices.length; i++) { if (choices[i].score > best.score) best = choices[i]; }
+		const tied = choices.filter(c => Math.abs(c.score - best.score) < 0.05);
+		if (tied.length > 1) return tied[Math.floor(Math.random() * tied.length)].type;
+		return best.type;
+	}
 
- private updateMoney(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
- const state = this.moneyState; if (!state) return;
- {
- const myPos = this.getEntity().getPosition();
- const targetPos = target.getPosition();
- this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
- }
- if (state.throwsFired < this.moneyCount && now >= state.nextThrowAtSeconds) {
- state.throwsFired++; state.nextThrowAtSeconds = now + this.moneyIntervalSeconds;
- this.spawnMoneyProjectile(target);
- if (this.getFlatDistanceTo(target) <= this.moneyRange) this.applyDamage(this.moneyDamage, onAttack);
- }
- if (now >= state.endTimeSeconds) { this.moneyState = null; this.nextMoneyAtSeconds = now + this.moneyCooldownSeconds; }
- }
+	// ── Dash attack ──
+	private startDash(target: Entity, now: number): void {
+		this.lastAttackType = "dash";
+		this.lastAttackAtSeconds = now;
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
+		this.dashState = {
+			endTimeSeconds: now + this.dashDurationSeconds,
+			direction: dir,
+			hasHit: false
+		};
+		this.attackLockUntilSeconds = this.dashState.endTimeSeconds + 0.3;
+	}
 
- private spawnMoneyProjectile(target: Entity): void {
- const myPos = this.getEntity().getPosition();
- const targetPos = target.getPosition();
- const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
+	private updateDash(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+		const state = this.dashState;
+		if (!state) return;
 
- const { entity: projectile, isGLB } = this.cloneWeaponTemplate(this.moneyBillTemplate, "uncle-sam-coin", 0.5);
- if (!isGLB) {
- // Fallback: green cylinder
- projectile.addComponent("render", { type: "cylinder", material: this.moneyMaterial });
- projectile.setLocalScale(0.5, 0.1, 0.5);
- }
+		this.moveToward(state.direction.x, state.direction.z, this.dashSpeed, dt);
 
- projectile.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1.5, myPos.z + dir.z * 1.5);
- this.getEntity().parent?.addChild(projectile) ?? this.getEntity().addChild(projectile);
- this.activeEffects.add(projectile);
- const startPos = projectile.getPosition().clone();
- const speed = 28; const startMs = Date.now(); const maxMs = 1200;
- const tick = () => {
- const elapsed = Date.now() - startMs;
- if (elapsed >= maxMs || !projectile.parent) { this.destroyEffect(projectile); return; }
- const t = elapsed / 1000;
- const arc = Math.sin(t * Math.PI) * 2.5;
- projectile.setPosition(startPos.x + dir.x * speed * t, startPos.y + arc, startPos.z + dir.z * speed * t);
- projectile.setLocalEulerAngles(0, elapsed * 2, 0);
- const mat = projectile.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
- if (mat) { mat.opacity = 0.8 * (1 - elapsed / maxMs); mat.update(); }
- requestAnimationFrame(tick);
- };
- requestAnimationFrame(tick);
- }
+		if (!state.hasHit && this.getFlatDistanceTo(target) <= this.dashHitRadius) {
+			state.hasHit = true;
+			this.applyDamage(this.dashDamage, onAttack);
+		}
 
- // ── Fireworks ──
- private startFireworks(now: number): void {
- this.lastAttackType = "fireworks"; this.lastAttackAtSeconds = now;
- this.fireworksState = { endTimeSeconds: now + this.fireworksCount * this.fireworksIntervalSeconds + 0.3, nextShotAtSeconds: now, shotsFired: 0 };
- this.attackLockUntilSeconds = this.fireworksState.endTimeSeconds;
- }
+		if (now >= state.endTimeSeconds) {
+			this.dashState = null;
+			this.nextDashAtSeconds = now + this.dashCooldownSeconds;
+		}
+	}
 
- private updateFireworks(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
- const state = this.fireworksState; if (!state) return;
- {
- const myPos = this.getEntity().getPosition();
- const targetPos = target.getPosition();
- this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
- }
- if (state.shotsFired < this.fireworksCount && now >= state.nextShotAtSeconds) {
- state.shotsFired++; state.nextShotAtSeconds = now + this.fireworksIntervalSeconds;
- this.spawnFirework(target);
- if (this.getFlatDistanceTo(target) <= this.fireworksRange) this.applyDamage(this.fireworksDamage, onAttack);
- }
- if (now >= state.endTimeSeconds) { this.fireworksState = null; this.nextFireworksAtSeconds = now + this.fireworksCooldownSeconds; }
- }
+	// ── Fireball attack ──
+	private startFireball(target: Entity, now: number): void {
+		this.lastAttackType = "fireball";
+		this.lastAttackAtSeconds = now;
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
 
- private spawnFirework(target: Entity): void {
- const myPos = this.getEntity().getPosition();
- const targetPos = target.getPosition();
- const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z).normalize();
+		const fireball = new Entity("uncle-sam-fireball");
+		fireball.addComponent("render", { type: "sphere", material: this.fireballMaterial });
+		fireball.setLocalScale(this.fireballRadius, this.fireballRadius, this.fireballRadius);
+		fireball.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1.5, myPos.z + dir.z * 1.5);
+		this.getEntity().parent?.addChild(fireball) ?? this.getEntity().addChild(fireball);
+		this.activeEffects.add(fireball);
 
- const { entity: projectile, isGLB } = this.cloneWeaponTemplate(this.fireworkRocketTemplate, "uncle-sam-firework", 0.4);
- if (!isGLB) {
- // Fallback: red cone
- projectile.addComponent("render", { type: "cone", material: this.fireworksMaterial });
- projectile.setLocalScale(0.3, 0.3, 1.5);
- }
+		const startPos = fireball.getPosition().clone();
+		const startMs = Date.now();
+		const maxMs = 1500;
 
- const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
- projectile.setLocalEulerAngles(-90, yaw, 0);
- projectile.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1, myPos.z + dir.z * 1.5);
- this.getEntity().parent?.addChild(projectile) ?? this.getEntity().addChild(projectile);
- this.activeEffects.add(projectile);
- const startPos = projectile.getPosition().clone();
- const speed = 50; const startMs = Date.now(); const maxMs = 800;
- const tick = () => {
- const elapsed = Date.now() - startMs;
- if (elapsed >= maxMs || !projectile.parent) { this.destroyEffect(projectile); return; }
- const t = elapsed / 1000;
- projectile.setPosition(startPos.x + dir.x * speed * t, startPos.y + Math.sin(t * 5) * 0.3, startPos.z + dir.z * speed * t);
- const mat = projectile.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
- if (mat) { mat.opacity = 0.9 * (1 - elapsed / maxMs); mat.update(); }
- requestAnimationFrame(tick);
- };
- requestAnimationFrame(tick);
- }
+		const tick = () => {
+			const elapsed = Date.now() - startMs;
+			if (elapsed >= maxMs || !fireball.parent) { this.destroyEffect(fireball); return; }
+			const t = elapsed / 1000;
+			fireball.setPosition(startPos.x + dir.x * this.fireballSpeed * t, startPos.y, startPos.z + dir.z * this.fireballSpeed * t);
+			const mat = fireball.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+			if (mat) { mat.opacity = 0.9 * (1 - elapsed / maxMs); mat.update(); }
+			requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
 
- // ── Air strike ──
- private startAirstrike(target: Entity, now: number): void {
- this.lastAttackType = "airstrike"; this.lastAttackAtSeconds = now;
- const targetPos = target.getPosition();
- const bombPositions: Vec3[] = [];
- for (let i = 0; i < this.airstrikeCount; i++) {
- const offsetX = (Math.random() - 0.5) * 8;
- const offsetZ = (Math.random() - 0.5) * 8;
- bombPositions.push(new Vec3(targetPos.x + offsetX, targetPos.y + 20, targetPos.z + offsetZ));
- }
- this.airstrikeState = { endTimeSeconds: now + this.airstrikeCount * this.airstrikeIntervalSeconds + 0.5, nextBombAtSeconds: now, bombsDropped: 0, bombPositions };
- this.attackLockUntilSeconds = this.airstrikeState.endTimeSeconds;
- }
+		this.fireballState = {
+			endTimeSeconds: now + 1.5,
+			fireballEntity: fireball,
+			hasHit: false
+		};
+		this.attackLockUntilSeconds = this.fireballState.endTimeSeconds + 0.3;
+	}
 
- private updateAirstrike(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
- const state = this.airstrikeState; if (!state) return;
- {
- const myPos = this.getEntity().getPosition();
- const targetPos = target.getPosition();
- this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
- }
+	private updateFireball(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+		const state = this.fireballState;
+		if (!state) return;
 
- if (state.bombsDropped < this.airstrikeCount && now >= state.nextBombAtSeconds) {
- const pos = state.bombPositions[state.bombsDropped];
- state.bombsDropped++; state.nextBombAtSeconds = now + this.airstrikeIntervalSeconds;
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
 
- // Telegraph ring at impact point
- this.spawnRingEffect(new Vec3(pos.x, pos.y - 20 + 0.1, pos.z), this.airstrikeHitRadius, 600, this.airstrikeRingMaterial, "uncle-sam-airstrike-ring", 0.6);
+		if (!state.hasHit && this.checkFireballHit(target)) {
+			state.hasHit = true;
+			this.applyDamage(this.fireballDamage, onAttack);
+		}
 
- // Bomb falling VFX
- const { entity: projectile, isGLB } = this.cloneWeaponTemplate(this.bombTemplate, "uncle-sam-bomb", 0.8);
- if (!isGLB) {
- // Fallback: yellow sphere
- projectile.addComponent("render", { type: "sphere", material: this.airstrikeMaterial });
- projectile.setLocalScale(0.8, 0.8, 0.8);
- }
+		if (now >= state.endTimeSeconds) {
+			this.destroyEffect(state.fireballEntity);
+			this.fireballState = null;
+			this.nextFireballAtSeconds = now + this.fireballCooldownSeconds;
+		}
+	}
 
- projectile.setPosition(pos.x, pos.y, pos.z);
- this.getEntity().parent?.addChild(projectile) ?? this.getEntity().addChild(projectile);
- this.activeEffects.add(projectile);
- const startMs = Date.now(); const fallMs = 500;
- const tick = () => {
- const elapsed = Date.now() - startMs;
- if (elapsed >= fallMs || !projectile.parent) { this.destroyEffect(projectile); return; }
- const t = elapsed / fallMs;
- projectile.setPosition(pos.x, pos.y - 20 * t, pos.z);
- const mat = projectile.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
- if (mat) { mat.opacity = 0.85; mat.update(); }
- requestAnimationFrame(tick);
- };
- requestAnimationFrame(tick);
+	private checkFireballHit(target: Entity): boolean {
+		const state = this.fireballState;
+		if (!state || !state.fireballEntity) return false;
+		const fireballPos = state.fireballEntity.getPosition();
+		const targetPos = target.getPosition();
+		const dx = targetPos.x - fireballPos.x;
+		const dz = targetPos.z - fireballPos.z;
+		const distance = Math.sqrt(dx * dx + dz * dz);
+		return distance <= this.fireballRadius + 1.5;
+	}
 
- // Check hit after delay
- const targetPos = target.getPosition();
- const dx = targetPos.x - pos.x;
- const dz = targetPos.z - pos.z;
- if (Math.sqrt(dx * dx + dz * dz) <= this.airstrikeHitRadius) {
- this.applyDamage(this.airstrikeDamage, onAttack);
- }
- }
+	// ── Ground slam attack ──
+	private startGroundSlam(target: Entity, now: number): void {
+		this.lastAttackType = "groundSlam";
+		this.lastAttackAtSeconds = now;
+		const targetPos = target.getPosition();
+		const glowEntity = this.spawnGlowEffect(targetPos, this.groundSlamRadius, this.groundSlamGlowDurationSeconds * 1000);
+		this.groundSlamState = {
+			glowStartTimeSeconds: now,
+			glowDurationSeconds: this.groundSlamGlowDurationSeconds,
+			damageTimeSeconds: now + this.groundSlamDamageDelaySeconds,
+			glowRadius: this.groundSlamRadius,
+			glowPosition: new Vec3(targetPos.x, targetPos.y, targetPos.z),
+			glowEntity: glowEntity,
+			hasDealtDamage: false
+		};
+		this.attackLockUntilSeconds = now + this.groundSlamGlowDurationSeconds + 0.5;
+	}
 
- if (now >= state.endTimeSeconds) {
- this.airstrikeState = null;
- this.nextAirstrikeAtSeconds = now + this.airstrikeCooldownSeconds;
- }
- }
+	private updateGroundSlam(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+		const state = this.groundSlamState;
+		if (!state) return;
 
- // ── Helpers ──
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
 
- /**
- * Clone a preloaded weapon GLB template, or create a bare Entity fallback.
- * Returns { entity, isGLB } so callers know whether to add primitive geometry.
- */
- private cloneWeaponTemplate(template: Entity | null, name: string, scale: number): { entity: Entity; isGLB: boolean } {
- if (template) {
- const clone = template.clone();
- clone.name = name;
- clone.setLocalScale(scale, scale, scale);
- clone.enabled = true; // clones of disabled templates should be visible
- // Detach from any parent the template may have so we can re-parent to the scene
- if (clone.parent) clone.parent.removeChild(clone);
- return { entity: clone, isGLB: true };
- }
- return { entity: new Entity(name), isGLB: false };
- }
+		if (!state.hasDealtDamage && now >= state.damageTimeSeconds) {
+			state.hasDealtDamage = true;
+			if (this.checkPlayerInGlowArea(target, state.glowPosition, state.glowRadius)) {
+				this.applyDamage(this.groundSlamDamage, onAttack);
+			}
+		}
 
- private faceTarget(target: Entity, dt: number): void {
- const myPos = this.getEntity().getPosition(); const targetPos = target.getPosition();
- this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, dt);
- }
+		if (now >= state.glowStartTimeSeconds + state.glowDurationSeconds) {
+			this.destroyEffect(state.glowEntity);
+			this.groundSlamState = null;
+			this.nextGroundSlamAtSeconds = now + this.groundSlamCooldownSeconds;
+		}
+	}
 
- private getFlatDistanceTo(target: Entity): number {
- const myPos = this.getEntity().getPosition(); const targetPos = target.getPosition();
- const dx = targetPos.x - myPos.x; const dz = targetPos.z - myPos.z;
- return Math.sqrt(dx * dx + dz * dz);
- }
+	private checkPlayerInGlowArea(target: Entity, glowCenter: Vec3, radius: number): boolean {
+		const targetPos = target.getPosition();
+		const dx = targetPos.x - glowCenter.x;
+		const dz = targetPos.z - glowCenter.z;
+		const distance = Math.sqrt(dx * dx + dz * dz);
+		return distance <= radius;
+	}
 
- private applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
- if (this.onPlayerAttack) this.onPlayerAttack(this, damage);
- if (onAttack) onAttack(this);
- }
+	private spawnGlowEffect(center: Vec3, radius: number, durationMs: number): Entity | null {
+		const sceneApp = this.resolveSceneApp();
+		if (!sceneApp?.root) return null;
 
- private createEffectMaterial(emissiveColor: Color, diffuseColor: Color, emissiveIntensity: number, opacity: number): StandardMaterial {
- const mat = new StandardMaterial();
- mat.emissive = emissiveColor; mat.emissiveIntensity = emissiveIntensity;
- mat.diffuse = diffuseColor; mat.opacity = opacity;
- mat.blendType = BLEND_ADDITIVE; mat.cull = CULLFACE_NONE; mat.depthWrite = false;
- mat.update(); return mat;
- }
+		const glowRoot = new Entity("uncle-sam-ground-glow");
+		const glowMesh = new Entity("uncle-sam-ground-glow-mesh");
+		glowMesh.addComponent("render", { type: "cylinder", material: this.groundSlamGlowMaterial });
+		glowMesh.setLocalScale(radius, 0.15, radius);
+		glowMesh.setPosition(0, 0.08, 0);
+		glowRoot.addChild(glowMesh);
+		glowRoot.setPosition(center.x, center.y, center.z);
+		sceneApp.root.addChild(glowRoot);
+		this.activeEffects.add(glowRoot);
 
- private spawnRingEffect(origin: Vec3, radius: number, durationMs: number, material: StandardMaterial, name: string, opacity: number): void {
- const ring = new Entity(name);
- ring.addComponent("render", { type: "torus", material });
- ring.setPosition(origin.x, origin.y + 0.1, origin.z);
- ring.setLocalScale(radius, radius * 0.15, radius);
- this.getEntity().parent?.addChild(ring) ?? this.getEntity().addChild(ring);
- this.activeEffects.add(ring);
- const startMs = Date.now();
- const tick = () => {
- const elapsed = Date.now() - startMs;
- if (elapsed >= durationMs) { this.destroyEffect(ring); return; }
- const mat = ring.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
- if (mat) { mat.opacity = opacity * (1 - elapsed / durationMs); mat.update(); }
- requestAnimationFrame(tick);
- };
- requestAnimationFrame(tick);
- }
+		const startMs = Date.now();
+		const tick = () => {
+			const elapsed = Date.now() - startMs;
+			if (elapsed >= durationMs || !glowRoot.parent) { this.destroyEffect(glowRoot); return; }
+			const mat = glowMesh.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+			if (mat) {
+				const pulse = 0.7 + Math.sin((elapsed / 1000) * Math.PI * 2) * 0.3;
+				mat.opacity = pulse * 0.7;
+				mat.update();
+			}
+			requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
 
- private destroyEffect(entity: Entity | null | undefined): void {
- if (!entity) return; this.activeEffects.delete(entity);
- if (entity.parent) entity.parent.removeChild(entity); entity.destroy();
- }
+		return glowRoot;
+	}
 
- private cleanupEffects(): void {
- for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
- this.activeEffects.clear(); this.moneyState = null; this.fireworksState = null; this.airstrikeState = null;
- }
+// ── Helpers ──
+
+	private faceTarget(target: Entity, dt: number): void {
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, dt);
+	}
+
+	private getFlatDistanceTo(target: Entity): number {
+		const myPos = this.getEntity().getPosition();
+		const targetPos = target.getPosition();
+		const dx = targetPos.x - myPos.x;
+		const dz = targetPos.z - myPos.z;
+		return Math.sqrt(dx * dx + dz * dz);
+	}
+
+	private applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
+		if (this.onPlayerAttack) this.onPlayerAttack(this, damage);
+		if (onAttack) onAttack(this);
+	}
+
+	private createEffectMaterial(emissiveColor: Color, diffuseColor: Color, emissiveIntensity: number, opacity: number): StandardMaterial {
+		const mat = new StandardMaterial();
+		mat.emissive = emissiveColor;
+		mat.emissiveIntensity = emissiveIntensity;
+		mat.diffuse = diffuseColor;
+		mat.opacity = opacity;
+		mat.blendType = BLEND_ADDITIVE;
+		mat.cull = CULLFACE_NONE;
+		mat.depthWrite = false;
+		mat.update();
+		return mat;
+	}
+
+	private destroyEffect(entity: Entity | null | undefined): void {
+		if (!entity) return;
+		this.activeEffects.delete(entity);
+		if (entity.parent) entity.parent.removeChild(entity);
+		entity.destroy();
+	}
+
+	private cleanupEffects(): void {
+		for (const effect of this.activeEffects) {
+			try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ }
+		}
+		this.activeEffects.clear();
+		this.dashState = null;
+		this.fireballState = null;
+		this.groundSlamState = null;
+	}
+
+	private resolveSceneApp(targetEntity?: Entity): import("playcanvas").AppBase | undefined {
+		const selfEntity = this.getEntity() as any;
+		const selfApp = (selfEntity?.app ?? selfEntity?._app) as import("playcanvas").AppBase | undefined;
+		if (selfApp?.root) return selfApp;
+		const targetAny = targetEntity as any;
+		const targetApp = (targetAny?.app ?? targetAny?._app) as import("playcanvas").AppBase | undefined;
+		if (targetApp?.root) return targetApp;
+		const globalApp = (globalThis as any)?.app as import("playcanvas").AppBase | undefined;
+		if (globalApp?.root) return globalApp;
+		return undefined;
+	}
 }
