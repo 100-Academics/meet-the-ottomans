@@ -1023,7 +1023,6 @@ export class GenghisKhan extends Boss {
         root.setLocalRotation(quat.x, quat.y, quat.z, quat.w);
     }
 
-
     private getFlatDistanceTo(targetEntity: Entity): number {
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();

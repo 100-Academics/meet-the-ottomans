@@ -33,6 +33,7 @@ const NPC_MODEL_PATHS = {
   lenin: "models/npc/boss/Lenin.glb",
   stalin: "models/npc/boss/Stalin.glb",
   unionSoldier: "models/npc/UnionSoldier.glb",
+  germanLookingSoldier: "models/npc/GermanLookingSoldier.glb",
   towerBoss: "models/npc/boss/Tower_00001_.glb"
 };
 
@@ -93,7 +94,7 @@ const BAYBARS_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const CAESAR_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.caesar,
-  modelRotation: new Vec3(0, 0, 0),
+  modelRotation: new Vec3(-90, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -215,8 +216,14 @@ const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   facingYawOffsetDegrees: 0
 };
 
-const ITALIAN_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+const RUSSIAN_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0,
+  detectionRange: -1
+};
+
+const ITALIAN_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(-90, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
@@ -249,6 +256,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   lenin: NPC_MODEL_PATHS.lenin,
   stalin: NPC_MODEL_PATHS.stalin,
   unionSoldier: NPC_MODEL_PATHS.unionSoldier,
+  russianSoldier: NPC_MODEL_PATHS.germanLookingSoldier,
   towerBoss: NPC_MODEL_PATHS.towerBoss,
   airLadin: NPC_MODEL_PATHS.airLadin,
   italian: "models/npc/ItalianSoldier.glb"
@@ -273,6 +281,7 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
   americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
     unionSoldier: UNION_SOLDIER_SPAWN_OVERRIDES,
+    russianSoldier: RUSSIAN_SOLDIER_SPAWN_OVERRIDES,
     italian: ITALIAN_SPAWN_OVERRIDES,
   mamlukIthink: MAMLUK_SPAWN_OVERRIDES,
   baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
@@ -426,13 +435,13 @@ export const LEGNICA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   // { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
   // { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
 ];
-export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const LEGNICA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "genghisKhan" }];
 
 // Ain Jalut
 export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 0, z: 0, type: "mongol" },
-  { id: 3, team: "foe", x: 0, z: 0, type: "mongol" },
-  { id: 5, team: "foe", x: 0, z: 0, type: "mongol" },
+  { id: 1, team: "foe", x: 10, z: 8, type: "mongol" },
+  { id: 3, team: "foe", x: -10, z: 8, type: "mongol" },
+  { id: 5, team: "foe", x: 10, z: -8, type: "mongol" },
   { id: 6, team: "foe", x: 5, z: 3, type: "mongol" },
   { id: 7, team: "foe", x: -5, z: 3, type: "mongol" },
   { id: 8, team: "foe", x: 5, z: -3, type: "mongol" },
@@ -454,7 +463,7 @@ export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   // { id: 24, team: "foe", x: 3, z: -10, type: "mongol" },
   // { id: 25, team: "foe", x: -3, z: -10, type: "mongol" },
 ];
-export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeser" }];
+export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "kingGeser" }];
 
 // Constantinople
 export const CONSTANTINOPLE_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -543,7 +552,7 @@ export const CHOSIN_RESERVOIR_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
   { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
 ];
-export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "genghisKhan" }];
+export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "genghisKhan" }];
 
 // Gallipoli
 export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -573,7 +582,7 @@ export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
   { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
 ];
-export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "kingGeorgeIII" }];
+export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "kingGeorgeIII" }];
 
 // Ridaniya — ~30 Mamluk troops spread far from center (±200–300) in small clusters (~3-5 per group). Baybars arrives as reinforcement after they fall.
 export const RIDANIYA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -621,7 +630,7 @@ export const RIDANIYA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 29, team: "foe", x: -220, z: -280, type: "mamlukIthink" },
   { id: 30, team: "foe", x: 230, z: 280, type: "mamlukIthink" },
 ];
-export const RIDANIYA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "baybars" }];
+export const RIDANIYA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "baybars" }];
 
 // Gettysburg
 export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
@@ -651,35 +660,35 @@ export const GETTYSBURG_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 24, team: "foe", x: 3, z: -10, type: "unionSoldier" },
   { id: 25, team: "foe", x: -3, z: -10, type: "unionSoldier" },
 ];
-export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "uncleSam" }];
+export const GETTYSBURG_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "uncleSam" }];
 
 // Kyiv
 export const KYIV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-  { id: 2, team: "foe", x: 9, z: 1, type: "mongol" },
-  { id: 3, team: "foe", x: 12, z: 1, type: "mongol" },
-  { id: 4, team: "foe", x: 15, z: 1, type: "mongol" },
-  { id: 5, team: "foe", x: 6, z: -3, type: "mongol" },
-  { id: 6, team: "foe", x: 9, z: -3, type: "mongol" },
-  { id: 7, team: "foe", x: 12, z: -3, type: "mongol" },
-  { id: 8, team: "foe", x: 15, z: -3, type: "mongol" },
-  { id: 9, team: "foe", x: 6, z: 5, type: "mongol" },
-  { id: 10, team: "foe", x: 9, z: 5, type: "mongol" },
-  { id: 11, team: "foe", x: 12, z: 5, type: "mongol" },
-  { id: 12, team: "foe", x: 15, z: 5, type: "mongol" },
-  { id: 13, team: "foe", x: -6, z: 1, type: "mongol" },
-  { id: 14, team: "foe", x: -9, z: 1, type: "mongol" },
-  { id: 15, team: "foe", x: -6, z: -3, type: "mongol" },
-  { id: 16, team: "foe", x: -9, z: -3, type: "mongol" },
-  { id: 17, team: "foe", x: -6, z: 5, type: "mongol" },
-  { id: 18, team: "foe", x: -9, z: 5, type: "mongol" },
-  { id: 19, team: "foe", x: 0, z: 8, type: "mongol" },
-  { id: 20, team: "foe", x: 3, z: 8, type: "mongol" },
-  { id: 21, team: "foe", x: -3, z: -6, type: "mongol" },
-  { id: 22, team: "foe", x: 0, z: -6, type: "mongol" },
-  { id: 23, team: "foe", x: 3, z: -6, type: "mongol" },
-  { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
-  { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
+  { id: 1, team: "foe", x: 20, z: 15, type: "russianSoldier" },
+  { id: 2, team: "foe", x: 30, z: 10, type: "russianSoldier" },
+  { id: 3, team: "foe", x: 40, z: 5, type: "russianSoldier" },
+  { id: 4, team: "foe", x: 25, z: -5, type: "russianSoldier" },
+  { id: 5, team: "foe", x: 35, z: -10, type: "russianSoldier" },
+  { id: 6, team: "foe", x: -20, z: 15, type: "russianSoldier" },
+  { id: 7, team: "foe", x: -30, z: 10, type: "russianSoldier" },
+  { id: 8, team: "foe", x: -40, z: 5, type: "russianSoldier" },
+  { id: 9, team: "foe", x: -25, z: -5, type: "russianSoldier" },
+  { id: 10, team: "foe", x: -35, z: -10, type: "russianSoldier" },
+  { id: 11, team: "foe", x: 15, z: 25, type: "russianSoldier" },
+  { id: 12, team: "foe", x: -15, z: 25, type: "russianSoldier" },
+  { id: 13, team: "foe", x: 0, z: 20, type: "russianSoldier" },
+  { id: 14, team: "foe", x: 10, z: -20, type: "russianSoldier" },
+  { id: 15, team: "foe", x: -10, z: -20, type: "russianSoldier" },
+  { id: 16, team: "foe", x: 0, z: -15, type: "russianSoldier" },
+  { id: 17, team: "foe", x: 45, z: 15, type: "russianSoldier" },
+  { id: 18, team: "foe", x: -45, z: 15, type: "russianSoldier" },
+  { id: 19, team: "foe", x: 10, z: 30, type: "russianSoldier" },
+  { id: 20, team: "foe", x: -10, z: 30, type: "russianSoldier" },
+  { id: 21, team: "foe", x: 20, z: -25, type: "russianSoldier" },
+  { id: 22, team: "foe", x: -20, z: -25, type: "russianSoldier" },
+  { id: 23, team: "foe", x: 5, z: -30, type: "russianSoldier" },
+  { id: 24, team: "foe", x: -5, z: -30, type: "russianSoldier" },
+  { id: 25, team: "foe", x: 0, z: 35, type: "russianSoldier" },
 ];
 export const KYIV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "stalin" }];
 

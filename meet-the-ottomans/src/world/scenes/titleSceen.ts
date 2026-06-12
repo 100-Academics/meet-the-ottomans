@@ -52,7 +52,7 @@ const introSlides: IntroSlide[] = [
     lines: [
       'If all goes well, you will ensure the Ottoman Empire is stronger than ever before.',
       'You must return glory to your forgotten empire.',
-      'But be advised: there may be unseen forces at play.'
+      'But be advised: there may be unseen forces at play. You may have to fight undead foes.'
     ]
   },
   {

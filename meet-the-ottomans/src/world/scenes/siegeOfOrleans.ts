@@ -42,7 +42,6 @@ import { waitForAmmoReady } from "../../util/spawnHelpers";
 	import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 	import { ORLEANS_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 	import { changeScene } from "../../App";
-import { DevConsole } from "../../util/devConsole";
 
 	const groundModelPath = '/world/battlefields/Orleans.glb';
 
@@ -584,7 +583,6 @@ await waitForAmmoReady(app, "ground");
 					spawnJoanOfArc().catch((error) => console.error(error));
 					return;
 				}
-				if (DevConsole._roundLock) return;
 				removeBattleHUD();
 				victoryHandled = true;
 				changeScene(canvas, app, 777);

@@ -48,7 +48,6 @@ import {
  NORTHWOOD_HIGH_TOWER_SPAWN_POINT,
 } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
-import { DevConsole } from "../../util/devConsole";
 
 /**
  * Battle of Northwood High School — a white, featureless room.
@@ -230,7 +229,7 @@ export async function battleOfNorthwoodHighScene(
  starMaterial.update();
  const starDome = new Entity("northwood-star-dome");
  const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
- radius: 660,
+ radius: 220,
  latitudeBands: 64,
  longitudeBands: 64,
  }));
@@ -242,7 +241,7 @@ export async function battleOfNorthwoodHighScene(
  app.on("update", () => starDome.setPosition(cameraEntity.getPosition()));
 
  // White flat floor — very small, placeholder-like
- const FLOOR_SIZE = 120;
+ const FLOOR_SIZE = 40;
  let groundY = 0;
  try {
  const whiteFloor = createWhiteFloor(app, new Vec3(0, 0, 0), new Vec3(FLOOR_SIZE, 1, FLOOR_SIZE));
@@ -266,10 +265,9 @@ export async function battleOfNorthwoodHighScene(
  let phase: "airLadin" | "tower" = "airLadin";
  let towerSpawned = false;
 
- // Phase 1: Spawn Air Ladin (high in the air)
+ // Phase 1: Spawn Air Ladin
  const airLadinSpawnOptions = {
  ...AIR_LADIN_BOSS_SPAWN_OVERRIDES,
- modelHeightOffset: 20,
  groundYFallback: respawnGroundY,
  };
 
@@ -305,21 +303,6 @@ export async function battleOfNorthwoodHighScene(
  groundYFallback: respawnGroundY,
  };
 
-  // Victory check
-  let victoryHandled = false;
-  app.on("update", () => {
-    if (isDeathScreenVisible()) return;
-    if (victoryHandled) return;
-    const remainingFoes = npcs.filter(
-      (currentNpc: any) =>
-        currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
-    );
-    if (remainingFoes.length === 0 && !DevConsole._roundLock) {
-    	victoryHandled = true;
-    	removeBattleHUD();
-    	changeScene(canvas, app, 777);
-    }
-  });
  try {
  const spawned = await spawnSceneNpcs(
  app,

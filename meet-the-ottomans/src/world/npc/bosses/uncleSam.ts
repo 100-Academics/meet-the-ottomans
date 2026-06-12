@@ -256,9 +256,6 @@ export class UncleSam extends Boss {
  // Fallback: green cylinder
  projectile.addComponent("render", { type: "cylinder", material: this.moneyMaterial });
  projectile.setLocalScale(0.5, 0.1, 0.5);
- } else {
- // Prepare GLB dollar bill materials for fading
- this.prepareGlbMaterialsForFade(projectile, this.moneyMaterial);
  }
 
  projectile.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1.5, myPos.z + dir.z * 1.5);
@@ -272,9 +269,9 @@ export class UncleSam extends Boss {
  const t = elapsed / 1000;
  const arc = Math.sin(t * Math.PI) * 2.5;
  projectile.setPosition(startPos.x + dir.x * speed * t, startPos.y + arc, startPos.z + dir.z * speed * t);
- // Spin the dollar bill with a tumbling animation for GLB
- projectile.setLocalEulerAngles(elapsed * 0.3, elapsed * 2, elapsed * 0.15);
- this.fadeAllMeshMaterials(projectile, 0.8 * (1 - elapsed / maxMs));
+ projectile.setLocalEulerAngles(0, elapsed * 2, 0);
+ const mat = projectile.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+ if (mat) { mat.opacity = 0.8 * (1 - elapsed / maxMs); mat.update(); }
  requestAnimationFrame(tick);
  };
  requestAnimationFrame(tick);
@@ -315,13 +312,7 @@ export class UncleSam extends Boss {
  }
 
  const yaw = Math.atan2(dir.x, dir.z) * 180 / Math.PI;
- if (isGLB) {
- // GLB rocket model: orient so the rocket nose points along flight direction
- projectile.setLocalEulerAngles(0, yaw, 0);
- this.prepareGlbMaterialsForFade(projectile, this.fireworksMaterial);
- } else {
  projectile.setLocalEulerAngles(-90, yaw, 0);
- }
  projectile.setPosition(myPos.x + dir.x * 1.5, myPos.y + 1, myPos.z + dir.z * 1.5);
  this.getEntity().parent?.addChild(projectile) ?? this.getEntity().addChild(projectile);
  this.activeEffects.add(projectile);
@@ -332,7 +323,8 @@ export class UncleSam extends Boss {
  if (elapsed >= maxMs || !projectile.parent) { this.destroyEffect(projectile); return; }
  const t = elapsed / 1000;
  projectile.setPosition(startPos.x + dir.x * speed * t, startPos.y + Math.sin(t * 5) * 0.3, startPos.z + dir.z * speed * t);
- this.fadeAllMeshMaterials(projectile, 0.9 * (1 - elapsed / maxMs));
+ const mat = projectile.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+ if (mat) { mat.opacity = 0.9 * (1 - elapsed / maxMs); mat.update(); }
  requestAnimationFrame(tick);
  };
  requestAnimationFrame(tick);
@@ -373,9 +365,6 @@ export class UncleSam extends Boss {
  // Fallback: yellow sphere
  projectile.addComponent("render", { type: "sphere", material: this.airstrikeMaterial });
  projectile.setLocalScale(0.8, 0.8, 0.8);
- } else {
- // Prepare GLB bomb materials for fading
- this.prepareGlbMaterialsForFade(projectile, this.airstrikeMaterial);
  }
 
  projectile.setPosition(pos.x, pos.y, pos.z);
@@ -387,11 +376,8 @@ export class UncleSam extends Boss {
  if (elapsed >= fallMs || !projectile.parent) { this.destroyEffect(projectile); return; }
  const t = elapsed / fallMs;
  projectile.setPosition(pos.x, pos.y - 20 * t, pos.z);
- // Spin the GLB bomb as it falls
- if (isGLB) {
- projectile.setLocalEulerAngles(elapsed * 0.5, elapsed * 1.2, 0);
- }
- this.fadeAllMeshMaterials(projectile, 0.85);
+ const mat = projectile.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+ if (mat) { mat.opacity = 0.85; mat.update(); }
  requestAnimationFrame(tick);
  };
  requestAnimationFrame(tick);
@@ -430,46 +416,6 @@ export class UncleSam extends Boss {
  return { entity: new Entity(name), isGLB: false };
  }
 
- /**
- * Prepare GLB model materials for fade-out by enabling blending and depth-write
- * on all mesh instances. This must be called once after cloning a GLB template.
- */
- private prepareGlbMaterialsForFade(entity: Entity, fallbackTint: StandardMaterial): void {
- const render = entity.render;
- if (!render) return;
- for (const mi of render.meshInstances) {
- const mat = mi.material as StandardMaterial | undefined;
- if (mat && mat instanceof StandardMaterial) {
- // Enable transparency so opacity fading works
- mat.blendType = BLEND_ADDITIVE;
- mat.cull = CULLFACE_NONE;
- mat.depthWrite = false;
- // Tint the emissive to give the projectile a glow matching the attack type
- if (fallbackTint.emissive) {
- mat.emissive = fallbackTint.emissive;
- mat.emissiveIntensity = Math.max(mat.emissiveIntensity, fallbackTint.emissiveIntensity * 0.5);
- }
- mat.update();
- }
- }
- }
-
- /**
- * Fade all mesh instance materials on an entity to the given opacity.
- * Works for both GLB-loaded models and primitive fallbacks.
- */
- private fadeAllMeshMaterials(entity: Entity, opacity: number): void {
- const render = entity.render;
- if (!render) return;
- for (const mi of render.meshInstances) {
- const mat = mi.material as StandardMaterial | undefined;
- if (mat && typeof (mat as any).opacity === "number") {
- mat.opacity = opacity;
- mat.update();
- }
- }
- }
-
  private faceTarget(target: Entity, dt: number): void {
  const myPos = this.getEntity().getPosition(); const targetPos = target.getPosition();
  this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, 0, dt);
@@ -505,7 +451,8 @@ export class UncleSam extends Boss {
  const tick = () => {
  const elapsed = Date.now() - startMs;
  if (elapsed >= durationMs) { this.destroyEffect(ring); return; }
- this.fadeAllMeshMaterials(ring, opacity * (1 - elapsed / durationMs));
+ const mat = ring.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+ if (mat) { mat.opacity = opacity * (1 - elapsed / durationMs); mat.update(); }
  requestAnimationFrame(tick);
  };
  requestAnimationFrame(tick);
