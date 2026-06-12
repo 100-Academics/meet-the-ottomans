@@ -305,7 +305,6 @@ export async function battleOfNorthwoodHighScene(
  groundYFallback: respawnGroundY,
  };
 
-<<<<<<< HEAD
   // Victory check
   let victoryHandled = false;
   app.on("update", () => {
@@ -321,7 +320,6 @@ export async function battleOfNorthwoodHighScene(
     	changeScene(canvas, app, 777);
     }
   });
-=======
  try {
  const spawned = await spawnSceneNpcs(
  app,
@@ -342,7 +340,6 @@ export async function battleOfNorthwoodHighScene(
  console.error("[NorthwoodHigh] Failed to spawn Tower:", err);
  }
  }
->>>>>>> 93ae111641d15463069235cf8a9d19a3014e163d
 
  // HUD
  createBattleHUD();
