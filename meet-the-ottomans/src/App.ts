@@ -126,14 +126,14 @@ export async function changeScene(
   } else if (sceneNum === 666) {
     return await showDeathScreen({
       app,
-      onMainMenu: () => changeScene(canvas, app, 0),
+      onMainMenu: () => changeScene(canvas, app, -2),
       message: "You have failed to bring glory to the Ottoman Empire. Game Over."
     });
   } else if (sceneNum === 777) {
     const victoryMessage = Boss.consumeLastBossDeathTaunt() ?? "Victory! All enemies defeated.";
     return await showVictoryScreen({
       app,
-      onMainMenu: () => changeScene(canvas, app, 0),
+      onMainMenu: () => changeScene(canvas, app, -2),
       message: victoryMessage
     });
   }

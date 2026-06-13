@@ -51,7 +51,6 @@ import {
   GALLIPOLI_BOSS_SPAWN_POINT,
   GALLIPOLI_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
-import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
@@ -63,7 +62,6 @@ var isBossSpawning = false;
 function resetGallipoliBattleState(): void {
   isBossSpawned = false;
   isBossSpawning = false;
-  Mongol.resetBattleState();
 }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
@@ -492,6 +490,8 @@ export async function battleOfGallipoliScene(
   const npcSpawnOptions = {
     ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
     groundYFallback: respawnGroundY,
+    playerSafeRadius: 12,
+    getPlayerPosition: () => player.getPosition(),
   };
   const npcs = await spawnSceneNpcs(
     app,

@@ -48,22 +48,26 @@ export class FrenchSoldier extends npc {
 
         const profile = this.getCombatProfile();
         const targetInfo = this.resolveTarget(allNpcs, profile.detectionRange, playerEntity, onNpcAttack, onPlayerAttack);
-        if (!targetInfo) {
+        
+        if (targetInfo) {
+            const { entity: targetEntity, targetNpc, onHit } = targetInfo;
+            const distance = this.getDistanceToEntity(targetEntity);
+
+            const wrappedMeleeAttack = (_attacker: npc) => {
+                this.scheduleMeleeHit(targetEntity, targetNpc, onHit, profile.attackDamage);
+            };
+
+            super.updateAI(deltaTime, targetEntity, currentTimeSeconds, wrappedMeleeAttack, profile);
+
+            if (distance <= this.rangedRange && distance > profile.attackRange) {
+                this.tryRangedAttack(targetEntity, targetNpc, onHit, currentTimeSeconds);
+            }
+        } else if (playerEntity) {
+            super.updateAI(deltaTime, playerEntity, currentTimeSeconds, (attacker) => {
+                onPlayerAttack?.(attacker, profile.attackDamage);
+            }, profile);
+        } else {
             super.updateAI(deltaTime, null, currentTimeSeconds, undefined, profile);
-            return;
-        }
-
-        const { entity: targetEntity, targetNpc, onHit } = targetInfo;
-        const distance = this.getDistanceToEntity(targetEntity);
-
-        const wrappedMeleeAttack = (_attacker: npc) => {
-            this.scheduleMeleeHit(targetEntity, targetNpc, onHit, profile.attackDamage);
-        };
-
-        super.updateAI(deltaTime, targetEntity, currentTimeSeconds, wrappedMeleeAttack, profile);
-
-        if (distance <= this.rangedRange && distance > profile.attackRange) {
-            this.tryRangedAttack(targetEntity, targetNpc, onHit, currentTimeSeconds);
         }
     }
 

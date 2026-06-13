@@ -408,6 +408,12 @@ const groundTag = "ground";
       frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       frenchSoldier.setHitboxRadius(hitboxRadius);
       npcs.push(frenchSoldier);
+	} else if (spawn.type === "modernFrenchSoldier") {
+      console.log(`Spawning Modern French Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const frenchSoldier = new FrenchSoldier(spawn.id, npcModel.modelEntity);
+      frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      frenchSoldier.setHitboxRadius(hitboxRadius);
+      npcs.push(frenchSoldier);
 	} else if (spawn.type === "americanRevolutionist") {
 		console.log(`Spawning American Revolutionist NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
 		const rev = new AmericanRevolutionist(spawn.id, npcModel.modelEntity);
@@ -550,6 +556,14 @@ const groundTag = "ground";
       npcs.push(boss);
     } else if (spawn.type === "kingGeorgeIII") {
       console.log(`Spawning King George III Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const boss = new KingGeorgeIII(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+      boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      boss.setHitboxRadius(hitboxRadius);
+      boss.drawHealthBar();
+      Boss.setActiveBoss(boss);
+      npcs.push(boss);
+    } else if (spawn.type === "kinGerorge") {
+      console.log(`Spawning Kin Gerorge Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new KingGeorgeIII(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
       boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       boss.setHitboxRadius(hitboxRadius);

@@ -7,7 +7,7 @@ export class Mongol extends npc {
     // Ranged attack settings (Mongols shoot while circling)
     protected rangedAttackRange: number = 30;
     protected rangedAttackDamage: number = 5;
-    protected rangedAttackCooldown: number = 0.5; // seconds
+    protected rangedAttackCooldown: number = 1.0; // seconds
     private guaranteedRangedHits: boolean = false;
     private static lastGroupShotTime: number = -Infinity;
     private static lastShotSelectionTick: number = -Infinity;
@@ -23,6 +23,9 @@ export class Mongol extends npc {
     public static retreatActive: boolean = false;
     public static retreatPoint: Vec3 | null = null;
     public static hordeSpawned: boolean = false;
+
+    private static taunts: string[] = ["this is a test", "I will of man you"];
+
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
