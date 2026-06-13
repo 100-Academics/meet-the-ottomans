@@ -66,13 +66,11 @@ var isBossSpawning = false;
 
 function resetVerdunBattleState(): void {
   isBossSpawned = false;
-  function resetVerdunBattleState(): void {
-    isBossSpawned = false;
-    isBossSpawning = false;
-    Mongol.resetBattleState();
-  }
+  isBossSpawning = false;
+  Mongol.resetBattleState();
+}
 
-  export async function battleOfVerdunScene(
+export async function battleOfVerdunScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
   _onClick: (battle: Battle) => void,
@@ -239,7 +237,6 @@ function resetVerdunBattleState(): void {
           spawnX + ox,
           spawnZ + oz,
           "ground",
-          bounds,
         );
         if (hitY !== undefined && (seededGroundY === undefined || hitY > seededGroundY)) {
           seededGroundY = hitY;

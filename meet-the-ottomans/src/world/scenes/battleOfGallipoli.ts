@@ -39,11 +39,6 @@ import {
   updateBattleHUD,
 } from "../../util/battleHUD";
 import { isDeathScreenVisible } from "./deathScreen";
-import {
-  getHighestGroundHitY,
-  getRenderableBounds,
-  createStarfieldTexture,
-} from "../../util/battleSceneHelpers";
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
 import { Grid } from "playcanvas/scripts/esm/grid.mjs";
 import { Player } from "../../player/player";
