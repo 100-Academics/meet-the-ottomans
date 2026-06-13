@@ -28,28 +28,28 @@ interface IceDashState {
 
 export class KingGeorgeIII extends Boss {
     // Royal guard wall
-    private readonly guardWallDamage = 10;
-    private readonly guardWallCooldownSeconds = 8.0;
-    private readonly guardWallRange = 20;
-    private readonly guardWallCount = 4;
+    private readonly guardWallDamage = 15;
+    private readonly guardWallCooldownSeconds = 6.0;
+    private readonly guardWallRange = 25;
+    private readonly guardWallCount = 6;
     private nextGuardWallAtSeconds = 0;
 
     // Crown boomerang
-    private readonly crownDamage = 14;
-    private readonly crownCooldownSeconds = 5.0;
-    private readonly crownRange = 25;
-    private readonly crownHitRadius = 2.5;
+    private readonly crownDamage = 20;
+    private readonly crownCooldownSeconds = 4.0;
+    private readonly crownRange = 30;
+    private readonly crownHitRadius = 3.0;
     private nextCrownAtSeconds = 0;
 
     // Ice Dash
-    private readonly iceDashSpeed = PLAYER_MOVE_SPEED * 2.8;
-    private readonly iceDashDurationSeconds = 0.45;
-    private readonly iceDashDamage = 14;
-    private readonly iceDashCooldownSeconds = 5.0;
-    private readonly iceDashRangeMin = 6;
-    private readonly iceDashRangeMax = 24;
-    private readonly iceDashHitRadius = 3.5;
-    private readonly iceFreezeDurationSeconds = 1.8;
+    private readonly iceDashSpeed = PLAYER_MOVE_SPEED * 3.2;
+    private readonly iceDashDurationSeconds = 0.4;
+    private readonly iceDashDamage = 18;
+    private readonly iceDashCooldownSeconds = 4.0;
+    private readonly iceDashRangeMin = 8;
+    private readonly iceDashRangeMax = 28;
+    private readonly iceDashHitRadius = 4.0;
+    private readonly iceFreezeDurationSeconds = 2.5;
     private nextIceDashAtSeconds = 0;
 
     // Runtime state
@@ -85,42 +85,48 @@ export class KingGeorgeIII extends Boss {
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("King George III")) {
         super(id, maxHealth, entity, "King George III");
-        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
-        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
+        this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.3;
+        this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.8;
 
-    this.setIntroTaunt("The King's word is law!", "The King's word is law!");
-    this.setIntroNameTranslation("Rex Georgius III", "King George III");
-    this.setIntroSkipTranslation(true);
-    this.setTauntSet({
-            highHealth: [
-                "By royal decree, you shall fall.",
-                "The Crown does not negotiate with rebels.",
-                "God save the King!"
-            ],
-            bossLowPlayerHigh: [
-                "The empire strikes back!",
-                "I shall not lose the colonies!",
-                "The redcoats will have their day!"
-            ],
-            playerLowBossHigh: [
-                "Yield to the Crown, colonial.",
-                "Your rebellion ends here.",
-                "The King's justice is absolute."
-            ],
-            bothLow: [
-                "For King and country!",
-                "The Crown shall endure!"
-            ],
-            death: [
-                "The kingdom… crumbles…",
-                "I was a good king…"
-            ],
-            bossDeath: [
-                "The Crown… passes.",
-                "God save… the next King."
-            ]
-        });
-    }
+        this.setIntroTaunt("The King's word is law!", "The King's word is law!");
+        this.setIntroNameTranslation("Rex Georgius III", "King George III");
+        this.setIntroSkipTranslation(true);
+        this.setTauntSet({
+                highHealth: [
+                    "By royal decree, you shall fall.",
+                    "The Crown does not negotiate with rebels.",
+                    "God save the King!",
+                    "Feel the wrath of the British Empire!"
+                ],
+                bossLowPlayerHigh: [
+                    "The empire strikes back!",
+                    "I shall not lose the colonies!",
+                    "The redcoats will have their day!",
+                    "You dare wound your King?!"
+                ],
+                playerLowBossHigh: [
+                    "Yield to the Crown, colonial.",
+                    "Your rebellion ends here.",
+                    "The King's justice is absolute.",
+                    "Bow before royal authority!"
+                ],
+                bothLow: [
+                    "For King and country!",
+                    "The Crown shall endure!",
+                    "Only one monarch leaves this field!"
+                ],
+                death: [
+                    "The kingdom… crumbles…",
+                    "I was a good king…",
+                    "Long live… the next king…"
+                ],
+                bossDeath: [
+                    "The Crown… passes.",
+                    "God save… the next King.",
+                    "The empire… falls…"
+                ]
+            });
+        }
 
     public override updateCombatAI(
         deltaTime: number, currentTimeSeconds: number, allNpcs: npc[],
