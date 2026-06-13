@@ -227,7 +227,7 @@ async function defaultScene(
                    new Battle(5, [40.23923, 26.27684], "Battle of Gallipoli", new Entity()),
                    new Battle(5, [48.8024, 44.6053], "Battle of Stalingrad", new Entity()),
                    new Battle(6, [40.4833, 127.2000], "Battle of Chosin Reservoir", new Entity()),
-                   new Battle(6, [10.82310, 106.62966], "Fall of Saigon", new Entity()),
+                   new Battle(6, [10.82310, 106.62966], "Fall of Saigon", new Entity()), // I hate this battle with all my heart, getting the buildings is a pain in the ass
                    new Battle(6, [30.56, 32.32], "Operation Abirey-Halev", new Entity()),
                    new Battle(7, [33.6667, 69.1833], "Operation Anaconda", new Entity()),
                    new Battle(7, [50.450001, 30.523333], "Battle of Kyiv", new Entity()),

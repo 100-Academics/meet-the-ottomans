@@ -100,6 +100,12 @@ export class npc {
         }
     }
 
+    public setDetectionRange(range: number): void {
+        if (Number.isFinite(range) && range > 0) {
+            this.aiConfig.detectionRange = range;
+        }
+    }
+
     public getHitboxRadius(): number {
         return this.hitboxRadius;
     }

@@ -58,6 +58,7 @@ export interface NpcSpawnPoint {
   type?: string;
   rotation?: Vec3;
   yaw?: number;
+  detectionRange?: number;
 }
 
 export interface NpcSpawnOverrides {
@@ -128,6 +129,14 @@ function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
         current = (current.parent as Entity | null) ?? null;
     }
     return false;
+}
+
+function applyDetectionRangeOverride(npcInstance: npc, detectionRangeOverride: number | undefined): void {
+    if (detectionRangeOverride !== undefined && detectionRangeOverride === -1) {
+        npcInstance.setDetectionRange(Number.MAX_VALUE);
+    } else if (detectionRangeOverride !== undefined && Number.isFinite(detectionRangeOverride) && detectionRangeOverride > 0) {
+        npcInstance.setDetectionRange(detectionRangeOverride);
+    }
 }
 
 function getGroundYAt(
@@ -300,10 +309,10 @@ export async function spawnSceneNpcs(
     const fallbackGroundY = options.groundYFallback;
     const typeModelPaths = options.typeModelPaths ?? {};
     const typeSpawnOverrides = options.typeSpawnOverrides ?? {};
-const groundTag = "ground";
-  const groundProbeHeight = options.groundProbeHeight ?? 300;
-  const groundProbeDepth = options.groundProbeDepth ?? 300;
-  const defaultGroundClearance = 0.1;
+    const groundTag = "ground";
+    const groundProbeHeight = options.groundProbeHeight ?? 300;
+    const groundProbeDepth = options.groundProbeDepth ?? 300;
+    const defaultGroundClearance = 0.1;
 
     const playerSafeRadius = options.playerSafeRadius ?? 6;
     const getPlayerPosition = options.getPlayerPosition
@@ -352,7 +361,7 @@ const groundTag = "ground";
                 groundYFallback
             );
             console.log(`[NPC] spawnY=${npcSpawnY.toFixed(2)} (groundProbeH=${groundProbeHeight}, depth=${groundProbeDepth}), fallback=${groundYFallback?.toFixed(2) ?? "n/a"}`);
-
+            
             const loadOptions: LoadModelOptions = {
             rigidbodyType: "kinematic",
             includeDescendants: true,
@@ -384,71 +393,77 @@ const groundTag = "ground";
                 const mongol = new Mongol(spawn.id, npcModel.modelEntity);
                 mongol.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 mongol.setHitboxRadius(hitboxRadius);
+                applyDetectionRangeOverride(mongol, detectionRangeOverride);
                 npcs.push(mongol);
     } else if (spawn.type === "templar") {
       console.log(`Spawning Templar NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const templar = new Templar(spawn.id, npcModel.modelEntity);
       templar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       templar.setHitboxRadius(hitboxRadius);
+      applyDetectionRangeOverride(templar, detectionRangeOverride);
       npcs.push(templar);
     } else if (spawn.type === "mamlukIthink") {
       console.log(`Spawning Mamluk NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const mamluk = new Mamluk(spawn.id, npcModel.modelEntity);
       mamluk.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       mamluk.setHitboxRadius(hitboxRadius);
-      if (detectionRangeOverride !== undefined && detectionRangeOverride === -1) {
-        mamluk.setDetectionRange(Number.MAX_VALUE);
-      } else if (detectionRangeOverride !== undefined && Number.isFinite(detectionRangeOverride) && detectionRangeOverride > 0) {
-        mamluk.setDetectionRange(detectionRangeOverride);
-      }
+      applyDetectionRangeOverride(mamluk, detectionRangeOverride);
       npcs.push(mamluk);
     } else if (spawn.type === "french") {
       console.log(`Spawning French NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const frenchSoldier = new FrenchSoldier(spawn.id, npcModel.modelEntity);
       frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       frenchSoldier.setHitboxRadius(hitboxRadius);
+      applyDetectionRangeOverride(frenchSoldier, detectionRangeOverride);
       npcs.push(frenchSoldier);
 	} else if (spawn.type === "modernFrenchSoldier") {
       console.log(`Spawning Modern French Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const frenchSoldier = new FrenchSoldier(spawn.id, npcModel.modelEntity);
       frenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       frenchSoldier.setHitboxRadius(hitboxRadius);
+      applyDetectionRangeOverride(frenchSoldier, detectionRangeOverride);
       npcs.push(frenchSoldier);
 	} else if (spawn.type === "americanRevolutionist") {
 		console.log(`Spawning American Revolutionist NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
 		const rev = new AmericanRevolutionist(spawn.id, npcModel.modelEntity);
 		rev.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
 		rev.setHitboxRadius(hitboxRadius);
+		applyDetectionRangeOverride(rev, detectionRangeOverride);
 		npcs.push(rev);
     } else if (spawn.type === "unionSoldier") {
         console.log(`Spawning Union Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
         const unionSoldier = new UnionSoldier(spawn.id, npcModel.modelEntity);
         unionSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
         unionSoldier.setHitboxRadius(hitboxRadius);
+        applyDetectionRangeOverride(unionSoldier, detectionRangeOverride);
         npcs.push(unionSoldier);
     } else if (spawn.type === "russianSoldier") {
         console.log(`Spawning Russian Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
         const russianSoldier = new RussianSoldier(spawn.id, npcModel.modelEntity);
         russianSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
         russianSoldier.setHitboxRadius(hitboxRadius);
+        applyDetectionRangeOverride(russianSoldier, detectionRangeOverride);
         npcs.push(russianSoldier);
 	} else if (spawn.type === "italian") {
         console.log(`Spawning Italian Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
         const italian = new ItalianSoldier(spawn.id, npcModel.modelEntity);
         italian.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
         italian.setHitboxRadius(hitboxRadius);
+        applyDetectionRangeOverride(italian, detectionRangeOverride);
         npcs.push(italian);
 	} else if (spawn.type === "huntingrifledude") {
         console.log(`Spawning Hunting Rifle Dude NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
         const hunter = new HuntingRifleDude(spawn.id, npcModel.modelEntity);
         hunter.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
         hunter.setHitboxRadius(hitboxRadius);
+        applyDetectionRangeOverride(hunter, detectionRangeOverride);
         npcs.push(hunter);
 	} else if (spawn.type === "polishHussar") {
 		console.log(`Spawning Polish Hussar NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
 		const hussar = new PolishHussar(spawn.id, npcModel.modelEntity);
 		hussar.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
 		hussar.setHitboxRadius(hitboxRadius);
+		applyDetectionRangeOverride(hussar, detectionRangeOverride);
 		npcs.push(hussar);
 	} else if (spawn.type === "genghisKhan") {
       console.log(`Spawning Genghis Khan Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
@@ -614,12 +629,7 @@ const groundTag = "ground";
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
                 spawnedNpc.setHitboxRadius(hitboxRadius);
-                if (detectionRangeOverride !== undefined && detectionRangeOverride === -1) {
-                    spawnedNpc.setDetectionRange(Number.MAX_VALUE);
-                    console.log(`[NPC] Spawned ${spawn.type} ID=${spawn.id} at (${spawn.x}, ${spawn.z}) with DETECTION=MAX`);
-                } else if (detectionRangeOverride !== undefined && Number.isFinite(detectionRangeOverride) && detectionRangeOverride > 0) {
-                    spawnedNpc.setDetectionRange(detectionRangeOverride);
-                }
+                applyDetectionRangeOverride(spawnedNpc, detectionRangeOverride);
                 npcs.push(spawnedNpc);
             }
         } catch (error) {
