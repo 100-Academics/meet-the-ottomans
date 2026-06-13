@@ -186,7 +186,7 @@ export class WingedHussarBoss extends Boss {
 		}
 	}
 
-	private updateHoardCharge(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+	private updateHoardCharge(_dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
 		const state = this.hoardChargeState;
 		if (!state) return;
 
@@ -201,7 +201,7 @@ export class WingedHussarBoss extends Boss {
 		}
 	}
 
-	private spawnHoardChargeVFX(target: Entity): void {
+	private spawnHoardChargeVFX(_target: Entity): void {
 		const sceneApp = this.resolveSceneApp();
 		if (!sceneApp?.root) return;
 
@@ -226,7 +226,7 @@ export class WingedHussarBoss extends Boss {
 		requestAnimationFrame(tick);
 	}
 
-	private startRayStorm(target: Entity, now: number): void {
+	private startRayStorm(_target: Entity, now: number): void {
 		this.lastAttackType = "rayStorm";
 		this.lastAttackAtSeconds = now;
 		

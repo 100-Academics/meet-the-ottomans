@@ -24,7 +24,8 @@ export class Mongol extends npc {
     public static retreatPoint: Vec3 | null = null;
     public static hordeSpawned: boolean = false;
 
-    private static taunts: string[] = ["this is a test", "I will of man you"];
+    // Mongol horde taunts - disabled to avoid unused variable
+    // private static taunts: string[] = ["this is a test", "I will of man you"];
 
     constructor(id: number, modelEntity: Entity = new Entity("mongol"), ) {
         super(id, 'foe', 100, modelEntity);

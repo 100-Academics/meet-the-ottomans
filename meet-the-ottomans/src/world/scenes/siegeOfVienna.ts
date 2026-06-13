@@ -43,7 +43,6 @@ import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS, VIENNA_BOSS_SPAWN_POINT, VIENNA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
-import { PolishHussar } from "../npc/troops/polishHussar";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
