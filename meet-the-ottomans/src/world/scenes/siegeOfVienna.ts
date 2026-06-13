@@ -42,8 +42,8 @@ import { Player } from '../../player/player';
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
-import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, VIENNA_BOSS_SPAWN_POINT, VIENNA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
-import { Mongol } from "../npc/troops/mongol";
+import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS, VIENNA_BOSS_SPAWN_POINT, VIENNA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
+import { PolishHussar } from "../npc/troops/polishHussar";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 
@@ -165,13 +165,13 @@ const start = new Vec3(x, 500, z);
 }
 
 
-async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], groundYFallback: number): Promise<void> { // spawn the Khan boss and wire UI
+async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], groundYFallback: number): Promise<void> { // spawn the Winged Hussar boss and wire UI
 	if (isBossSpawned || isBossSpawning) return;
 	isBossSpawning = true;
 
 	try {
 const bossSpawnOptions = {
-      ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
+      ...DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS,
       groundYFallback,
       groundProbeHeight: 500,
       groundProbeDepth: 500
@@ -332,10 +332,9 @@ function createStarfieldTexture(device: AppBase['graphicsDevice'], width = 1024,
 var isBossSpawned = false; // Track whether the boss has been spawned yet
 var isBossSpawning = false; // Track whether a boss spawn attempt is in progress
 
-function resetLegnicaBattleState(): void {
+function resetViennaBattleState(): void {
 	isBossSpawned = false;
 	isBossSpawning = false;
-	Mongol.resetBattleState();
 }
 
 export async function siegeOfViennaScene(
@@ -345,7 +344,7 @@ export async function siegeOfViennaScene(
 	_sceneNum: number,
 	spawnPoint?: [number, number, number]
 ) {
-	resetLegnicaBattleState();
+	resetViennaBattleState();
 	// Clean up any previous scene assets and input listeners
 	unloadAll(app);
 	app.mouse?.off();

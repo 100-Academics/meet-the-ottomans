@@ -556,6 +556,8 @@ export async function battleOfVerdunScene(
   const npcSpawnOptions = {
     ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
     groundYFallback: respawnGroundY,
+    playerSafeRadius: 12,
+    getPlayerPosition: () => player.getPosition(),
   };
   const npcs = await spawnSceneNpcs(
     app,

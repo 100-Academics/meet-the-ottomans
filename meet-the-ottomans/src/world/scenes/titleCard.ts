@@ -17,10 +17,7 @@ export async function showTitleCard(): Promise<void> {
   card.innerHTML = `
     <div class="title-card-inner">
       <div class="title-card-logo" id="title-card-logo">
-        <!-- Logo placeholder: replace with an <img> tag when a logo is ready -->
-        <div class="logo-placeholder">
-          <span class="logo-placeholder-text">LOGO</span>
-        </div>
+        <img src="koreandude.png" alt="Logo" class="logo-image" />
       </div>
       <h1 class="title-card-heading">A 100% Academic Game</h1>
       <p class="title-card-subtitle">totallyacademic.dpns.org</p>

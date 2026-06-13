@@ -3,7 +3,7 @@ import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } 
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 
-type KingGeorgeAttackType = "royalGuardWall" | "crownBoomerang" | "dash";
+type KingGeorgeAttackType = "royalGuardWall" | "crownBoomerang" | "iceDash";
 
 interface RoyalGuardWallState {
     endTimeSeconds: number;
@@ -19,10 +19,11 @@ interface CrownBoomerangState {
     targetPos: Vec3;
 }
 
-interface DashState {
+interface IceDashState {
     endTimeSeconds: number;
     direction: Vec3;
     hasHit: boolean;
+    freezeDurationSeconds: number;
 }
 
 export class KingGeorgeIII extends Boss {
@@ -40,15 +41,16 @@ export class KingGeorgeIII extends Boss {
     private readonly crownHitRadius = 2.5;
     private nextCrownAtSeconds = 0;
 
-    // Dash
-    private readonly dashSpeed = PLAYER_MOVE_SPEED * 2.4;
-    private readonly dashDurationSeconds = 0.5;
-    private readonly dashDamage = 12;
-    private readonly dashCooldownSeconds = 4.5;
-    private readonly dashRangeMin = 5;
-    private readonly dashRangeMax = 22;
-    private readonly dashHitRadius = 3.0;
-    private nextDashAtSeconds = 0;
+    // Ice Dash
+    private readonly iceDashSpeed = PLAYER_MOVE_SPEED * 2.8;
+    private readonly iceDashDurationSeconds = 0.45;
+    private readonly iceDashDamage = 14;
+    private readonly iceDashCooldownSeconds = 5.0;
+    private readonly iceDashRangeMin = 6;
+    private readonly iceDashRangeMax = 24;
+    private readonly iceDashHitRadius = 3.5;
+    private readonly iceFreezeDurationSeconds = 1.8;
+    private nextIceDashAtSeconds = 0;
 
     // Runtime state
     private attackLockUntilSeconds = 0;
@@ -56,7 +58,7 @@ export class KingGeorgeIII extends Boss {
     private lastAttackAtSeconds = -Infinity;
     private guardWallState: RoyalGuardWallState | null = null;
     private crownState: CrownBoomerangState | null = null;
-    private dashState: DashState | null = null;
+    private iceDashState: IceDashState | null = null;
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
     // VFX materials
@@ -66,11 +68,17 @@ export class KingGeorgeIII extends Boss {
     private readonly crownMaterial = this.createEffectMaterial(
         new Color(1, 0.85, 0.1), new Color(1, 0.95, 0.3), 4.0, 0.9
     );
-    private readonly dashTrailMaterial = this.createEffectMaterial(
-        new Color(0.7, 0.6, 0.2), new Color(0.9, 0.8, 0.3), 3.0, 0.7
+    private readonly iceDashTrailMaterial = this.createEffectMaterial(
+        new Color(0.4, 0.75, 0.95), new Color(0.6, 0.85, 1.0), 3.5, 0.8
+    );
+    private readonly iceFreezeMaterial = this.createEffectMaterial(
+        new Color(0.5, 0.8, 1.0), new Color(0.7, 0.9, 1.0), 2.0, 0.6
     );
     private readonly guardRingMaterial = this.createEffectMaterial(
         new Color(0.6, 0.5, 0.15), new Color(0.8, 0.7, 0.2), 2.0, 0.5
+    );
+    private readonly iceBurstMaterial = this.createEffectMaterial(
+        new Color(0.6, 0.85, 1.0), new Color(0.8, 0.95, 1.0), 4.0, 0.7
     );
 
     private readonly activeEffects = new Set<Entity>();
@@ -135,7 +143,7 @@ export class KingGeorgeIII extends Boss {
 
         if (this.guardWallState) { this.updateGuardWall(dt, targetEntity, currentTimeSeconds, onAttack); return; }
         if (this.crownState) { this.updateCrown(dt, targetEntity, currentTimeSeconds, onAttack); return; }
-        if (this.dashState) { this.updateDash(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+        if (this.iceDashState) { this.updateIceDash(dt, targetEntity, currentTimeSeconds, onAttack); return; }
 
         if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
 
@@ -143,7 +151,7 @@ export class KingGeorgeIII extends Boss {
         const chosen = this.pickNextAttack(distance, currentTimeSeconds);
         if (chosen === "royalGuardWall") { this.startGuardWall(targetEntity, currentTimeSeconds); return; }
         if (chosen === "crownBoomerang") { this.startCrown(targetEntity, currentTimeSeconds); return; }
-        if (chosen === "dash") { this.startDash(targetEntity, currentTimeSeconds); return; }
+        if (chosen === "iceDash") { this.startIceDash(targetEntity, currentTimeSeconds); return; }
 
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
@@ -170,8 +178,8 @@ export class KingGeorgeIII extends Boss {
         if (now >= this.nextCrownAtSeconds && distance <= this.crownRange) {
             choices.push({ type: "crownBoomerang", score: 1.2 + (distance / Math.max(0.001, this.crownRange)) });
         }
-        if (now >= this.nextDashAtSeconds && distance >= this.dashRangeMin && distance <= this.dashRangeMax) {
-            choices.push({ type: "dash", score: 1.0 });
+        if (now >= this.nextIceDashAtSeconds && distance >= this.iceDashRangeMin && distance <= this.iceDashRangeMax) {
+            choices.push({ type: "iceDash", score: 1.3 });
         }
         if (choices.length === 0) return null;
         if (this.lastAttackType && (now - this.lastAttackAtSeconds) < 1.8) {
@@ -330,48 +338,96 @@ export class KingGeorgeIII extends Boss {
         }
     }
 
-    // ── Dash ──
-    private startDash(target: Entity, now: number): void {
+    // ── Ice Dash (freezes player on hit) ──
+    private startIceDash(target: Entity, now: number): void {
         const myPos = this.getEntity().getPosition();
         const targetPos = target.getPosition();
         const dir = new Vec3(targetPos.x - myPos.x, 0, targetPos.z - myPos.z);
         if (dir.lengthSq() <= 0.0001) return; dir.normalize();
-        this.lastAttackType = "dash"; this.lastAttackAtSeconds = now;
-        this.dashState = { endTimeSeconds: now + this.dashDurationSeconds, direction: dir, hasHit: false };
-        this.attackLockUntilSeconds = this.dashState.endTimeSeconds + 0.3;
+        this.lastAttackType = "iceDash"; this.lastAttackAtSeconds = now;
+        this.iceDashState = { 
+            endTimeSeconds: now + this.iceDashDurationSeconds, 
+            direction: dir, 
+            hasHit: false,
+            freezeDurationSeconds: this.iceFreezeDurationSeconds
+        };
+        this.attackLockUntilSeconds = this.iceDashState.endTimeSeconds + 0.4;
+        
+        // Ice burst telegraph at start position
+        this.spawnRingEffect(myPos, 2.5, 300, this.iceBurstMaterial, "kinggeorge-ice-burst", 0.8);
     }
 
-    private updateDash(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
-        const state = this.dashState; if (!state) return;
-        this.moveToward(state.direction.x, state.direction.z, this.dashSpeed, dt);
+    private updateIceDash(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
+        const state = this.iceDashState; if (!state) return;
+        this.moveToward(state.direction.x, state.direction.z, this.iceDashSpeed, dt);
 
-        // Trail VFX
+        // Ice trail VFX
         const myPos = this.getEntity().getPosition();
-        const trail = new Entity("kinggeorge-dash-trail");
-        trail.addComponent("render", { type: "sphere", material: this.dashTrailMaterial });
-        trail.setLocalScale(1.2, 1.2, 1.2);
-        trail.setPosition(myPos.x, myPos.y + 0.5, myPos.z);
-        this.getEntity().parent?.addChild(trail) ?? this.getEntity().addChild(trail);
-        this.activeEffects.add(trail);
-        const startMs = Date.now(); const durationMs = 250;
+        const iceCrystal = new Entity("kinggeorge-ice-crystal");
+        iceCrystal.addComponent("render", { type: "box", material: this.iceDashTrailMaterial });
+        iceCrystal.setLocalScale(0.8, 0.3, 0.8);
+        iceCrystal.setPosition(myPos.x, myPos.y + 0.15, myPos.z);
+        iceCrystal.setLocalEulerAngles(0, Math.random() * 360, 0);
+        this.getEntity().parent?.addChild(iceCrystal) ?? this.getEntity().addChild(iceCrystal);
+        this.activeEffects.add(iceCrystal);
+        
+        const startMs = Date.now(); const durationMs = 600;
         const tick = () => {
             const elapsed = Date.now() - startMs;
-            if (elapsed >= durationMs) { this.destroyEffect(trail); return; }
-            const mat = trail.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
-            if (mat) { mat.opacity = 0.7 * (1 - elapsed / durationMs); mat.update(); }
+            if (elapsed >= durationMs) { this.destroyEffect(iceCrystal); return; }
+            const mat = iceCrystal.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+            if (mat) { mat.opacity = 0.8 * (1 - elapsed / durationMs); mat.update(); }
             requestAnimationFrame(tick);
         };
         requestAnimationFrame(tick);
 
-        if (!state.hasHit && this.getFlatDistanceTo(target) <= this.dashHitRadius) {
+        if (!state.hasHit && this.getFlatDistanceTo(target) <= this.iceDashHitRadius) {
             state.hasHit = true;
-            this.applyDamage(this.dashDamage, onAttack);
+            this.applyDamage(this.iceDashDamage, onAttack);
+            this.applyFreezeEffect(target, state.freezeDurationSeconds);
         }
 
         if (now >= state.endTimeSeconds) {
-            this.dashState = null;
-            this.nextDashAtSeconds = now + this.dashCooldownSeconds;
+            this.iceDashState = null;
+            this.nextIceDashAtSeconds = now + this.iceDashCooldownSeconds;
         }
+    }
+
+    private applyFreezeEffect(targetEntity: Entity, durationSeconds: number): void {
+        // Create ice shell around player
+        const playerPos = targetEntity.getPosition();
+        const iceShell = new Entity("player-ice-shell");
+        iceShell.addComponent("render", { type: "sphere", material: this.iceFreezeMaterial });
+        iceShell.setLocalScale(2.2, 2.2, 2.2);
+        iceShell.setPosition(playerPos.x, playerPos.y + 1.0, playerPos.z);
+        this.getEntity().parent?.addChild(iceShell) ?? this.getEntity().addChild(iceShell);
+        this.activeEffects.add(iceShell);
+
+        // Freeze player movement by disabling camera controls
+        const controller = (targetEntity as any)?.script?.FirstPersonCamera
+            ?? (targetEntity as any)?.script?.firstPersonCamera;
+        if (controller) {
+            const originalMoveSpeed = controller.moveSpeed;
+            const originalJumpHeight = controller.jumpHeight;
+            controller.moveSpeed = 0;
+            controller.jumpHeight = 0;
+            
+            // Unfreeze after duration
+            window.setTimeout(() => {
+                this.destroyEffect(iceShell);
+                if (controller && controller.parent) {
+                    controller.moveSpeed = originalMoveSpeed;
+                    controller.jumpHeight = originalJumpHeight;
+                }
+            }, durationSeconds * 1000);
+        } else {
+            window.setTimeout(() => {
+                this.destroyEffect(iceShell);
+            }, durationSeconds * 1000);
+        }
+
+        // Show freeze status text
+        this.showStatusText("Frozen!", Math.min(1500, durationSeconds * 1000));
     }
 
     // ── Helpers ──
@@ -424,6 +480,6 @@ export class KingGeorgeIII extends Boss {
 
     private cleanupEffects(): void {
         for (const effect of this.activeEffects) { try { if (effect.parent) effect.parent.removeChild(effect); effect.destroy(); } catch { /* */ } }
-        this.activeEffects.clear(); this.guardWallState = null; this.crownState = null; this.dashState = null;
+        this.activeEffects.clear(); this.guardWallState = null; this.crownState = null; this.iceDashState = null;
     }
 }
