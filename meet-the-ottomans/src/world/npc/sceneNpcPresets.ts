@@ -277,7 +277,7 @@ const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 const RUSSIAN_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0,
-  detectionRange: -1
+  detectionRange: 1000
 };
 
 const ITALIAN_SPAWN_OVERRIDES: NpcSpawnOverrides = {
@@ -333,7 +333,7 @@ const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0,
-  detectionRange: -1
+  detectionRange: 1000
 };
 
 // NPC type -> spawn overrides. Allows the spawn system to accept a type->overrides map.
