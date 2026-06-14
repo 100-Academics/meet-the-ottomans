@@ -401,12 +401,24 @@ export async function battleOfLegnicaScene(
     app.root.addChild(light);
   }
 
+  // Ground-snap the secret so its base sits on the actual battlefield surface;
+  // the player spawn lands around y≈8 in this scene, so a hardcoded y=1 would
+  // bury the model. We use the same raycast helper the player spawn uses
+  // (`getHighestGroundHitY` against the 'ground'-tagged entity) and fall back
+  // to the player's surface Y if the raycast at this X/Z misses.
+  const secretGroundY = getHighestGroundHitY(app, 3, -5, 'ground') ?? respawnGroundY;
+  // The loader applies a default rotation of (0, 90, 90) when none is given
+  // (see src/util/loadModel.ts), which tips jar.glb on its side. Setting
+  // (0, 0, 0) tells the loader to use the model's raw .glb orientation so it
+  // stands upright. Tweak these three angles if the model still looks wrong.
+  const secretRotation = new Vec3(0, 0, 0);
   const secret = new Secret({
     app,
     cameraEntity: player.getCameraEntity(),
-    modelPath: "models/secret/coin.glb",
-    position: new Vec3(3, 1, -5),
-    scale: new Vec3(0.5, 0.5, 0.5)
+    modelPath: "models/jar.glb",
+    position: new Vec3(3, secretGroundY + 1, -5),
+    scale: new Vec3(0.5, 0.5, 0.5),
+    rotation: secretRotation
   });
   await secret.spawn();
 

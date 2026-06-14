@@ -594,6 +594,34 @@ canvas#application-canvas {
   color: #fa0;
 }
 
+/* Secrets counter popup */
+#secrets-counter-popup {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 2px solid #666;
+  font-family: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  z-index: 110;
+  pointer-events: none;
+  white-space: nowrap;
+  /* Hidden by default; secrets.ts adds the `.visible` class when a pickup
+     happens and removes it after ~1.5s so the popup fades in/out instead
+     of sitting on screen for the whole battle. */
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+#secrets-counter-popup.visible {
+  opacity: 1;
+}
+
 /* Battle crosshair */
 #battle-crosshair {
   position: fixed;

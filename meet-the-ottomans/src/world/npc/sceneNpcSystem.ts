@@ -12,6 +12,7 @@ import { RussianSoldier } from "./troops/russianSoldier";
 import { ItalianSoldier } from "./troops/italianSoldier";
 import { HuntingRifleDude } from "./troops/huntingRifleDude";
 import { PolishHussar } from "./troops/polishHussar";
+import { KoreanSoldier } from "./troops/koreanSoldier";
 import { Boss } from "./bosses/boss";
 import { GenghisKhan } from "./bosses/genghisKhan";
 import { KingGeser } from "./bosses/kingGeser";
@@ -32,6 +33,7 @@ import { TowerBoss } from "./bosses/towerBoss";
 import { BinLadin } from "./bosses/binLaden";
 import { AirLadin } from "./bosses/airLaden";
 import { WingedHussarBoss } from "./bosses/wingedHussarBoss";
+import { NineTailedFox } from "./bosses/nineTailedFox";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 import { DevConsole } from "../../util/devConsole";
 
@@ -447,6 +449,13 @@ export async function spawnSceneNpcs(
         unionSoldier.setHitboxRadius(hitboxRadius);
         applyDetectionRangeOverride(unionSoldier, detectionRangeOverride);
         npcs.push(unionSoldier);
+    } else if (spawn.type === "koreansldier") {
+        console.log(`Spawning Korean Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+        const koreanSoldier = new KoreanSoldier(spawn.id, npcModel.modelEntity);
+        koreanSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+        koreanSoldier.setHitboxRadius(hitboxRadius);
+        applyDetectionRangeOverride(koreanSoldier, detectionRangeOverride);
+        npcs.push(koreanSoldier);
     } else if (spawn.type === "russianSoldier") {
         console.log(`Spawning Russian Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
         const russianSoldier = new RussianSoldier(spawn.id, npcModel.modelEntity);
@@ -635,6 +644,14 @@ export async function spawnSceneNpcs(
 			boss.drawHealthBar();
 			Boss.setActiveBoss(boss);
 			npcs.push(boss);
+    } else if (spawn.type === "nineTailedFox") {
+            console.log(`Spawning Nine Tailed Fox Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+            const boss = new NineTailedFox(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+            boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+            boss.setHitboxRadius(hitboxRadius);
+            boss.drawHealthBar();
+            Boss.setActiveBoss(boss);
+            npcs.push(boss);
     }else {
                 const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
                 spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
