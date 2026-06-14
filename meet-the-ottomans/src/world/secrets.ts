@@ -9,12 +9,76 @@ import { loadModel, type Model } from "../util/loadModel";
 // Read it from anywhere with `getSecretsFound()`. Reset with `resetSecretsFound()`.
 let secretsFound = 0;
 
+// Total number of secrets hidden across the whole game. Tracked here (not at
+// each call site) so the popup denominator stays consistent no matter which
+// battle the player is in.
+export const TOTAL_SECRETS_AVAILABLE = 21;
+
+// ── Secrets counter popup ──
+//
+// A small fixed-position DOM badge showing "secrets found... X/21". Mounted
+// lazily on first show (so the DOM is empty until there's something to tell
+// the player about) and fades in/out with a CSS opacity transition.
+const POPUP_ID = 'secrets-counter-popup';
+const POPUP_VISIBLE_CLASS = 'visible';
+// How long the popup stays at full opacity before it starts fading out.
+const POPUP_VISIBLE_MS = 1500;
+
+function ensureSecretsPopup(): HTMLElement | null {
+    if (typeof document === 'undefined' || !document.body) return null;
+
+    let el = document.getElementById(POPUP_ID);
+    if (el) return el;
+
+    el = document.createElement('div');
+    el.id = POPUP_ID;
+    el.setAttribute('aria-live', 'polite');
+    el.textContent = `secrets found... ${secretsFound}/${TOTAL_SECRETS_AVAILABLE}`;
+    document.body.appendChild(el);
+    return el;
+}
+
+function hideSecretsPopup(): void {
+    if (typeof document === 'undefined') return;
+    const el = document.getElementById(POPUP_ID);
+    if (el) el.classList.remove(POPUP_VISIBLE_CLASS);
+}
+
+// Visible-while-id timer: lets a rapid second pickup reset the timer instead
+// of leaving the popup half-faded when the next secret is grabbed.
+let popupHideTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Show the popup with the latest count, then schedule a fade-out. If called
+// while the popup is already visible, the existing fade-out is cancelled so
+// the badge stays bright through the second reveal.
+export function showSecretsPopup(durationMs: number = POPUP_VISIBLE_MS): void {
+    const el = ensureSecretsPopup();
+    if (!el) return;
+    el.textContent = `secrets found... ${secretsFound}/${TOTAL_SECRETS_AVAILABLE}`;
+    el.classList.add(POPUP_VISIBLE_CLASS);
+
+    if (popupHideTimer !== null) {
+        clearTimeout(popupHideTimer);
+    }
+    popupHideTimer = setTimeout(() => {
+        hideSecretsPopup();
+        popupHideTimer = null;
+    }, durationMs);
+}
+
 export function getSecretsFound(): number {
     return secretsFound;
 }
 
 export function resetSecretsFound(): void {
     secretsFound = 0;
+    if (popupHideTimer !== null) {
+        clearTimeout(popupHideTimer);
+        popupHideTimer = null;
+    }
+    // Counter back to zero → nothing to brag about, so hide the popup rather
+    // than flashing "0/21" at the player.
+    hideSecretsPopup();
 }
 
 // ── SecretOptions ──
@@ -164,6 +228,7 @@ export class Secret {
         if (this.collected) return;
         this.collected = true;
         secretsFound++;
+        showSecretsPopup();
         console.log(
             `[Secret] collected at (${this.position.x.toFixed(2)}, ${this.position.y.toFixed(2)}, ${this.position.z.toFixed(2)}) — total: ${secretsFound}`
         );
