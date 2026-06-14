@@ -43,10 +43,6 @@ const NPC_MODEL_PATHS = {
   nineTailedFox: "models/npc/boss/NineTailedFox.glb"
 };
 
-const LEGNICA_ENEMY_TYPE = "mongolTroop";
-const SIEGE_OF_CONSTANTINOPLE_ENEMY_TYPE = "byzantineSoldier";
-const BATTLE_OF_AIN_JALUT_ENEMY_TYPE = "mamlukSoldier";
-
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
 const KHAN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.genghisKhan,
@@ -289,6 +285,12 @@ const RUSSIAN_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   detectionRange: 1000
 };
 
+const KOREAN_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0,
+  detectionRange: 1000
+};
+
 const ITALIAN_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
@@ -360,6 +362,7 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   italian: ITALIAN_SPAWN_OVERRIDES,
   huntingrifledude: HUNTING_RIFLE_DUDE_SPAWN_OVERRIDES,
   mamlukIthink: MAMLUK_SPAWN_OVERRIDES,
+  koreansldier: KOREAN_SOLDIER_SPAWN_OVERRIDES,
   baybars: BAYBARS_BOSS_SPAWN_OVERRIDES,
   caesar: CAESAR_BOSS_SPAWN_OVERRIDES,
   napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
@@ -517,7 +520,7 @@ const LEGNICA_ENEMY_TYPE = "mongol";
 const AIN_JALUT_ENEMY_TYPE = "mongol";
 const CONSTANTINOPLE_ENEMY_TYPE = "templar";
 const ORLEANS_ENEMY_TYPE = "french";
-const CHOSIN_RESERVOIR_ENEMY_TYPE = "mongol";
+const CHOSIN_RESERVOIR_ENEMY_TYPE = "koreansldier";
 const GALLIPOLI_ENEMY_TYPE = "frenchSoldierOld";
 const RIDANIYA_ENEMY_TYPE = "mamlukIthink";
 const GETTYSBURG_ENEMY_TYPE = "unionSoldier";
@@ -850,77 +853,77 @@ export const STALINGRAD_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "fo
 
 // Three Emperors
 export const THREE_EMPERORS_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "french" },
-  { id: 2, team: "foe", x: 9, z: 1, type: "french" },
-  { id: 3, team: "foe", x: 12, z: 1, type: "french" },
-  { id: 4, team: "foe", x: 15, z: 1, type: "french" },
-  { id: 5, team: "foe", x: 6, z: -3, type: "french" },
-  { id: 6, team: "foe", x: 9, z: -3, type: "french" },
-  { id: 7, team: "foe", x: 12, z: -3, type: "french" },
-  { id: 8, team: "foe", x: 15, z: -3, type: "french" },
-  { id: 9, team: "foe", x: 6, z: 5, type: "french" },
-  { id: 10, team: "foe", x: 9, z: 5, type: "french" },
-  { id: 11, team: "foe", x: 12, z: 5, type: "french" },
-  { id: 12, team: "foe", x: 15, z: 5, type: "french" },
-  { id: 13, team: "foe", x: -6, z: 1, type: "french" },
-  { id: 14, team: "foe", x: -9, z: 1, type: "french" },
-  { id: 15, team: "foe", x: -6, z: -3, type: "french" },
-  { id: 16, team: "foe", x: -9, z: -3, type: "french" },
-  { id: 17, team: "foe", x: -6, z: 5, type: "french" },
-  { id: 18, team: "foe", x: -9, z: 5, type: "french" },
-  { id: 19, team: "foe", x: 0, z: 8, type: "french" },
-  { id: 20, team: "foe", x: 3, z: 8, type: "french" },
-  { id: 21, team: "foe", x: -3, z: -6, type: "french" },
-  { id: 22, team: "foe", x: 0, z: -6, type: "french" },
-  { id: 23, team: "foe", x: 3, z: -6, type: "french" },
-  { id: 24, team: "foe", x: -3, z: 8, type: "french" },
-  { id: 25, team: "foe", x: 18, z: 1, type: "french" },
+  { id: 1, team: "foe", x: 6, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 9, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 12, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 15, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 6, z: -3, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 6, team: "foe", x: 9, z: -3, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 7, team: "foe", x: 12, z: -3, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 8, team: "foe", x: 15, z: -3, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 9, team: "foe", x: 6, z: 5, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 10, team: "foe", x: 9, z: 5, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 11, team: "foe", x: 12, z: 5, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 12, team: "foe", x: 15, z: 5, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 13, team: "foe", x: -6, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 14, team: "foe", x: -9, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 15, team: "foe", x: -6, z: -3, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 16, team: "foe", x: -9, z: -3, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 17, team: "foe", x: -6, z: 5, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 18, team: "foe", x: -9, z: 5, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 19, team: "foe", x: 0, z: 8, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 20, team: "foe", x: 3, z: 8, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 21, team: "foe", x: -3, z: -6, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 22, team: "foe", x: 0, z: -6, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 23, team: "foe", x: 3, z: -6, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 24, team: "foe", x: -3, z: 8, type: THREE_EMPERORS_ENEMY_TYPE },
+  { id: 25, team: "foe", x: 18, z: 1, type: THREE_EMPERORS_ENEMY_TYPE },
 ];
 export const THREE_EMPERORS_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "napoleon" }];
 
 // Verdun
 export const VERDUN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "modernFrenchSoldier" },
-  { id: 2, team: "foe", x: 9, z: 1, type: "modernFrenchSoldier" },
-  { id: 3, team: "foe", x: 12, z: 1, type: "modernFrenchSoldier" },
-  { id: 4, team: "foe", x: 15, z: 1, type: "modernFrenchSoldier" },
-  { id: 5, team: "foe", x: 6, z: -3, type: "modernFrenchSoldier" },
-  { id: 6, team: "foe", x: 9, z: -3, type: "modernFrenchSoldier" },
-  { id: 7, team: "foe", x: 12, z: -3, type: "modernFrenchSoldier" },
-  { id: 8, team: "foe", x: 15, z: -3, type: "modernFrenchSoldier" },
-  { id: 9, team: "foe", x: 6, z: 5, type: "modernFrenchSoldier" },
-  { id: 10, team: "foe", x: 9, z: 5, type: "modernFrenchSoldier" },
-  { id: 11, team: "foe", x: 12, z: 5, type: "modernFrenchSoldier" },
-  { id: 12, team: "foe", x: 15, z: 5, type: "modernFrenchSoldier" },
-  { id: 13, team: "foe", x: -6, z: 1, type: "modernFrenchSoldier" },
-  { id: 14, team: "foe", x: -9, z: 1, type: "modernFrenchSoldier" },
-  { id: 15, team: "foe", x: -6, z: -3, type: "modernFrenchSoldier" },
-  { id: 16, team: "foe", x: -9, z: -3, type: "modernFrenchSoldier" },
-  { id: 17, team: "foe", x: -6, z: 5, type: "modernFrenchSoldier" },
-  { id: 18, team: "foe", x: -9, z: 5, type: "modernFrenchSoldier" },
-  { id: 19, team: "foe", x: 0, z: 8, type: "modernFrenchSoldier" },
-  { id: 20, team: "foe", x: 3, z: 8, type: "modernFrenchSoldier" },
-  { id: 21, team: "foe", x: -3, z: -6, type: "modernFrenchSoldier" },
-  { id: 22, team: "foe", x: 0, z: -6, type: "modernFrenchSoldier" },
-  { id: 23, team: "foe", x: 3, z: -6, type: "modernFrenchSoldier" },
-  { id: 24, team: "foe", x: -3, z: 8, type: "modernFrenchSoldier" },
-  { id: 25, team: "foe", x: 18, z: 1, type: "modernFrenchSoldier" },
+  { id: 1, team: "foe", x: 6, z: 1, type: VERDUN_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 9, z: 1, type: VERDUN_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 12, z: 1, type: VERDUN_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 15, z: 1, type: VERDUN_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 6, z: -3, type: VERDUN_ENEMY_TYPE },
+  { id: 6, team: "foe", x: 9, z: -3, type: VERDUN_ENEMY_TYPE },
+  { id: 7, team: "foe", x: 12, z: -3, type: VERDUN_ENEMY_TYPE },
+  { id: 8, team: "foe", x: 15, z: -3, type: VERDUN_ENEMY_TYPE },
+  { id: 9, team: "foe", x: 6, z: 5, type: VERDUN_ENEMY_TYPE },
+  { id: 10, team: "foe", x: 9, z: 5, type: VERDUN_ENEMY_TYPE },
+  { id: 11, team: "foe", x: 12, z: 5, type: VERDUN_ENEMY_TYPE },
+  { id: 12, team: "foe", x: 15, z: 5, type: VERDUN_ENEMY_TYPE },
+  { id: 13, team: "foe", x: -6, z: 1, type: VERDUN_ENEMY_TYPE },
+  { id: 14, team: "foe", x: -9, z: 1, type: VERDUN_ENEMY_TYPE },
+  { id: 15, team: "foe", x: -6, z: -3, type: VERDUN_ENEMY_TYPE },
+  { id: 16, team: "foe", x: -9, z: -3, type: VERDUN_ENEMY_TYPE },
+  { id: 17, team: "foe", x: -6, z: 5, type: VERDUN_ENEMY_TYPE },
+  { id: 18, team: "foe", x: -9, z: 5, type: VERDUN_ENEMY_TYPE },
+  { id: 19, team: "foe", x: 0, z: 8, type: VERDUN_ENEMY_TYPE },
+  { id: 20, team: "foe", x: 3, z: 8, type: VERDUN_ENEMY_TYPE },
+  { id: 21, team: "foe", x: -3, z: -6, type: VERDUN_ENEMY_TYPE },
+  { id: 22, team: "foe", x: 0, z: -6, type: VERDUN_ENEMY_TYPE },
+  { id: 23, team: "foe", x: 3, z: -6, type: VERDUN_ENEMY_TYPE },
+  { id: 24, team: "foe", x: -3, z: 8, type: VERDUN_ENEMY_TYPE },
+  { id: 25, team: "foe", x: 18, z: 1, type: VERDUN_ENEMY_TYPE },
 ];
 export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "napoleon" }];
 
 // Yorktown
 export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: -6, type: "americanRevolutionist" },
-  { id: 2, team: "foe", x: 9, z: -6, type: "americanRevolutionist" },
-  { id: 3, team: "foe", x: 12, z: -6, type: "americanRevolutionist" },
-  { id: 4, team: "foe", x: 15, z: -6, type: "americanRevolutionist" },
-  { id: 5, team: "foe", x: 18, z: -6, type: "americanRevolutionist" },
+  { id: 1, team: "foe", x: 6, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 9, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 12, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 15, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 18, z: -6, type: YORKTOWN_ENEMY_TYPE },
 ];
 export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "georgeWashington" }];
 
 // Saigon
 export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+  { id: 1, team: "foe", x: 6, z: 1, type: SAIGON_ENEMY_TYPE },
 ];
 export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "vietnamDragonKing" }];
 
@@ -930,54 +933,54 @@ export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "
 
 // Anaconda
 export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-{ id: 1, team: "foe", x: 10, z: -8, type: "huntingrifledude" },
-{ id: 2, team: "foe", x: -8, z: 10, type: "huntingrifledude" },
-{ id: 3, team: "foe", x: 15, z: 5, type: "huntingrifledude" },
+{ id: 1, team: "foe", x: 10, z: -8, type: ANACONDA_ENEMY_TYPE },
+{ id: 2, team: "foe", x: -8, z: 10, type: ANACONDA_ENEMY_TYPE },
+{ id: 3, team: "foe", x: 15, z: 5, type: ANACONDA_ENEMY_TYPE },
 ];
 export const ANACONDA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: -20, z: 25, maxHealth: 500, type: "binLadin" }];
 
 // Arnon
 export const ARNON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
+  { id: 1, team: "foe", x: 6, z: 1, type: ARNON_ENEMY_TYPE },
 ];
 export const ARNON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "moses" }];
 
 // Agincourt
 export const AGINCOURT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 8, z: 3, type: "french" },
-  { id: 2, team: "foe", x: 8, z: 4, type: "french" },
-  { id: 3, team: "foe", x: 8, z: 5, type: "french" },
-  { id: 4, team: "foe", x: 8, z: 6, type: "french" },
-  { id: 5, team: "foe", x: 8, z: 7, type: "french" },
-  { id: 6, team: "foe", x: 8, z: 8, type: "french" },
-  { id: 7, team: "foe", x: 8, z: 9, type: "french" },
-  { id: 8, team: "foe", x: 8, z: 10, type: "french" },
-  { id: 9, team: "foe", x: 8, z: 11, type: "french" },
-  { id: 10, team: "foe", x: 8, z: 12, type: "french" },
-  { id: 11, team: "foe", x: 8, z: 13, type: "french" },
-  { id: 12, team: "foe", x: 8, z: 14, type: "french" },
-  { id: 13, team: "foe", x: 8, z: 15, type: "french" },
+  { id: 1, team: "foe", x: 8, z: 3, type: AGINCOURT_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 8, z: 4, type: AGINCOURT_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 8, z: 5, type: AGINCOURT_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 8, z: 6, type: AGINCOURT_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 8, z: 7, type: AGINCOURT_ENEMY_TYPE },
+  { id: 6, team: "foe", x: 8, z: 8, type: AGINCOURT_ENEMY_TYPE },
+  { id: 7, team: "foe", x: 8, z: 9, type: AGINCOURT_ENEMY_TYPE },
+  { id: 8, team: "foe", x: 8, z: 10, type: AGINCOURT_ENEMY_TYPE },
+  { id: 9, team: "foe", x: 8, z: 11, type: AGINCOURT_ENEMY_TYPE },
+  { id: 10, team: "foe", x: 8, z: 12, type: AGINCOURT_ENEMY_TYPE },
+  { id: 11, team: "foe", x: 8, z: 13, type: AGINCOURT_ENEMY_TYPE },
+  { id: 12, team: "foe", x: 8, z: 14, type: AGINCOURT_ENEMY_TYPE },
+  { id: 13, team: "foe", x: 8, z: 15, type: AGINCOURT_ENEMY_TYPE },
 ];
 // Change boss spawn type for Agincourt to William the Conquerer
 export const AGINCOURT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "williamTheConquerer" }];
 
 // Vienna
 export const VIENNA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "polishHussar" },
-  { id: 2, team: "foe", x: -5, z: 3, type: "polishHussar" },
-  { id: 3, team: "foe", x: 4, z: -4, type: "polishHussar" },
-  { id: 4, team: "foe", x: -3, z: -5, type: "polishHussar" },
-  { id: 5, team: "foe", x: 8, z: 2, type: "polishHussar" },
+  { id: 1, team: "foe", x: 6, z: 1, type: VIENNA_ENEMY_TYPE },
+  { id: 2, team: "foe", x: -5, z: 3, type: VIENNA_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 4, z: -4, type: VIENNA_ENEMY_TYPE },
+  { id: 4, team: "foe", x: -3, z: -5, type: VIENNA_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 8, z: 2, type: VIENNA_ENEMY_TYPE },
 ];
 export const VIENNA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "wingedHussarBoss" }];
 
 // Pavia
 export const PAVIA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: -150, z: 100, type: "italian" },
-  { id: 2, team: "foe", x: -150, z: 100, type: "italian" },
-  { id: 3, team: "foe", x: -150, z: 100, type: "italian" },
-  { id: 4, team: "foe", x: -150, z: 100, type: "italian" },
-  { id: 5, team: "foe", x: -150, z: 100, type: "italian" },
+  { id: 1, team: "foe", x: -150, z: 100, type: PAVIA_ENEMY_TYPE },
+  { id: 2, team: "foe", x: -150, z: 100, type: PAVIA_ENEMY_TYPE },
+  { id: 3, team: "foe", x: -150, z: 100, type: PAVIA_ENEMY_TYPE },
+  { id: 4, team: "foe", x: -150, z: 100, type: PAVIA_ENEMY_TYPE },
+  { id: 5, team: "foe", x: -150, z: 100, type: PAVIA_ENEMY_TYPE },
 ];
 export const PAVIA_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 80, maxHealth: 500, type: "caesar" }];
 

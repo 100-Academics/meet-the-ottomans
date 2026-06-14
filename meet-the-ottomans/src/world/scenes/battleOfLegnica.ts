@@ -48,6 +48,7 @@ import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 import { DevConsole } from "../../util/devConsole";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
+import { Secret } from "../secrets";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
 
@@ -399,6 +400,15 @@ export async function battleOfLegnicaScene(
     light.setLocalEulerAngles(45, 30, 0);  // Light coming from above and at an angle
     app.root.addChild(light);
   }
+
+  const secret = new Secret({
+    app,
+    cameraEntity: player.getCameraEntity(),
+    modelPath: "models/secret/coin.glb",
+    position: new Vec3(3, 1, -5),
+    scale: new Vec3(0.5, 0.5, 0.5)
+  });
+  await secret.spawn();
 
   const npcSpawnOptions = {
     ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
