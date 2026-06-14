@@ -42,26 +42,26 @@ interface SuicideBombersState {
 
 export class AirLadin extends Boss {
 	private readonly ambushCooldownSeconds = 10.0;
-	private readonly ambushRange = 25;
+	private readonly ambushRange = 50;
 	private readonly ambushDamage = 5;
 	private nextAmbushAtSeconds = 0;
 
 	private readonly iedCraterCount = 5;
 	private readonly iedIntervalSeconds = 0.2;
 	private readonly iedCooldownSeconds = 8.0;
-	private readonly iedRange = 18;
+	private readonly iedRange = 36;
 	private readonly iedDamage = 14;
-	private readonly iedHitRadius = 2.5;
+	private readonly iedHitRadius = 5;
 	private nextIedAtSeconds = 0;
 
 	private readonly akDamage = 10;
 	private readonly akCooldownSeconds = 3.5;
-	private readonly akRange = 35;
+	private readonly akRange = 70;
 	private nextAkAtSeconds = 0;
 
   private readonly invisCooldownSeconds = 30.0;
   private readonly invisDurationSeconds = 3.0;
-  private readonly invisRange = 30;
+  private readonly invisRange = 60;
 	private nextInvisAtSeconds = 0;
 
 	private readonly bomberCount = 3;
@@ -70,7 +70,7 @@ export class AirLadin extends Boss {
 	private readonly bomberExplosionRadius = 3.5;
 	private readonly bomberDamage = 20;
 	private readonly bomberCooldownSeconds = 14.0;
-	private readonly bomberRange = 30;
+	private readonly bomberRange = 60;
 	private nextBomberAtSeconds = 0;
 
 	private attackLockUntilSeconds = 0;

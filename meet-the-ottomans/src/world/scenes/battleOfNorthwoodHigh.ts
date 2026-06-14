@@ -96,17 +96,19 @@ function createStarfieldTexture(
 }
 
 function createWhiteFloor(
- app: AppBase,
- position: Vec3,
- scale: Vec3,
+app: AppBase,
+position: Vec3,
+scale: Vec3,
+color?: Color,
 ): Entity {
- const floor = new Entity("white-floor");
+const floor = new Entity("white-floor");
 
- // White plane geometry for the floor
- const material = new StandardMaterial();
- material.diffuse.set(1, 1, 1);
- material.useLighting = true;
- material.update();
+// Gray plane geometry for the floor
+const material = new StandardMaterial();
+const floorColor = color ?? new Color(0.4, 0.4, 0.45);
+material.diffuse.set(floorColor.r, floorColor.g, floorColor.b);
+material.useLighting = true;
+material.update();
 
  const mesh = Mesh.fromGeometry(app.graphicsDevice, new BoxGeometry({
  halfExtents: new Vec3(scale.x / 2, 0.05, scale.z / 2),
@@ -231,7 +233,7 @@ export async function battleOfNorthwoodHighScene(
  let whiteFloor: Entity | null = null;
  let floorCollision: any = null;
  try {
- whiteFloor = createWhiteFloor(app, new Vec3(0, 0, 0), new Vec3(PHASE1_FLOOR_SIZE, 1, PHASE1_FLOOR_SIZE));
+ whiteFloor = createWhiteFloor(app, new Vec3(0, 0, 0), new Vec3(PHASE1_FLOOR_SIZE, 1, PHASE1_FLOOR_SIZE), new Color(0.4, 0.4, 0.45));
  app.root.addChild(whiteFloor);
  floorCollision = whiteFloor.collision;
 
@@ -252,6 +254,7 @@ export async function battleOfNorthwoodHighScene(
  const npcs: any[] = [];
  let phase: "airLadin" | "tower" = "airLadin";
  let towerSpawned = false;
+ let towerSpawnInProgress = false;
 
  // Phase 1: Spawn Air Ladin
  const airLadinSpawnOptions = {
@@ -280,7 +283,8 @@ export async function battleOfNorthwoodHighScene(
 
  // Spawn Tower when Air Ladin is defeated
  async function spawnTowerBoss(): Promise<void> {
- if (towerSpawned) return;
+ if (towerSpawned || towerSpawnInProgress) return;
+ towerSpawnInProgress = true;
  towerSpawned = true;
  phase = "tower";
 
@@ -292,21 +296,26 @@ export async function battleOfNorthwoodHighScene(
  };
 
  try {
+ console.log("[NorthwoodHigh] Tower spawn options:", towerSpawnOptions);
  const spawned = await spawnSceneNpcs(
  app,
  (app.systems as any).rigidbody,
  NORTHWOOD_HIGH_TOWER_SPAWN_POINT,
  towerSpawnOptions,
  );
+ console.log("[NorthwoodHigh] Tower spawn result count:", spawned.length);
  for (const s of spawned) {
  npcs.push(s);
  if (s instanceof Boss) {
+ console.log("[NorthwoodHigh] Tower boss instance created, drawing health bar...");
  s.drawHealthBar();
  Boss.setActiveBoss(s);
  s.showStatusText("??????????", 3000);
+ console.log("[NorthwoodHigh] Tower health bar should be visible now");
  }
  }
  console.log("[NorthwoodHigh] Phase 2: Tower spawned");
+ towerSpawnInProgress = false;
 
  // Expand the floor for the Tower phase
  if (whiteFloor) {
@@ -418,7 +427,8 @@ export async function battleOfNorthwoodHighScene(
  }
 
  // Victory: all foes defeated (only after Tower phase has started)
- if (remainingFoes.length === 0 && (towerSpawned || phase === "tower")) {
+ // Must wait for tower spawn to complete before checking victory
+ if (remainingFoes.length === 0 && towerSpawned && !towerSpawnInProgress) {
  victoryHandled = true;
  removeBattleHUD();
  changeScene(canvas, app, 777);
