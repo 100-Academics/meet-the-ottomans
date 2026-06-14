@@ -150,7 +150,8 @@ export const AIR_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
  modelPath: NPC_MODEL_PATHS.airLadin,
  modelRotation: new Vec3(0, 0, 0),
  modelScale: new Vec3(4, 4, 4),
- modelHeightOffset: 11,
+ // Air Ladin flies at ~100 units up (half the previous 200).
+ modelHeightOffset: 25,
  facingYawOffsetDegrees: 0,
  hitboxRadius: 2.4
 };

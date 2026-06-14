@@ -16,10 +16,6 @@ import {
  RigidBodyComponentSystem,
  TextureHandler,
  ContainerHandler,
- Asset,
- AssetListLoader,
- TEXTURETYPE_RGBP,
- Texture,
  StandardMaterial,
  MeshInstance,
  FILLMODE_FILL_WINDOW,
@@ -28,6 +24,9 @@ import {
  BoxGeometry,
  SphereGeometry,
  CULLFACE_FRONT,
+ KEY_1,
+ KEY_2,
+ Texture,
 } from "playcanvas";
 
 import { unloadAll } from "../../util/unloadall";
@@ -186,26 +185,7 @@ export async function battleOfNorthwoodHighScene(
  });
  app.start();
  }
- if (!app.keyboard) app.keyboard = new Keyboard(window);
-
- // Load environment map for IBL lighting
- const envAtlasAsset =
- app.assets.find("battle-env-atlas") ??
- new Asset(
- "battle-env-atlas",
- "texture",
- { url: "/environment-map.png" },
- { type: TEXTURETYPE_RGBP, mipmaps: false },
- );
- if (!app.assets.find("battle-env-atlas")) app.assets.add(envAtlasAsset);
- await new Promise<void>((resolve) => {
- if (envAtlasAsset.loaded) {
- resolve();
- return;
- }
- new AssetListLoader([envAtlasAsset], app.assets).load(() => resolve());
- });
- app.scene.envAtlas = envAtlasAsset.resource as Texture;
+ // No environment map / IBL for this scene — avoids "spotlight/city" reflections on the large white floor.
 
  // Spawn player
  const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
@@ -213,8 +193,11 @@ export async function battleOfNorthwoodHighScene(
  let respawnPosition = playerSpawn.clone();
  let respawnGroundY = 0;
  player.setDeathQuizContext(7, () => {
- player.revive(respawnPosition);
- if (cameraController) cameraController.groundHeight = respawnGroundY;
+  player.revive(respawnPosition);
+  if (cameraController) cameraController.groundHeight = respawnGroundY;
+  createBattleHUD();
+  player.equipWeapon(2); // Re-equip Gun after revival
+  updateBattleHUD(player);
  });
  const cameraController = player.getCameraController();
  const cameraEntity = player.getCameraEntity();
@@ -227,9 +210,10 @@ export async function battleOfNorthwoodHighScene(
  starMaterial.emissiveMap = createStarfieldTexture(app.graphicsDevice);
  starMaterial.cull = CULLFACE_FRONT;
  starMaterial.update();
+ // Sprite dome — enclosing the arena
  const starDome = new Entity("northwood-star-dome");
  const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
- radius: 220,
+ radius: 500,
  latitudeBands: 64,
  longitudeBands: 64,
  }));
@@ -240,17 +224,21 @@ export async function battleOfNorthwoodHighScene(
  app.root.addChild(starDome);
  app.on("update", () => starDome.setPosition(cameraEntity.getPosition()));
 
- // White flat floor — very small, placeholder-like
- const FLOOR_SIZE = 40;
+ // White flat floor — 10x bigger arena for the boss fight
+ const PHASE1_FLOOR_SIZE = 400;
+ const PHASE2_FLOOR_SIZE = 800;
  let groundY = 0;
+ let whiteFloor: Entity | null = null;
+ let floorCollision: any = null;
  try {
- const whiteFloor = createWhiteFloor(app, new Vec3(0, 0, 0), new Vec3(FLOOR_SIZE, 1, FLOOR_SIZE));
+ whiteFloor = createWhiteFloor(app, new Vec3(0, 0, 0), new Vec3(PHASE1_FLOOR_SIZE, 1, PHASE1_FLOOR_SIZE));
  app.root.addChild(whiteFloor);
+ floorCollision = whiteFloor.collision;
 
  // Use the floor as spawn reference
  groundY = 0.15; // slightly above the white floor surface
  const spawnY = groundY + (cameraController?.playerHeight ?? 2) + 0.05;
- player.setPosition(new Vec3(0, spawnY, FLOOR_SIZE * 0.4));
+ player.setPosition(new Vec3(0, spawnY, PHASE1_FLOOR_SIZE * 0.4));
  respawnPosition = player.getPosition().clone();
  respawnGroundY = groundY;
  if (cameraController) cameraController.groundHeight = groundY;
@@ -319,6 +307,16 @@ export async function battleOfNorthwoodHighScene(
  }
  }
  console.log("[NorthwoodHigh] Phase 2: Tower spawned");
+
+ // Expand the floor for the Tower phase
+ if (whiteFloor) {
+ const scaleRatio = PHASE2_FLOOR_SIZE / PHASE1_FLOOR_SIZE;
+ whiteFloor.setLocalScale(scaleRatio, 1, scaleRatio);
+ if (floorCollision) {
+ floorCollision.halfExtents = new Vec3(PHASE2_FLOOR_SIZE / 2, 0.05, PHASE2_FLOOR_SIZE / 2);
+ }
+ console.log(`[NorthwoodHigh] Floor expanded to ${PHASE2_FLOOR_SIZE}x${PHASE2_FLOOR_SIZE}`);
+ }
  } catch (err) {
  console.error("[NorthwoodHigh] Failed to spawn Tower:", err);
  }
@@ -326,7 +324,20 @@ export async function battleOfNorthwoodHighScene(
 
  // HUD
  createBattleHUD();
+ player.equipWeapon(2); // Start with Gun (slot 2), not oldGun
  updateBattleHUD(player);
+
+ // Weapon switching
+ app.keyboard?.on("keydown", (event: { key: number | null }) => {
+ if (isDeathScreenVisible()) return;
+ if (event.key === KEY_1) {
+ player.equipWeapon(1);
+ updateBattleHUD(player);
+ } else if (event.key === KEY_2) {
+ player.equipWeapon(2);
+ updateBattleHUD(player);
+ }
+ });
 
  // Combat loop
  app.mouse?.on(
@@ -334,9 +345,12 @@ export async function battleOfNorthwoodHighScene(
  (event: { x: number; y: number; button: number }) => {
  if (isDeathScreenVisible()) return;
  if (event.button !== 0) return;
+ const isGunEquipped = player.getEquippedWeaponName() === "Gun";
+ const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
+ const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
  const hitNpc = cameraController?.getClickedNpcInRange(
- event.x,
- event.y,
+ targetX,
+ targetY,
  npcs,
  player.getAttackRange(),
  );

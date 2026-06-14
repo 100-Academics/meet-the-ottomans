@@ -380,15 +380,17 @@ export async function spawnSceneNpcs(
           npcModel.modelEntity.setLocalEulerAngles(currentEuler.x, currentEuler.y + spawn.yaw, currentEuler.z);
         }
         const modelMinY = getEntityMinY(npcModel.modelEntity);
-            console.log(`[NPC] modelMinY=${modelMinY?.toFixed(2) ?? "n/a"}, targetMinY=${(npcSpawnY + defaultGroundClearance).toFixed(2)}, scaleY=${scaleY}`);
-            if (modelMinY !== undefined) {
-                const targetMinY = npcSpawnY + defaultGroundClearance;
-                const deltaY = targetMinY - modelMinY;
-                if (Math.abs(deltaY) > 0.001) {
-                    const currentPos = npcModel.modelEntity.getPosition();
-                    npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
-                }
-            }
+        console.log(`[NPC] modelMinY=${modelMinY?.toFixed(2) ?? "n/a"}, targetMinY=${(npcSpawnY + defaultGroundClearance).toFixed(2)}, scaleY=${scaleY}`);
+        // AirLadin is airborne: keep his `modelHeightOffset` (set in the presets) instead of forcing his feet to the ground.
+        const isFlyingNpc = spawn.type === "AirLadin";
+        if (modelMinY !== undefined && !isFlyingNpc) {
+        const targetMinY = npcSpawnY + defaultGroundClearance;
+        const deltaY = targetMinY - modelMinY;
+        if (Math.abs(deltaY) > 0.001) {
+        const currentPos = npcModel.modelEntity.getPosition();
+        npcModel.modelEntity.setPosition(currentPos.x, currentPos.y + deltaY, currentPos.z);
+        }
+        }
             if (spawn.type === "mongol") {
                 console.log(`Spawning Mongol NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
                 const mongol = new Mongol(spawn.id, npcModel.modelEntity);
