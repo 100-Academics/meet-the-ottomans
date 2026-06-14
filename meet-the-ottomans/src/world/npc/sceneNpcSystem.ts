@@ -5,6 +5,7 @@ import { Mongol } from "./troops/mongol";
 import { Mamluk } from "./troops/Mamluk";
 import { Templar } from "./troops/templars";
 import { FrenchSoldier } from "./troops/frenchSoldier";
+import { OldFrenchSoldier } from "./troops/oldFrenchSoldier";
 import { AmericanRevolutionist } from "./troops/americanRevolutionist";
 import { UnionSoldier } from "./troops/unionSoldier";
 import { RussianSoldier } from "./troops/russianSoldier";
@@ -423,6 +424,13 @@ export async function spawnSceneNpcs(
       frenchSoldier.setHitboxRadius(hitboxRadius);
       applyDetectionRangeOverride(frenchSoldier, detectionRangeOverride);
       npcs.push(frenchSoldier);
+	} else if (spawn.type === "frenchSoldierOld") {
+      console.log(`Spawning Old French Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const oldFrenchSoldier = new OldFrenchSoldier(spawn.id, npcModel.modelEntity);
+      oldFrenchSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      oldFrenchSoldier.setHitboxRadius(hitboxRadius);
+      applyDetectionRangeOverride(oldFrenchSoldier, detectionRangeOverride);
+      npcs.push(oldFrenchSoldier);
 	} else if (spawn.type === "americanRevolutionist") {
 		console.log(`Spawning American Revolutionist NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
 		const rev = new AmericanRevolutionist(spawn.id, npcModel.modelEntity);
