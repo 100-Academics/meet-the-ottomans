@@ -79,7 +79,7 @@ export class VietnamDragonKing extends Boss {
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.7;
 
         this.setIntroTaunt("Rồng thiêng tỉnh giấc!", "The sacred dragon awakens!");
-        this.setIntroNameTranslation("Việt Nam Long Vương", "Vietnam Dragon King");
+        this.setIntroNameTranslation("Lạc Long Quân", "Dragon Lord of Lạc");
         this.setTauntSet({
             highHealth: [
                 "The waters of the Mekong answer to me.",

@@ -15,12 +15,12 @@ export const battleSummaries: Record<string, BattleSummary> = {
     name: "Battle of Legnica",
     date: "April 9, 1241",
     location: "Legnica, Silesia (modern Poland)",
-    historicalContext: "Part of the Mongol invasion of Europe. After devastating Poland and Hungary, Mongol forces under Baidar and Kadan clashed with a coalition of Polish knights and Teutonic Knights led by Duke Henry II the Pious.",
+    historicalContext: "Part of the Mongol invasion of Europe. After devastating Poland and Hungary, Mongol forces under Baidar and Kadan clashed with a coalition of Polish knights, Teutonic Knights, and Silesian forces led by Duke Henry II the Pious. Crushing defeat of the coalition by the hand of the Mongols.",
     combatants: {
       sideA: { name: "Mongol Empire", strength: 8000 },
       sideB: { name: "Polish & Teutonic Knights", strength: 6000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "This is intended to be your first battle. You will face Mongol forces and try to drive them back, unlike what happened in the actual historical event."
   },
   "Battle of Ain Jalut": {
     name: "Battle of Ain Jalut",
@@ -31,7 +31,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Mamluk Sultanate", strength: 12000 },
       sideB: { name: "Mongol Ilkhanate", strength: 10000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "A battle with a moutain. You will again face Mongols, repeating what happened in History by driving them back."
   },
   "Siege of Constantinople": {
     name: "Siege of Constantinople",
@@ -42,7 +42,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Crusaders", strength: 22000 },
       sideB: { name: "Byzantine Empire", strength: 15000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "A city battle. You will protect the city from the Crusaders., This does not follow the historical outcome."
   },
   "Battle of Agincourt": {
     name: "Battle of Agincourt",
@@ -53,7 +53,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Kingdom of England", strength: 9000 },
       sideB: { name: "Kingdom of France", strength: 20000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "Another city battle, kinda. You will face English forces and try to defend the city. This does not follow the historical outcome."
   },
   "Siege of Orléans": {
     name: "Siege of Orléans",
@@ -64,7 +64,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Kingdom of France", strength: 10000 },
       sideB: { name: "Kingdom of England", strength: 5000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "Here you will face the French forces and try to take Orléans. This does not follow the historical outcome."
   },
   "Fall of Constantinople": {
     name: "Fall of Constantinople",
@@ -75,7 +75,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Ottoman Empire", strength: 80000 },
       sideB: { name: "Byzantine Empire", strength: 7000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "Here you will face the Byzantine forces and try to capture Constantinople. This follows the historical outcome."
   },
   "Battle of Ridaniya": {
     name: "Battle of Ridaniya",
@@ -86,7 +86,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Ottoman Empire", strength: 60000 },
       sideB: { name: "Mamluk Sultanate", strength: 40000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "Here you will face the Mamluk forces and try to defeat them. This follows the historical outcome."
   },
   "Battle of Pavia (Italian Wars)": {
     name: "Battle of Pavia",
@@ -97,7 +97,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Habsburg Empire (Charles V)", strength: 23000 },
       sideB: { name: "Kingdom of France", strength: 26000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "Here you will fight Italian forces and defeat them. Foggy battle. This does not follow the historical outcome."
   },
   "Siege of Vienna": {
     name: "Siege of Vienna",
@@ -108,7 +108,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Holy League (Poland, Habsburgs, etc.)", strength: 70000 },
       sideB: { name: "Ottoman Empire", strength: 150000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "Here you will face the Polish elite cavalry and successfully siege the city. This does not follow the historical outcome."
   },
   "Battle of Yorktown": {
     name: "Battle of Yorktown",
@@ -119,7 +119,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "American & French Allies", strength: 17000 },
       sideB: { name: "Great Britain", strength: 9000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face British forces and defeat them. This follows the historical outcome."
   },
   "Battle of Three Emperors": {
     name: "Battle of Three Emperors",
@@ -130,7 +130,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "French Empire", strength: 68000 },
       sideB: { name: "Austrian & Russian Empires", strength: 85000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You face French forces here. You will try to defeat them. This does not follow the historical outcome."
   },
   "Battle of Gettysburg": {
     name: "Battle of Gettysburg",
@@ -141,7 +141,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Union Army", strength: 93000 },
       sideB: { name: "Confederate Army", strength: 75000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face Confederate forces and try to defeat them. This follows the historical outcome."
   },
   "Battle of Verdun": {
     name: "Battle of Verdun",
@@ -152,7 +152,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "France", strength: 300000 },
       sideB: { name: "German Empire", strength: 330000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face German forces and try to defend the city. This does follows the historical outcome."
   },
   "Battle of Gallipoli": {
     name: "Battle of Gallipoli",
@@ -163,7 +163,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Allied Powers (Britain, France, ANZAC)", strength: 489000 },
       sideB: { name: "Ottoman Empire", strength: 315000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face British forces here and try to defend the peninsula. This follows the historical outcome."
   },
   "Battle of Stalingrad": {
     name: "Battle of Stalingrad",
@@ -174,7 +174,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Soviet Union", strength: 1100000 },
       sideB: { name: "Axis Powers (Germany, Italy, Romania, etc.)", strength: 1000000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face Russian forces here and try to defend the city. This does not follow the historical outcome."
   },
   "Battle of Chosin Reservoir": {
     name: "Battle of Chosin Reservoir",
@@ -185,7 +185,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "UN Command (USA, UK, Norway)", strength: 30000 },
       sideB: { name: "China", strength: 120000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face the Korean forces here and try to defeat them. This follows the historical outcome."
   },
   "Fall of Saigon": {
     name: "Fall of Saigon",
@@ -196,7 +196,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "North Vietnam & Viet Cong", strength: 100000 },
       sideB: { name: "South Vietnam & USA (evacuation)", strength: 25000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face the North Vietnamese and Viet Cong forces here and try to defeat them. This does not follow the historical outcome."
   },
   "Operation Abirey-Halev": {
     name: "Operation Abirey-Halev",
@@ -207,18 +207,18 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Israel", strength: 15000 },
       sideB: { name: "Egypt", strength: 45000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face Israeli forces here and try to defeat them. This does not follow the historical outcome."
   },
   "Operation Anaconda": {
     name: "Operation Anaconda",
     date: "March 2-18, 2002",
     location: "Shah-i-Kot Valley, Afghanistan",
-    historicalContext: "The largest battle of the War in Afghanistan's initial phase. US and coalition forces launched a major offensive against Al-Qaeda and Taliban fighters entrenched in mountain caves, establishing the pattern for future counterinsurgency operations.",
+    historicalContext: "The largest battle of the War in Afghanistan's initial phase. US and coalition forces launched a major offensive against Al-Qaeda and Taliban fighters entrenched in mountain valleys, establishing the pattern for future counterinsurgency operations.",
     combatants: {
       sideA: { name: "US & Coalition Forces", strength: 3000 },
       sideB: { name: "Al-Qaeda & Taliban", strength: 1000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face Al-Qaeda and Taliban forces here and try to defeat them. This does follows the historical outcome."
   },
   "Battle of Kyiv": {
     name: "Battle of Kyiv",
@@ -229,7 +229,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Ukraine", strength: 25000 },
       sideB: { name: "Russia", strength: 30000 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face Russian forces here and try to defend the city. Although at the time of writing they have held the city strong for several years, the historical accuracy of the outcome is uncertain."
   },
   "Operation Arnon": {
     name: "Operation Arnon",
@@ -240,7 +240,7 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Israel (IDF Shaldag Unit)", strength: 50 },
       sideB: { name: "Hamas", strength: 150 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "You will face Israeli forces here and try to defeat them. This does not follow the historical outcome."
   },
   "Northwood High School": {
     name: "Northwood High School",
@@ -251,6 +251,6 @@ export const battleSummaries: Record<string, BattleSummary> = {
       sideA: { name: "Side A", strength: 0 },
       sideB: { name: "Side B", strength: 0 }
     },
-    briefingMessage: "The Final Fight. Are you ready?"
+    briefingMessage: "The Final Fight, against a foe you may know. Are you ready?"
   }
 };

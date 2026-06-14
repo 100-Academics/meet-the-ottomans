@@ -16,7 +16,7 @@ const NPC_MODEL_PATHS = {
   willieconquer: "models/npc/boss/WillieConquer.glb",
   koreansldier: "models/npc/KoreanSoldier.glb",
   mamlukIthink: "models/npc/Mamluk.glb",
-  modernishsoldier: "models/npc/VietnamSoldier.glb",
+  modernishsoldier: "models/npc/boss/AnotherOldDude.glb",
   genghisKhan: "models/npc/boss/genghis_khan.glb",
   kingGeser: "models/npc/boss/KingGeser.glb",
   christ: "models/npc/boss/Jesus10K.glb",
@@ -26,7 +26,7 @@ const NPC_MODEL_PATHS = {
   caesar: "models/npc/boss/Caesar.glb",
   napoleon: "models/npc/boss/Napolean.glb",
   uncleSam: "models/npc/boss/UncleSam.glb",
-  vietnamDragonKing: "models/npc/boss/VietnamDragonKing.glb",
+  vietnamDragonKing: "models/npc/boss/dragon_king.glb",
   binLadin: "models/npc/boss/osama_bin_laden.glb",
   airLadin: "models/npc/boss/osama_bin_laden.glb",
   cainAndAbel: "models/npc/boss/CainAndAbel.glb",
@@ -531,7 +531,7 @@ const STALINGRAD_ENEMY_TYPE = "russianSoldier";
 const THREE_EMPERORS_ENEMY_TYPE = "french";
 const VERDUN_ENEMY_TYPE = "modernFrenchSoldier";
 const YORKTOWN_ENEMY_TYPE = "americanRevolutionist";
-const SAIGON_ENEMY_TYPE = "mongol";
+const SAIGON_ENEMY_TYPE = "modernishsoldier";
 const ANACONDA_ENEMY_TYPE = "huntingrifledude";
 const ARNON_ENEMY_TYPE = "mongol";
 const AGINCOURT_ENEMY_TYPE = "french";
@@ -923,9 +923,16 @@ export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 ];
 export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "georgeWashington" }];
 
-// Saigon
+// Saigon — fall of Saigon ambush of Viet Cong / NVA soldiers around the player's entry waypoint.
 export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 1, team: "foe", x: 6, z: 1, type: SAIGON_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 9, z: -2, type: SAIGON_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 12, z: 1, type: SAIGON_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 15, z: -3, type: SAIGON_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 6, z: 5, type: SAIGON_ENEMY_TYPE },
+  { id: 6, team: "foe", x: 9, z: 5, type: SAIGON_ENEMY_TYPE },
+  { id: 7, team: "foe", x: -6, z: 1, type: SAIGON_ENEMY_TYPE },
+  { id: 8, team: "foe", x: -9, z: -3, type: SAIGON_ENEMY_TYPE },
 ];
 export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "vietnamDragonKing" }];
 

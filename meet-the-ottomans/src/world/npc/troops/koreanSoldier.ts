@@ -6,15 +6,18 @@ type DamageCallback = (damage: number) => void;
 
 // Korean soldier — bolt-action rifleman. Chases the player from range and
 // fires tracer projectiles in the mid-range band, then falls back to melee
-// when the player closes distance. Mirrors the HuntingRifleDude / RussianSoldier
-// pattern so it inherits the projectile-system plumbing that the rest of the
-// troop classes already share.
+// when the player closes distance.
+//
+// AI template is intentionally kept in lock-step with RussianSoldier /
+// HuntingRifleDude so all three share the same chase/melee plumbing proven
+// to work elsewhere in the game. Per-NPC tuning (damage numbers, cooldowns,
+// projectile speed) lives in the private fields below.
 export class KoreanSoldier extends npc {
     // Melee burst when the player gets inside the rifle min range.
     private readonly meleeRange = 2.3;
     private readonly meleeDamage = 15;
     private readonly meleeCooldownSeconds = 1.6;
-    private readonly meleeWindupSeconds = 0.4;
+    private readonly meleeWindupSeconds = 0.5;
 
     // Mid-range rifle shots — damage scales up at closer range in
     // tryRangedAttack via hit-radius checks.
@@ -23,7 +26,7 @@ export class KoreanSoldier extends npc {
     private readonly rangedCooldownSeconds = 1.5;
     private readonly rangedProjectileSpeed = 60;
     // First-shot stagger spreads the opening volley over a few seconds so
-    // 25 troops clustered near spawn don't delete the player in one frame.
+    // a full squad clustered near spawn doesn't delete the player in one frame.
     private readonly firstShotStaggerSeconds = 4.0;
 
     private lastRangedAttackTime = -Infinity;
@@ -33,16 +36,11 @@ export class KoreanSoldier extends npc {
         super(id, "foe", 100, modelEntity);
         this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 0.85;
         this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.7;
-        // The base npc class returns a hardcoded detectionRange from
-        // getCombatProfile(), so we set this large enough to engage the player
-        // at typical engagement distances. Detection is gated by the profile
-        // (see getCombatProfile override below).
-        this.aiConfig.detectionRange = 60;
-        // Per-NPC randomized first-shot delay: pick a "last shot" timestamp
-        // between `now - rangedCooldown` (fire immediately) and
-        // `now - rangedCooldown + firstShotStagger` (don't fire for the full
-        // stagger window). Combined with random per-NPC values this spreads
-        // the opening volley across ~firstShotStagger seconds.
+        // Engage the player at typical battlefield distances; the per-NPC
+        // override registered by spawnSceneNpcs narrows or widens this.
+        this.setDetectionRange(Number.MAX_VALUE);
+        // Per-NPC randomized first-shot delay so the opening volley is spread
+        // across roughly firstShotStaggerSeconds instead of landing in one tick.
         this.lastRangedAttackTime = (Date.now() / 1000)
             - this.rangedCooldownSeconds
             + (Math.random() * this.firstShotStaggerSeconds);
@@ -83,17 +81,19 @@ export class KoreanSoldier extends npc {
         const distance = this.getDistanceToEntity(targetEntity);
 
         // Wrap the base class's melee hit so the windup delay fires before
-        // committing damage, like RussianSoldier does.
+        // committing damage — same trick RussianSoldier uses.
         const wrappedMeleeAttack = (_attacker: npc) => {
             this.scheduleMeleeHit(targetEntity, targetNpc, onHit, profile.attackDamage);
         };
 
         // super.updateAI handles chase + attack-range melee transitions.
+        // THIS is the call that actually moves the entity (moveToward inside
+        // npc.updateAI). Keep it on the happy path so soldiers always move.
         super.updateAI(deltaTime, targetEntity, currentTimeSeconds, wrappedMeleeAttack, profile);
 
-        // Layer the rifle shot on top of the chase/melee behavior. The base
-        // class won't fire because the target is outside `profile.attackRange`
-        // (the melee range), so we trigger the projectile ourselves.
+        // Layer the rifle shot on top of chase/melee. Base class won't fire
+        // because the target sits outside the melee band, so the projectile
+        // trigger lives here.
         if (distance <= this.rangedRange && distance > profile.attackRange) {
             this.tryRangedAttack(targetEntity, targetNpc, onHit, currentTimeSeconds);
         }
