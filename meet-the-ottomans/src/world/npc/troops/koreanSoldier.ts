@@ -19,9 +19,12 @@ export class KoreanSoldier extends npc {
     // Mid-range rifle shots — damage scales up at closer range in
     // tryRangedAttack via hit-radius checks.
     private readonly rangedRange = 28;
-    private readonly rangedDamage = 12;
+    private readonly rangedDamage = 7;
     private readonly rangedCooldownSeconds = 1.5;
     private readonly rangedProjectileSpeed = 60;
+    // First-shot stagger spreads the opening volley over a few seconds so
+    // 25 troops clustered near spawn don't delete the player in one frame.
+    private readonly firstShotStaggerSeconds = 4.0;
 
     private lastRangedAttackTime = -Infinity;
     private meleeWindupPending = false;
@@ -35,6 +38,14 @@ export class KoreanSoldier extends npc {
         // at typical engagement distances. Detection is gated by the profile
         // (see getCombatProfile override below).
         this.aiConfig.detectionRange = 60;
+        // Per-NPC randomized first-shot delay: pick a "last shot" timestamp
+        // between `now - rangedCooldown` (fire immediately) and
+        // `now - rangedCooldown + firstShotStagger` (don't fire for the full
+        // stagger window). Combined with random per-NPC values this spreads
+        // the opening volley across ~firstShotStagger seconds.
+        this.lastRangedAttackTime = (Date.now() / 1000)
+            - this.rangedCooldownSeconds
+            + (Math.random() * this.firstShotStaggerSeconds);
     }
 
     // Use the aiConfig-driven detection range rather than the hardcoded 14 from

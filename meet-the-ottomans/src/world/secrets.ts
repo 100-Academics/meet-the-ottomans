@@ -70,6 +70,10 @@ export function getSecretsFound(): number {
     return secretsFound;
 }
 
+export function setSecretsFound(count: number): void {
+    secretsFound = count;
+}
+
 export function resetSecretsFound(): void {
     secretsFound = 0;
     if (popupHideTimer !== null) {

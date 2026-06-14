@@ -416,7 +416,7 @@ export async function battleOfLegnicaScene(
     app,
     cameraEntity: player.getCameraEntity(),
     modelPath: "models/jar.glb",
-    position: new Vec3(3, secretGroundY + 1, -5),
+    position: new Vec3(3, secretGroundY, -5),
     scale: new Vec3(0.5, 0.5, 0.5),
     rotation: secretRotation
   });

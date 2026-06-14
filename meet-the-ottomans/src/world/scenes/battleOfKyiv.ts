@@ -46,6 +46,7 @@ import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
+import { Secret } from "../secrets";
 import {
   DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
   DEFAULT_STALIN_BOSS_SPAWN_OPTIONS,
@@ -295,18 +296,39 @@ export async function battleOfKyivScene(
       "[Collision] rigidbody system not available — contact logging disabled",
     );
   }
-  app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
-  if (app.systems.light) {
-    const light = new Entity("directional-light");
-    light.addComponent("light", {
-      type: "directional",
-      color: new Color(1, 1, 1),
-      intensity: 1,
-      castShadows: true,
-    });
-    light.setLocalEulerAngles(45, 30, 0);
-    app.root.addChild(light);
-  }
+   app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
+   if (app.systems.light) {
+     const light = new Entity("directional-light");
+     light.addComponent("light", {
+       type: "directional",
+       color: new Color(1, 1, 1),
+       intensity: 1,
+       castShadows: true,
+     });
+     light.setLocalEulerAngles(45, 30, 0);
+     app.root.addChild(light);
+   }
+
+   // Ground-snap the secret so its base sits on the actual battlefield surface;
+   // the player spawn lands around y≈8 in this scene, so a hardcoded y=1 would
+   // bury the model. We use the same raycast helper the player spawn uses
+   // (`getHighestGroundHitY` against the 'ground'-tagged entity) and fall back
+   // to the player's surface Y if the raycast at this X/Z misses.
+   const secretGroundY = getHighestGroundHitY(app, 3, -5, 'ground') ?? respawnGroundY;
+   // The loader applies a default rotation of (0, 90, 90) when none is given
+   // (see src/util/loadModel.ts), which tips jar.glb on its side. Setting
+   // (0, 0, 0) tells the loader to use the model's raw .glb orientation so it
+   // stands upright. Tweak these three angles if the model still looks wrong.
+   const secretRotation = new Vec3(0, 0, 0);
+   const secret = new Secret({
+     app,
+     cameraEntity: player.getCameraEntity(),
+     modelPath: "models/jar.glb",
+     position: new Vec3(3, secretGroundY + 1, -5),
+     scale: new Vec3(0.5, 0.5, 0.5),
+     rotation: secretRotation
+   });
+   await secret.spawn();
   const npcSpawnOptions = {
     ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
     groundYFallback: respawnGroundY,

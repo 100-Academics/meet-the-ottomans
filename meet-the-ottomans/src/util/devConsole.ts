@@ -27,6 +27,7 @@ import { loadModel } from './loadModel';
 import { NPC_TYPE_MODEL_PATHS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from '../world/npc/sceneNpcPresets';
 import { spawnSceneNpcs } from '../world/npc/sceneNpcSystem';
 import type { NpcSpawnPoint } from '../world/npc/sceneNpcSystem';
+import { getSecretsFound, resetSecretsFound, setSecretsFound } from '../world/secrets';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1397,6 +1398,21 @@ export class DevConsole {
           description: 'Spawn position (default: 10 units in front of player, on ground)',
         },
       ],
+    });
+
+    DevConsole.register('setSecretsFound', 'Set the number of secrets found', (count) => {
+      setSecretsFound(parseInt(count, 10));
+      return `Set secrets found to ${count}`;
+    });
+
+    DevConsole.register('resetSecretsFound', 'Reset the number of secrets found', () => {
+      resetSecretsFound();
+      return `Reset secrets found. Secrets found: ${getSecretsFound()}`;
+    });
+
+    DevConsole.register("unlockAllSecrets", "Unlock all secrets", () => {
+      setSecretsFound(21);
+      return `All ${getSecretsFound()} secrets unlocked`;
     });
 
     // ---- exit ----

@@ -41,6 +41,7 @@ import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
+import { Secret } from "../secrets";
 import { changeScene } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
@@ -365,20 +366,41 @@ await waitForAmmoReady(app, "ground");;
 	// Further reduce skybox intensity to deepen the misty feel
   app.scene.skyboxIntensity = 0.2;
 
-	// Set up basic scene lighting
-  app.scene.ambientLight = new Color(0.55, 0.58, 0.65);
+   // Set up basic scene lighting
+   app.scene.ambientLight = new Color(0.55, 0.58, 0.65);
 
-	if (app.systems.light) {
-		const light = new Entity('sun-light');
-		light.addComponent('light', {
-			type: 'directional',
-			color: new Color(1, 0.96, 0.82),
-			intensity: 1.45,
-			castShadows: true
-		});
-		light.setLocalEulerAngles(52, 35, 0);
-		app.root.addChild(light);
-	}
+   if (app.systems.light) {
+     const light = new Entity('sun-light');
+     light.addComponent('light', {
+       type: 'directional',
+       color: new Color(1, 0.96, 0.82),
+       intensity: 1.45,
+       castShadows: true
+     });
+     light.setLocalEulerAngles(52, 35, 0);
+     app.root.addChild(light);
+   }
+
+   // Ground-snap the secret so its base sits on the actual battlefield surface;
+   // the player spawn lands around y≈8 in this scene, so a hardcoded y=1 would
+   // bury the model. We use the same raycast helper the player spawn uses
+   // (`getHighestGroundHitY` against the 'ground'-tagged entity) and fall back
+   // to the player's surface Y if the raycast at this X/Z misses.
+   const secretGroundY = getHighestGroundHitY(app, 3, -5, 'ground') ?? respawnGroundY;
+   // The loader applies a default rotation of (0, 90, 90) when none is given
+   // (see src/util/loadModel.ts), which tips jar.glb on its side. Setting
+   // (0, 0, 0) tells the loader to use the model's raw .glb orientation so it
+   // stands upright. Tweak these three angles if the model still looks wrong.
+   const secretRotation = new Vec3(0, 0, 0);
+   const secret = new Secret({
+     app,
+     cameraEntity: player.getCameraEntity(),
+     modelPath: "models/jar.glb",
+     position: new Vec3(3, secretGroundY + 1, -5),
+     scale: new Vec3(0.5, 0.5, 0.5),
+     rotation: secretRotation
+   });
+   await secret.spawn();
 
 	const paviaSpawnPoints = resolvePaviaSpawnPoints(respawnPosition);
 	const npcSpawnOptions = {

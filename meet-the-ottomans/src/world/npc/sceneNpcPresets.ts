@@ -36,11 +36,11 @@ const NPC_MODEL_PATHS = {
   stalin: "models/npc/boss/Stalin.glb",
   unionSoldier: "models/npc/UnionSoldier.glb",
   germanLookingSoldier: "models/npc/GermanLookingSoldier.glb",
-  towerBoss: "models/npc/boss/Tower_00001_.glb",
+  towerBoss: "models/npc/boss/throne.glb",
   polishHussar: "models/npc/polish_hussar.glb",
   wingedHussarBoss: "models/npc/polish_hussar.glb",
   moses: "models/npc/boss/Moses.glb",
-  nineTailedFox: "models/npc/boss/NineTailedFox.glb"
+  nineTailedFox: "models/npc/boss/nine-tailed_fox.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -146,8 +146,8 @@ export const AIR_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
  modelPath: NPC_MODEL_PATHS.airLadin,
  modelRotation: new Vec3(0, 0, 0),
  modelScale: new Vec3(4, 4, 4),
- // Air Ladin flies at ~100 units up (half the previous 200).
- modelHeightOffset: 25,
+ // Air Ladin flies at ~50 units up (half the previous 100).
+ modelHeightOffset: 12.5,
  facingYawOffsetDegrees: 0,
  hitboxRadius: 2.4
 };
@@ -199,8 +199,8 @@ const STALIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const TOWER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.towerBoss,
-  modelRotation: new Vec3(-90, 0, 0),
-  modelScale: new Vec3(3, 3, 3),
+  modelRotation: new Vec3(0, 0, 0),
+  modelScale: new Vec3(50, 50, 50),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
   hitboxRadius: 2.4
@@ -336,7 +336,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   italian: "models/npc/ItalianSoldier.glb",
   polishHussar: NPC_MODEL_PATHS.polishHussar,
   wingedHussarBoss: NPC_MODEL_PATHS.wingedHussarBoss,
-  nineTailedFox: "models/npc/boss/NineTailedFox.glb"
+  nineTailedFox: "models/npc/boss/nine-tailed_fox.glb"
 };
 
 const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
