@@ -45,7 +45,7 @@ import { Boss } from "../npc/bosses/boss";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS, AGINCOURT_BOSS_SPAWN_POINT, AGINCOURT_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
-import { hasTagInHierarchy, getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Agincourt.glb';
 
@@ -76,81 +76,6 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
   }
 }
 
-/**
- * Recursively scans an entity and all its children to find the bounding box of all
- * renderable mesh instances. Returns the min/max X,Z coordinates and maximum Y.
- * Returns undefined if no renderable meshes were found.
-*
-* USAGE: Called during scene initialization to determine where the ground model is located,
-* so we can calculate a good spawn point at the center of the visible terrain.
- */
-function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number } | undefined {
-  // Initialize bounds to extreme values (will be updated as we find meshes)
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
-  let minZ = Number.POSITIVE_INFINITY;
-  let maxZ = Number.NEGATIVE_INFINITY;
-  let minY = Number.POSITIVE_INFINITY;
-  let maxY = Number.NEGATIVE_INFINITY;
-  let found = false;
-
-  // Recursive function to walk through the entity hierarchy
-  const visit = (node: Entity) => {
-    // Get mesh instances (the actual renderable parts) from this entity
-    const meshInstances = node.render?.meshInstances;
-    if (meshInstances && meshInstances.length > 0) {
-      // Check each mesh instance to update our bounds
-      for (const meshInstance of meshInstances) {
-        // Get the axis-aligned bounding box for this mesh
-        const aabb = meshInstance.aabb;
-        if (!aabb) {
-          continue;
-        }
-
-        // Get the minimum and maximum corners of the bounding box
-        const min = aabb.getMin();
-        const max = aabb.getMax();
-        
-        // Skip if any coordinate is invalid (NaN, Infinity, etc.)
-        if (
-        !Number.isFinite(min.x) ||
-        !Number.isFinite(min.y) ||
-        !Number.isFinite(min.z) ||
-        !Number.isFinite(max.x) ||
-        !Number.isFinite(max.y) ||
-        !Number.isFinite(max.z)
-      ) {
-        continue;
-      }
-
-      // Update our overall bounds to encompass this mesh
-      minX = Math.min(minX, min.x);
-      maxX = Math.max(maxX, max.x);
-      minZ = Math.min(minZ, min.z);
-      maxZ = Math.max(maxZ, max.z);
-      minY = Math.min(minY, min.y);
-      maxY = Math.max(maxY, max.y);
-        found = true;
-      }
-    }
-
-    // Recursively visit all child entities
-    for (const child of node.children) {
-      visit(child as Entity);
-    }
-  };
-
-  // Start the recursive traversal from the root entity
-  visit(entity);
-
-  // If we never found any meshes, return nothing
-  if (!found) {
-    return undefined;
-  }
-
-  // Return the calculated bounding box
-  }
-  }
 
   /**
    * Main scene initialization for the Battle of Agincourt.

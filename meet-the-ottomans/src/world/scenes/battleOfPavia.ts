@@ -42,6 +42,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sc
 import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { changeScene } from "../../App";
+import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
 
@@ -55,127 +56,9 @@ const groundModelPath = '/world/battlefields/Pavia.glb';
 //	isBossSpawning = false;
 //}
 
-function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
-	let current: Entity | null = entity;
-	while (current) {
-		if (current.tags?.has(tag)) {
-			return true;
-		}
-		current = (current.parent as Entity | null) ?? null;
-	}
-	return false;
-}
 
-function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: string): number | undefined {
-	const rigidbodySystem = (app.systems as any).rigidbody as
-		| {
-				raycastAll?: (start: Vec3, end: Vec3) => Array<{ entity?: Entity | null; point?: Vec3; hitFraction?: number }> | undefined;
-				raycastFirst?: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
-			}
-		| undefined;
 
-	if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
-		console.log('[Raycast] rigidbody system or raycast function not available');
-		return undefined;
-	}
 
-	const start = new Vec3(x, 300, z);
-	const end = new Vec3(x, -300, z);
-
-	if (typeof rigidbodySystem.raycastAll === 'function') {
-		const hits = rigidbodySystem.raycastAll(start, end);
-		if (hits && hits.length > 0) {
-			let bestFraction = Number.POSITIVE_INFINITY;
-			let bestFractionY: number | undefined;
-			let highestY: number | undefined;
-			for (const hit of hits) {
-				if (!hit?.point) continue;
-				if (!Number.isFinite(hit.point.y)) continue;
-				const hitEntity = hit.entity ?? null;
-				if (!hasTagInHierarchy(hitEntity, groundTag)) continue;
-				const hf = hit.hitFraction;
-				if (typeof hf === 'number' && Number.isFinite(hf) && hf < bestFraction) {
-					bestFraction = hf;
-					bestFractionY = hit.point.y;
-				}
-				if (highestY === undefined || hit.point.y > highestY) highestY = hit.point.y;
-			}
-			if (bestFractionY !== undefined) return bestFractionY;
-			if (highestY !== undefined) return highestY;
-		}
-	}
-
-	const firstHit = rigidbodySystem.raycastFirst(start, end);
-	if (!firstHit?.point) return undefined;
-	const firstEntity = firstHit.entity ?? null;
-	if (!hasTagInHierarchy(firstEntity, groundTag)) return undefined;
-	return Number.isFinite(firstHit.point.y) ? firstHit.point.y : undefined;
-}
-
-function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number } | undefined {
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
-  let minZ = Number.POSITIVE_INFINITY;
-  let maxZ = Number.NEGATIVE_INFINITY;
-  let minY = Number.POSITIVE_INFINITY;
-  let maxY = Number.NEGATIVE_INFINITY;
-	let found = false;
-
-	const visit = (node: Entity) => {
-		const meshInstances = node.render?.meshInstances;
-		if (meshInstances && meshInstances.length > 0) {
-			for (const meshInstance of meshInstances) {
-				const aabb = meshInstance.aabb;
-				if (!aabb) continue;
-				const min = aabb.getMin();
-				const max = aabb.getMax();
-if (!Number.isFinite(min.x) || !Number.isFinite(min.y) || !Number.isFinite(min.z) || !Number.isFinite(max.x) || !Number.isFinite(max.y) || !Number.isFinite(max.z)) continue;
-  minX = Math.min(minX, min.x);
-  maxX = Math.max(maxX, max.x);
-  minZ = Math.min(minZ, min.z);
-  maxZ = Math.max(maxZ, max.z);
-  minY = Math.min(minY, min.y);
-  maxY = Math.max(maxY, max.y);
-				found = true;
-			}
-		}
-		for (const child of node.children) visit(child as Entity);
-	};
-
-	visit(entity);
-	if (!found) return undefined;
-	return { minX, maxX, minZ, maxZ, minY, maxY };
-}
-
-export function createStarfieldTexture(device: AppBase['graphicsDevice'], width = 1024, height = 512): Texture {
-	const canvas = document.createElement('canvas');
-	canvas.width = width;
-	canvas.height = height;
-	const ctx = canvas.getContext('2d');
-	if (!ctx) return new Texture(device!, { mipmaps: true, name: 'pavia-starfield-fallback' });
-	const baseGradient = ctx.createLinearGradient(0, 0, width, height);
-	baseGradient.addColorStop(0, '#05040d');
-	baseGradient.addColorStop(0.45, '#0b1229');
-	baseGradient.addColorStop(1, '#020209');
-	ctx.fillStyle = baseGradient;
-	ctx.fillRect(0, 0, width, height);
-	const starCount = 1200;
-	for (let i = 0; i < starCount; i += 1) {
-		const x = Math.random() * width;
-		const y = Math.random() * height;
-		const size = Math.random() < 0.9 ? 1 : 2;
-		const alpha = 0.45 + Math.random() * 0.55;
-		const tint = Math.random();
-		const r = Math.floor(190 + tint * 60);
-		const g = Math.floor(200 + tint * 45);
-		const b = Math.floor(230 + tint * 25);
-		ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-		ctx.fillRect(x, y, size, size);
-	}
-	const texture = new Texture(device!, { mipmaps: true, name: 'pavia-starfield' });
-	texture.setSource(canvas);
-	return texture;
-}
 
 function resolvePaviaSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
 	const basePoints = PAVIA_NPC_SPAWN_POINTS;
