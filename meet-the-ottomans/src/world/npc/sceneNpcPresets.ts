@@ -40,7 +40,7 @@ const NPC_MODEL_PATHS = {
   polishHussar: "models/npc/polish_hussar.glb",
   wingedHussarBoss: "models/npc/polish_hussar.glb",
   moses: "models/npc/boss/Moses.glb",
-  nineTailedFox: "models/npc/boss/NineTailedFox.glb"
+  nineTailedFox: "models/npc/boss/nine-tailed_fox.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -335,7 +335,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   italian: "models/npc/ItalianSoldier.glb",
   polishHussar: NPC_MODEL_PATHS.polishHussar,
   wingedHussarBoss: NPC_MODEL_PATHS.wingedHussarBoss,
-  nineTailedFox: "models/npc/boss/NineTailedFox.glb"
+  nineTailedFox: "models/npc/boss/nine-tailed_fox.glb"
 };
 
 const MONGOL_SPAWN_OVERRIDES: NpcSpawnOverrides = {
