@@ -120,8 +120,7 @@ export async function changeScene(
   unloadAll(app);
   if (sceneNum === -2) {
     return await titleScreen(canvas, app, () => {}, () => 0, sceneNum);
-  } else if (sceneNum === -0) {
-
+  } else if (sceneNum === 0) {
     return await defaultScene(canvas, app, () => {}, () => 0, sceneNum);
   } else if (sceneNum === 666) {
     return await showDeathScreen({
