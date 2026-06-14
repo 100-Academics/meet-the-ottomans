@@ -43,6 +43,10 @@ const NPC_MODEL_PATHS = {
   nineTailedFox: "models/npc/boss/NineTailedFox.glb"
 };
 
+const LEGNICA_ENEMY_TYPE = "mongolTroop";
+const SIEGE_OF_CONSTANTINOPLE_ENEMY_TYPE = "byzantineSoldier";
+const BATTLE_OF_AIN_JALUT_ENEMY_TYPE = "mamlukSoldier";
+
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
 const KHAN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.genghisKhan,
@@ -788,32 +792,32 @@ export const KYIV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x:
 
 // Stalingrad
 export const STALINGRAD_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "mongol" },
-  { id: 2, team: "foe", x: 9, z: 1, type: "mongol" },
-  { id: 3, team: "foe", x: 12, z: 1, type: "mongol" },
-  { id: 4, team: "foe", x: 15, z: 1, type: "mongol" },
-  { id: 5, team: "foe", x: 6, z: -3, type: "mongol" },
-  { id: 6, team: "foe", x: 9, z: -3, type: "mongol" },
-  { id: 7, team: "foe", x: 12, z: -3, type: "mongol" },
-  { id: 8, team: "foe", x: 15, z: -3, type: "mongol" },
-  { id: 9, team: "foe", x: 6, z: 5, type: "mongol" },
-  { id: 10, team: "foe", x: 9, z: 5, type: "mongol" },
-  { id: 11, team: "foe", x: 12, z: 5, type: "mongol" },
-  { id: 12, team: "foe", x: 15, z: 5, type: "mongol" },
-  { id: 13, team: "foe", x: -6, z: 1, type: "mongol" },
-  { id: 14, team: "foe", x: -9, z: 1, type: "mongol" },
-  { id: 15, team: "foe", x: -6, z: -3, type: "mongol" },
-  { id: 16, team: "foe", x: -9, z: -3, type: "mongol" },
-  { id: 17, team: "foe", x: -6, z: 5, type: "mongol" },
-  { id: 18, team: "foe", x: -9, z: 5, type: "mongol" },
-  { id: 19, team: "foe", x: 0, z: 8, type: "mongol" },
-  { id: 20, team: "foe", x: 3, z: 8, type: "mongol" },
-  { id: 21, team: "foe", x: -3, z: -6, type: "mongol" },
-  { id: 22, team: "foe", x: 0, z: -6, type: "mongol" },
-  { id: 23, team: "foe", x: 3, z: -6, type: "mongol" },
-  { id: 24, team: "foe", x: -3, z: 8, type: "mongol" },
-  { id: 25, team: "foe", x: 18, z: 1, type: "mongol" },
-];
+  { id: 1, team: "foe", x: 6, z: 1,    type: "germanLookingSoldier" },
+  { id: 2, team: "foe", x: 9, z: 1,    type: "germanLookingSoldier" },
+  { id: 3, team: "foe", x: 12, z: 1,   type: "germanLookingSoldier" },
+  { id: 4, team: "foe", x: 15, z: 1,   type: "germanLookingSoldier" },
+  { id: 5, team: "foe", x: 6, z: -3,   type: "germanLookingSoldier" },
+  { id: 6, team: "foe", x: 9, z: -3,   type: "germanLookingSoldier" },
+  { id: 7, team: "foe", x: 12, z: -3,  type: "germanLookingSoldier" },
+  { id: 8, team: "foe", x: 15, z: -3,  type: "germanLookingSoldier" },
+  { id: 9, team: "foe", x: 6, z: 5,    type: "germanLookingSoldier" },
+  { id: 10, team: "foe", x: 9, z: 5,   type: "germanLookingSoldier" },
+  { id: 11, team: "foe", x: 12, z: 5,  type: "germanLookingSoldier" },
+  { id: 12, team: "foe", x: 15, z: 5,  type: "germanLookingSoldier" },
+  { id: 13, team: "foe", x: -6, z: 1,  type: "germanLookingSoldier" },
+  { id: 14, team: "foe", x: -9, z: 1,  type: "germanLookingSoldier" },
+  { id: 15, team: "foe", x: -6, z: -3, type: "germanLookingSoldier" },
+  { id: 16, team: "foe", x: -9, z: -3, type: "germanLookingSoldier" },
+  { id: 17, team: "foe", x: -6, z: 5,  type: "germanLookingSoldier" },
+  { id: 18, team: "foe", x: -9, z: 5,  type: "germanLookingSoldier" },
+  { id: 19, team: "foe", x: 0, z: 8,   type: "germanLookingSoldier" },
+  { id: 20, team: "foe", x: 3, z: 8,   type: "germanLookingSoldier" },
+  { id: 21, team: "foe", x: -3, z: -6, type: "germanLookingSoldier" },
+  { id: 22, team: "foe", x: 0, z: -6,  type: "germanLookingSoldier" },
+  { id: 23, team: "foe", x: 3, z: -6,  type: "germanLookingSoldier" },
+  { id: 24, team: "foe", x: -3, z: 8,  type: "germanLookingSoldier" },
+  { id: 25, team: "foe", x: 18, z: 1,  type: "germanLookingSoldier" },
+]; 
 export const STALINGRAD_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "lenin" }];
 
 // Three Emperors
