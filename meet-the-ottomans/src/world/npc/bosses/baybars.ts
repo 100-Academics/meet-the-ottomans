@@ -237,6 +237,7 @@ export class Baybars extends Boss {
             lastSpikePosition: myPos.clone()
         };
         this.attackLockUntilSeconds = this.dashState.endTimeSeconds + this.dashRecoverSeconds;
+        this.spawnSpikeDrop(myPos.clone(), now);
     }
 
     private updateDash(dt: number, target: Entity, now: number, onAttack?: (attacker: npc) => void): void {
@@ -300,15 +301,15 @@ export class Baybars extends Boss {
         const perpX = -dashDirection.z;
         const perpZ = dashDirection.x;
 
-        const spikeCount = 3;
+        const spikeCount = 4;
         for (let i = 0; i < spikeCount; i++) {
-            const lateralOffset = (i - (spikeCount - 1) / 2) * 1.0;
-            const randomOffset = (Math.random() - 0.5) * 0.4;
+            const lateralOffset = (i - (spikeCount - 1) / 2) * 1.2;
+            const randomOffset = (Math.random() - 0.5) * 0.3;
             const spike = new Entity("baybars-dash-spike-trail");
             spike.addComponent("render", { type: "cone" } as any);
 
-            const sx = 0.25 + Math.random() * 0.15;
-            const fullHeight = 2.0 + Math.random() * 1.2;
+            const sx = 0.35 + Math.random() * 0.2;
+            const fullHeight = 2.8 + Math.random() * 1.5;
             spike.setLocalScale(sx, 0.01, sx);
             spike.setPosition(
                 position.x + perpX * (lateralOffset + randomOffset),
@@ -323,9 +324,9 @@ export class Baybars extends Boss {
             this.registerEffect(spike);
 
             const startMs = Date.now();
-            const riseMs = 200;
-            const holdMs = 800;
-            const shrinkMs = 400;
+            const riseMs = 180;
+            const holdMs = 600;
+            const shrinkMs = 350;
             const totalMs = riseMs + holdMs + shrinkMs;
 
             const tick = () => {
@@ -353,6 +354,146 @@ export class Baybars extends Boss {
                 requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
+        }
+    }
+
+    private spawnSpikeDrop(origin: Vec3, currentTimeSeconds: number): void {
+        const sceneApp = this.resolveSceneApp();
+        if (!sceneApp?.root) return;
+
+        const spikeDropCount = 8;
+        const spreadRadius = 6;
+        const delayBetweenSpikes = 0.08;
+
+        for (let i = 0; i < spikeDropCount; i++) {
+            const angle = (i / spikeDropCount) * Math.PI * 2;
+            const randomAngleOffset = (Math.random() - 0.5) * 0.4;
+            const finalAngle = angle + randomAngleOffset;
+            const radius = spreadRadius * (0.6 + Math.random() * 0.4);
+
+            const spikePos = new Vec3(
+                origin.x + Math.cos(finalAngle) * radius,
+                origin.y,
+                origin.z + Math.sin(finalAngle) * radius
+            );
+
+            const telegraph = new Entity(`baybars-spike-drop-telegraph-${i}`);
+            telegraph.addComponent("render", { type: "cylinder" } as any);
+            telegraph.setLocalScale(1.8, 0.05, 1.8);
+            telegraph.setPosition(spikePos.x, spikePos.y + 0.05, spikePos.z);
+            if (telegraph.render?.meshInstances?.length) {
+                telegraph.render.meshInstances[0].material = this.spikeTelegraphMaterial;
+            }
+            sceneApp.root.addChild(telegraph);
+            this.registerEffect(telegraph);
+
+            const telegraphDelay = i * delayBetweenSpikes * 1000;
+            const telegraphDuration = 350;
+
+            setTimeout(() => {
+                if (!telegraph.parent) return;
+
+                const telStart = Date.now();
+                const telTick = () => {
+                    const telElapsed = Date.now() - telStart;
+                    if (telElapsed >= telegraphDuration || !telegraph.parent) {
+                        this.destroyEffect(telegraph);
+                        return;
+                    }
+                    const pulse = 0.7 + Math.sin(telElapsed * 0.015) * 0.3;
+                    telegraph.setLocalScale(1.8 * pulse, 0.05, 1.8 * pulse);
+                    const mat = telegraph.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+                    if (mat) {
+                        mat.opacity = 0.95 * (1 - telElapsed / telegraphDuration);
+                        mat.update();
+                    }
+                    requestAnimationFrame(telTick);
+                };
+                requestAnimationFrame(telTick);
+            }, telegraphDelay);
+
+            const spikeDelay = telegraphDelay + telegraphDuration;
+
+            setTimeout(() => {
+                const spike = new Entity("baybars-spike-drop");
+                spike.addComponent("render", { type: "cone" } as any);
+                spike.setLocalScale(0.5, 0.01, 0.5);
+                spike.setPosition(spikePos.x, spikePos.y + 8, spikePos.z);
+                if (spike.render?.meshInstances?.length) {
+                    spike.render.meshInstances[0].material = this.spikeMaterial;
+                }
+                sceneApp.root.addChild(spike);
+                this.registerEffect(spike);
+
+                const halo = new Entity("baybars-spike-drop-halo");
+                halo.addComponent("render", { type: "sphere" } as any);
+                halo.setLocalScale(1.2, 0.3, 1.2);
+                halo.setPosition(spikePos.x, spikePos.y + 0.15, spikePos.z);
+                if (halo.render?.meshInstances?.length) {
+                    halo.render.meshInstances[0].material = this.spikeTelegraphMaterial;
+                }
+                sceneApp.root.addChild(halo);
+                this.registerEffect(halo);
+
+                const startPosY = spikePos.y + 8;
+                const startMs = Date.now();
+                const fallMs = 400;
+                const holdMs = 500;
+                const shrinkMs = 350;
+                const totalMs = fallMs + holdMs + shrinkMs;
+                const fullHeight = 3.5;
+
+                const tick = () => {
+                    const elapsed = Date.now() - startMs;
+                    if (elapsed >= totalMs || !spike.parent) {
+                        this.destroyEffect(spike);
+                        this.destroyEffect(halo);
+                        return;
+                    }
+
+                    if (elapsed < fallMs) {
+                        const t = elapsed / fallMs;
+                        const easedT = t * t;
+                        const currentY = startPosY - (startPosY - spikePos.y - fullHeight * 0.5) * easedT;
+                        spike.setLocalScale(0.5, 0.01, 0.5);
+                        spike.setPosition(spikePos.x, currentY, spikePos.z);
+                        halo.setPosition(spikePos.x, spikePos.y + 0.15, spikePos.z);
+                        const haloScale = 1.2 - t * 0.4;
+                        halo.setLocalScale(haloScale, 0.3, haloScale);
+                    } else if (elapsed < fallMs + holdMs) {
+                        spike.setLocalScale(0.5, fullHeight, 0.5);
+                        spike.setPosition(spikePos.x, spikePos.y + fullHeight * 0.5, spikePos.z);
+                        const holdT = (elapsed - fallMs) / holdMs;
+                        const haloScale = 0.8 + holdT * 0.4;
+                        halo.setLocalScale(haloScale, 0.25, haloScale);
+                        const haloMat = halo.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+                        if (haloMat) {
+                            haloMat.opacity = 0.7 * (1 - holdT * 0.6);
+                            haloMat.update();
+                        }
+                    } else {
+                        const shrinkT = (elapsed - fallMs - holdMs) / shrinkMs;
+                        const easedShrink = shrinkT * shrinkT;
+                        const currentHeight = fullHeight * (1 - easedShrink);
+                        spike.setLocalScale(0.5 * (1 - shrinkT), currentHeight, 0.5 * (1 - shrinkT));
+                        spike.setPosition(spikePos.x, spikePos.y + currentHeight * 0.5, spikePos.z);
+                        const mat = spike.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+                        if (mat) {
+                            mat.opacity = 0.85 * (1 - shrinkT);
+                            mat.update();
+                        }
+                        const haloScale = 1.2 * (1 - shrinkT);
+                        halo.setLocalScale(haloScale, 0.15, haloScale);
+                        const haloMat = halo.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+                        if (haloMat) {
+                            haloMat.opacity = 0.4 * (1 - shrinkT);
+                            haloMat.update();
+                        }
+                    }
+                    requestAnimationFrame(tick);
+                };
+                requestAnimationFrame(tick);
+            }, spikeDelay);
         }
     }
 

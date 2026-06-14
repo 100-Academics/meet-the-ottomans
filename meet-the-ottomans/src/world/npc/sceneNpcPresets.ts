@@ -9,7 +9,7 @@ import type { NpcSceneSpawnOptions, NpcSpawnOverrides, NpcSpawnPoint } from "./s
 const NPC_MODEL_PATHS = {
   mongolTroop: "models/npc/MongolHorseman.glb",
   templarTroop: "models/npc/Crusader.glb",
-  frenchSoldierOld: "models/npc/FrenchSoldierWWI.glb",
+  frenchSoldierOld: "models/npc/OldFrenchSoldier.glb",
   modernFrenchSoldier: "models/npc/ModernerFrenchSoldier.glb",
   huntingrifledude: "models/npc/WWISoldier.glb",
   joanofarc: "models/npc/boss/JoanOfArc.glb",
@@ -259,6 +259,11 @@ const MODERN_FRENCH_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   facingYawOffsetDegrees: 0
 };
 
+const OLD_FRENCH_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0
+};
+
 const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelRotation: new Vec3(-90, 0, 0),
   facingYawOffsetDegrees: 0
@@ -291,6 +296,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   mongol: NPC_MODEL_PATHS.mongolTroop,
   templar: NPC_MODEL_PATHS.templarTroop,
   french: NPC_MODEL_PATHS.frenchSoldierOld,
+  frenchSoldierOld: NPC_MODEL_PATHS.frenchSoldierOld,
   modernFrenchSoldier: NPC_MODEL_PATHS.modernFrenchSoldier,
   huntingrifledude: NPC_MODEL_PATHS.frenchSoldierOld,
   joanofarc: NPC_MODEL_PATHS.joanofarc,
@@ -341,6 +347,7 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   mongol: MONGOL_SPAWN_OVERRIDES,
   templar: TEMPLAR_SPAWN_OVERRIDES,
   french: FRENCH_SPAWN_OVERRIDES,
+  frenchSoldierOld: OLD_FRENCH_SOLDIER_SPAWN_OVERRIDES,
   modernFrenchSoldier: MODERN_FRENCH_SOLDIER_SPAWN_OVERRIDES,
   joanofarc: JOAN_OF_ARC_SPAWN_OVERRIDES,
   americanRevolutionist: AMERICAN_REVOLUTIONIST_SPAWN_OVERRIDES,
@@ -650,31 +657,31 @@ export const CHOSIN_RESERVOIR_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, tea
 
 // Gallipoli
 export const GALLIPOLI_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 6, z: 1, type: "modernFrenchSoldier" },
-  { id: 2, team: "foe", x: 9, z: 1, type: "modernFrenchSoldier" },
-  { id: 3, team: "foe", x: 12, z: 1, type: "modernFrenchSoldier" },
-  { id: 4, team: "foe", x: 15, z: 1, type: "modernFrenchSoldier" },
-  { id: 5, team: "foe", x: 6, z: -3, type: "modernFrenchSoldier" },
-  { id: 6, team: "foe", x: 9, z: -3, type: "modernFrenchSoldier" },
-  { id: 7, team: "foe", x: 12, z: -3, type: "modernFrenchSoldier" },
-  { id: 8, team: "foe", x: 15, z: -3, type: "modernFrenchSoldier" },
-  { id: 9, team: "foe", x: 6, z: 5, type: "modernFrenchSoldier" },
-  { id: 10, team: "foe", x: 9, z: 5, type: "modernFrenchSoldier" },
-  { id: 11, team: "foe", x: 12, z: 5, type: "modernFrenchSoldier" },
-  { id: 12, team: "foe", x: 15, z: 5, type: "modernFrenchSoldier" },
-  { id: 13, team: "foe", x: -6, z: 1, type: "modernFrenchSoldier" },
-  { id: 14, team: "foe", x: -9, z: 1, type: "modernFrenchSoldier" },
-  { id: 15, team: "foe", x: -6, z: -3, type: "modernFrenchSoldier" },
-  { id: 16, team: "foe", x: -9, z: -3, type: "modernFrenchSoldier" },
-  { id: 17, team: "foe", x: -6, z: 5, type: "modernFrenchSoldier" },
-  { id: 18, team: "foe", x: -9, z: 5, type: "modernFrenchSoldier" },
-  { id: 19, team: "foe", x: 0, z: 8, type: "modernFrenchSoldier" },
-  { id: 20, team: "foe", x: 3, z: 8, type: "modernFrenchSoldier" },
-  { id: 21, team: "foe", x: -3, z: -6, type: "modernFrenchSoldier" },
-  { id: 22, team: "foe", x: 0, z: -6, type: "modernFrenchSoldier" },
-  { id: 23, team: "foe", x: 3, z: -6, type: "modernFrenchSoldier" },
-  { id: 24, team: "foe", x: -3, z: 8, type: "modernFrenchSoldier" },
-  { id: 25, team: "foe", x: 18, z: 1, type: "modernFrenchSoldier" },
+  { id: 1, team: "foe", x: 6, z: 1, type: "frenchSoldierOld" },
+  { id: 2, team: "foe", x: 9, z: 1, type: "frenchSoldierOld" },
+  { id: 3, team: "foe", x: 12, z: 1, type: "frenchSoldierOld" },
+  { id: 4, team: "foe", x: 15, z: 1, type: "frenchSoldierOld" },
+  { id: 5, team: "foe", x: 6, z: -3, type: "frenchSoldierOld" },
+  { id: 6, team: "foe", x: 9, z: -3, type: "frenchSoldierOld" },
+  { id: 7, team: "foe", x: 12, z: -3, type: "frenchSoldierOld" },
+  { id: 8, team: "foe", x: 15, z: -3, type: "frenchSoldierOld" },
+  { id: 9, team: "foe", x: 6, z: 5, type: "frenchSoldierOld" },
+  { id: 10, team: "foe", x: 9, z: 5, type: "frenchSoldierOld" },
+  { id: 11, team: "foe", x: 12, z: 5, type: "frenchSoldierOld" },
+  { id: 12, team: "foe", x: 15, z: 5, type: "frenchSoldierOld" },
+  { id: 13, team: "foe", x: -6, z: 1, type: "frenchSoldierOld" },
+  { id: 14, team: "foe", x: -9, z: 1, type: "frenchSoldierOld" },
+  { id: 15, team: "foe", x: -6, z: -3, type: "frenchSoldierOld" },
+  { id: 16, team: "foe", x: -9, z: -3, type: "frenchSoldierOld" },
+  { id: 17, team: "foe", x: -6, z: 5, type: "frenchSoldierOld" },
+  { id: 18, team: "foe", x: -9, z: 5, type: "frenchSoldierOld" },
+  { id: 19, team: "foe", x: 0, z: 8, type: "frenchSoldierOld" },
+  { id: 20, team: "foe", x: 3, z: 8, type: "frenchSoldierOld" },
+  { id: 21, team: "foe", x: -3, z: -6, type: "frenchSoldierOld" },
+  { id: 22, team: "foe", x: 0, z: -6, type: "frenchSoldierOld" },
+  { id: 23, team: "foe", x: 3, z: -6, type: "frenchSoldierOld" },
+  { id: 24, team: "foe", x: -3, z: 8, type: "frenchSoldierOld" },
+  { id: 25, team: "foe", x: 18, z: 1, type: "frenchSoldierOld" },
 ];
 export const GALLIPOLI_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "kinGerorge" }];
 
