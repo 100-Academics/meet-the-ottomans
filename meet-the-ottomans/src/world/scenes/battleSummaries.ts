@@ -244,13 +244,13 @@ export const battleSummaries: Record<string, BattleSummary> = {
   },
   "Northwood High School": {
     name: "Northwood High School",
-    date: "[Date to be specified]",
+    date: "???",
     location: "Silver Spring, Maryland, USA",
-    historicalContext: "[Context to be written - fictional/custom battle scenario]",
+    historicalContext: "??????",
     combatants: {
       sideA: { name: "Side A", strength: 0 },
       sideB: { name: "Side B", strength: 0 }
     },
-    briefingMessage: "[Your briefing message here - to be written]"
+    briefingMessage: "The Final Fight. Are you ready?"
   }
 };
