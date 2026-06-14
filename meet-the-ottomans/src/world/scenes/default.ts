@@ -46,6 +46,7 @@ import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js'
 // @ts-expect-error - local JS utility has no .d.ts declarations
 import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
+import { getSecretsFound, TOTAL_SECRETS_AVAILABLE } from '../secrets';
 
 //battles
 import { battleOfLegnicaScene } from "./battleOfLegnica";
@@ -422,10 +423,23 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
     });
   }
 
+  // Period 8 (∞) is gated behind collecting every secret in the game. Hide the
+  // button until the player has them all — re-showing it on their next visit
+  // to this scene once `getSecretsFound()` catches up to `TOTAL_SECRETS_AVAILABLE`.
+  const period8Btn = timePeriodButtons[7];
+  if (period8Btn && getSecretsFound() < TOTAL_SECRETS_AVAILABLE) {
+    period8Btn.style.display = 'none';
+  }
+
   if (timePeriodButtons.every(btn => btn !== null) && timePeriodText) {
     timePeriodButtons.forEach((btn, index) => {
       btn!.addEventListener('click', () => {
         const period = index + 1;
+        // Defense-in-depth: even if a future code path programmatically clicks
+        // or focuses the period-8 button, don't unlock it without all secrets.
+        if (period === 8 && getSecretsFound() < TOTAL_SECRETS_AVAILABLE) {
+          return;
+        }
         selectedTimePeriod = period;
         renderBattlesForPeriod(period);
       });

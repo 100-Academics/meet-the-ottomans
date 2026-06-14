@@ -106,10 +106,9 @@ export function showDeathScreen(options?: {
       onRestart();
       return;
     }
-    if (onMainMenu) {
-      onMainMenu();
-      return;
-    }
+  });
+  menu.addEventListener('click', () => {
+    if (onMainMenu) return onMainMenu();
     window.location.href = '/';
   });
 
