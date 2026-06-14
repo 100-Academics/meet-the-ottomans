@@ -187,7 +187,7 @@ export class NineTailedFox extends Boss {
         return best.type;
     }
 
-    private startFoxFire(target: Entity, now: number): void {
+    private startFoxFire(_target: Entity, now: number): void {
         this.lastAttackType = "foxFire"; this.lastAttackAtSeconds = now;
         const orb = this.createFoxFireOrb();
         this.foxFireState = { endTimeSeconds: now + this.foxFireDurationSeconds, hasHit: false, orb };
@@ -228,7 +228,7 @@ export class NineTailedFox extends Boss {
         return orb;
     }
 
-    private startTailSwipe(target: Entity, now: number): void {
+    private startTailSwipe(_target: Entity, now: number): void {
         this.lastAttackType = "tailSwipe"; this.lastAttackAtSeconds = now;
         this.tailSwipeState = { endTimeSeconds: now + 0.5, hasHit: false };
         this.attackLockUntilSeconds = this.tailSwipeState.endTimeSeconds;
@@ -318,7 +318,7 @@ export class NineTailedFox extends Boss {
             const offset = new Vec3(Math.sin(now * 2) * 3, 0, Math.cos(now * 2) * 3);
             const myPos = this.getEntity().getPosition();
             state.clone.setPosition(myPos.x + offset.x, myPos.y + 1, myPos.z + offset.z);
-            if (!this.getFlatDistanceTo(target) <= this.illusionDamage) {
+            if (this.getFlatDistanceTo(target) <= this.illusionDamage) {
                 // Deal passive damage while illusion is active
                 if (now >= this.nextIllusionAtSeconds - this.illusionDurationSeconds + 1.0) {
                     this.applyDamage(this.illusionDamage * 0.3, onAttack);

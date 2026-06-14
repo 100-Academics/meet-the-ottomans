@@ -53,6 +53,7 @@ ANACONDA_NPC_SPAWN_POINTS,
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
+import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
 
 const groundModelPath = "/world/battlefields/Shahikot.glb";
@@ -66,109 +67,8 @@ function resetAnacondaBattleState(): void {
   Mongol.resetBattleState();
 }
 
-function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
-  let current: Entity | null = entity;
-  while (current) {
-    if (current.tags?.has(tag)) return true;
-    current = (current.parent as Entity | null) ?? null;
-  }
-  return false;
-}
 
-function getHighestGroundHitY(
-  app: AppBase,
-  x: number,
-  z: number,
-  groundTag: string,
-  terrainBounds?: { minY: number; maxY: number },
-): number | undefined {
-  const rigidbodySystem = (app.systems as any).rigidbody as any;
-  if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== "function")
-    return undefined;
 
-  // Use terrain bounds to determine the ray range, falling back to ±300
-  const rayRange = terrainBounds ? (terrainBounds.maxY - terrainBounds.minY) : 600;
-  const rayCenter = terrainBounds ? (terrainBounds.maxY + terrainBounds.minY) * 0.5 : 0;
-  const start = new Vec3(x, rayCenter + rayRange * 0.5, z);
-  const end = new Vec3(x, rayCenter - rayRange * 0.5, z);
-  if (typeof rigidbodySystem.raycastAll === "function") {
-    const hits = rigidbodySystem.raycastAll(start, end);
-    if (hits && hits.length > 0) {
-      let bestFraction = Number.POSITIVE_INFINITY;
-      let bestFractionY: number | undefined;
-      let highestY: number | undefined;
-      for (const hit of hits) {
-        if (!hit?.point) continue;
-        if (!Number.isFinite(hit.point.y)) continue;
-        const hitEntity = hit.entity ?? null;
-        if (!hasTagInHierarchy(hitEntity, groundTag)) continue;
-        const hitFraction = hit.hitFraction;
-        if (
-          typeof hitFraction === "number" &&
-          Number.isFinite(hitFraction) &&
-          hitFraction < bestFraction
-        ) {
-          bestFraction = hitFraction;
-          bestFractionY = hit.point.y;
-        }
-        if (highestY === undefined || hit.point.y > highestY)
-          highestY = hit.point.y;
-      }
-      if (bestFractionY !== undefined) return bestFractionY;
-      if (highestY !== undefined) return highestY;
-    }
-  }
-  const firstHit = rigidbodySystem.raycastFirst(start, end);
-  if (!firstHit?.point) return undefined;
-  const firstEntity = firstHit.entity ?? null;
-  if (!hasTagInHierarchy(firstEntity, groundTag)) return undefined;
-  return Number.isFinite(firstHit.point.y) ? firstHit.point.y : undefined;
-}
-
-function getRenderableBounds(
-  entity: Entity,
-):
-  | { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number }
-  | undefined {
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
-  let minZ = Number.POSITIVE_INFINITY;
-  let maxZ = Number.NEGATIVE_INFINITY;
-  let minY = Number.POSITIVE_INFINITY;
-  let maxY = Number.NEGATIVE_INFINITY;
-  let found = false;
-  const visit = (node: Entity) => {
-    const meshInstances = node.render?.meshInstances;
-    if (meshInstances && meshInstances.length > 0) {
-      for (const meshInstance of meshInstances) {
-        const aabb = meshInstance.aabb;
-        if (!aabb) continue;
-        const min = aabb.getMin();
-        const max = aabb.getMax();
-        if (
-          !Number.isFinite(min.x) ||
-          !Number.isFinite(min.y) ||
-          !Number.isFinite(min.z) ||
-          !Number.isFinite(max.x) ||
-          !Number.isFinite(max.y) ||
-          !Number.isFinite(max.z)
-        )
-          continue;
-        minX = Math.min(minX, min.x);
-        maxX = Math.max(maxX, max.x);
-        minZ = Math.min(minZ, min.z);
-        maxZ = Math.max(maxZ, max.z);
-        minY = Math.min(minY, min.y);
-        maxY = Math.max(maxY, max.y);
-        found = true;
-      }
-    }
-    for (const child of node.children) visit(child as Entity);
-  };
-  visit(entity);
-  if (!found) return undefined;
-  return { minX, maxX, minZ, maxZ, minY, maxY };
-}
 
 function createNightSkyTexture(device: AppBase['graphicsDevice'], width = 1024, height = 512): Texture {
 const canvas = document.createElement('canvas');
@@ -644,7 +544,7 @@ for (
       spawnX + ox,
       spawnZ + oz,
       "ground",
-      bounds,
+      bounds ? { terrainBounds: { minY: bounds.minY, maxY: bounds.maxY } } : undefined,
     );
     if (hitY !== undefined && (seededGroundY === undefined || hitY > seededGroundY)) {
       seededGroundY = hitY;

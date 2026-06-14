@@ -42,124 +42,12 @@ import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { AIN_JALUT_BOSS_SPAWN_POINT, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { changeScene } from "../../App";
+import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
 
 var isBossSpawned = false;
 var isBossSpawning = false;
-
-/**
- * Checks if an entity or any of its parents in the hierarchy has the specified tag.
- * Walks up the parent chain from the given entity to see if the tag exists anywhere.
-*
-* USAGE: Called during raycasting to verify that a raycast hit an entity that has the desired tag
-* (e.g., "ground"). This ensures we only consider valid hits and ignore collisions with other objects.
- */
-function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
-  // Start from the current entity and traverse upward
-  let current: Entity | null = entity;
-  while (current) {
-    // If this entity has the tag, we found it
-    if (current.tags?.has(tag)) {
-      return true;
-    }
-    // Move to the parent and repeat
-    current = (current.parent as Entity | null) ?? null;
-  }
-  // We've reached the root and didn't find the tag
-  return false;
-}
-
-/**
- * Uses a physics raycast to find the highest point of ground-tagged objects at a given x,z position.
- * Shoots a ray downward from high up and returns the Y coordinate of the first ground it hits,
- * prioritizing the closest hit but falling back to the highest Y value if needed.
-*
-* USAGE: Called during scene initialization to determine the terrain height at specific positions,
-* so we can spawn the player camera at the correct elevation (standing on top of the ground, not inside it).
- */
-function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: string): number | undefined {
-  // Get the physics/rigidbody system from the app so we can do raycasts
-  const rigidbodySystem = (app.systems as any).rigidbody as
-    | {
-        raycastAll?: (start: Vec3, end: Vec3) => Array<{ entity?: Entity | null; point?: Vec3; hitFraction?: number }> | undefined;
-        raycastFirst?: (start: Vec3, end: Vec3) => { entity?: Entity | null; point?: Vec3 } | null;
-      }
-    | undefined;
-
-  // If the physics system isn't available, we can't raycast
-  if (!rigidbodySystem || typeof rigidbodySystem.raycastFirst !== 'function') {
-    console.log('[Raycast] rigidbody system or raycast function not available');
-    return undefined;
-  }
-
-  // Define the ray: starting from high above and going downward to find ground
-  const start = new Vec3(x, 300, z);
-  const end = new Vec3(x, -300, z);
-
-  // Try to get all collision hits along the ray (more reliable than just the first hit)
-  if (typeof rigidbodySystem.raycastAll === 'function') {
-    const hits = rigidbodySystem.raycastAll(start, end);
-    if (hits && hits.length > 0) {
-      // Track the closest hit (by hitFraction) and the highest Y coordinate
-      let bestFraction = Number.POSITIVE_INFINITY;
-      let bestFractionY: number | undefined;
-      let highestY: number | undefined;
-      
-      for (const hit of hits) {
-        // Skip if the hit point is invalid
-        if (!hit?.point) {
-          continue;
-        }
-        // Skip if the Y coordinate isn't a real number
-        if (!Number.isFinite(hit.point.y)) {
-          continue;
-        }
-        
-        // Check if this hit is on an entity tagged as ground
-        const hitEntity = hit.entity ?? null;
-        if (!hasTagInHierarchy(hitEntity, groundTag)) {
-          continue;
-        }
-        
-        // If this is a closer hit than what we've seen, remember it
-        const hitFraction = hit.hitFraction;
-        if (typeof hitFraction === 'number' && Number.isFinite(hitFraction) && hitFraction < bestFraction) {
-          bestFraction = hitFraction;
-          bestFractionY = hit.point.y;
-        }
-        
-        // Also track the overall highest Y coordinate we've seen
-        if (highestY === undefined || hit.point.y > highestY) {
-          highestY = hit.point.y;
-        }
-      }
-      
-      // Return the closest hit if we found one, otherwise fall back to the highest point
-      if (bestFractionY !== undefined) {
-        return bestFractionY;
-      }
-      if (highestY !== undefined) {
-        return highestY;
-      }
-    }
-  }
-
-  // Fallback: if raycastAll didn't work or returned nothing, try the simpler raycastFirst
-  const firstHit = rigidbodySystem.raycastFirst(start, end);
-  if (!firstHit?.point) {
-    return undefined;
-  }
-
-  // Make sure the hit is on a ground-tagged entity
-  const firstEntity = firstHit.entity ?? null;
-  if (!hasTagInHierarchy(firstEntity, groundTag)) {
-    return undefined;
-  }
-
-  // Return the Y coordinate if it's a valid number
-  return Number.isFinite(firstHit.point.y) ? firstHit.point.y : undefined;
-}
 
 /**
  * Recursively scans an entity and all its children to find the bounding box of all
@@ -169,73 +57,6 @@ function getHighestGroundHitY(app: AppBase, x: number, z: number, groundTag: str
 * USAGE: Called during scene initialization to determine where the ground model is located,
 * so we can calculate a good spawn point at the center of the visible terrain.
  */
-function getRenderableBounds(entity: Entity): { minX: number; maxX: number; minZ: number; maxZ: number; minY: number; maxY: number } | undefined {
-  // Initialize bounds to extreme values (will be updated as we find meshes)
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
-  let minZ = Number.POSITIVE_INFINITY;
-  let maxZ = Number.NEGATIVE_INFINITY;
-  let minY = Number.POSITIVE_INFINITY;
-  let maxY = Number.NEGATIVE_INFINITY;
-  let found = false;
-
-  // Recursive function to walk through the entity hierarchy
-  const visit = (node: Entity) => {
-    // Get mesh instances (the actual renderable parts) from this entity
-    const meshInstances = node.render?.meshInstances;
-    if (meshInstances && meshInstances.length > 0) {
-      // Check each mesh instance to update our bounds
-      for (const meshInstance of meshInstances) {
-        // Get the axis-aligned bounding box for this mesh
-        const aabb = meshInstance.aabb;
-        if (!aabb) {
-          continue;
-        }
-
-        // Get the minimum and maximum corners of the bounding box
-        const min = aabb.getMin();
-        const max = aabb.getMax();
-        
-        // Skip if any coordinate is invalid (NaN, Infinity, etc.)
-        if (
-        !Number.isFinite(min.x) ||
-        !Number.isFinite(min.y) ||
-        !Number.isFinite(min.z) ||
-        !Number.isFinite(max.x) ||
-        !Number.isFinite(max.y) ||
-        !Number.isFinite(max.z)
-      ) {
-        continue;
-      }
-
-      // Update our overall bounds to encompass this mesh
-      minX = Math.min(minX, min.x);
-      maxX = Math.max(maxX, max.x);
-      minZ = Math.min(minZ, min.z);
-      maxZ = Math.max(maxZ, max.z);
-      minY = Math.min(minY, min.y);
-      maxY = Math.max(maxY, max.y);
-        found = true;
-      }
-    }
-
-    // Recursively visit all child entities
-    for (const child of node.children) {
-      visit(child as Entity);
-    }
-  };
-
-  // Start the recursive traversal from the root entity
-  visit(entity);
-
-  // If we never found any meshes, return nothing
-  if (!found) {
-    return undefined;
-  }
-
-  // Return the calculated bounding box
-  return { minX, maxX, minZ, maxZ, minY, maxY };
-}
 
 function resolveAinJalutSpawnPoints(anchor: Vec3): NpcSpawnPoint[] {
   const basePoints = AIN_JALUT_NPC_SPAWN_POINTS;
@@ -303,14 +124,6 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: Array<Awaited
   }
 }
 
-/**
- * Main scene initialization for the Battle of Ain Jalut.
- * Sets up the 3D environment, camera, ground physics, lighting, and handles player spawning.
-*
-* USAGE: Called whenever the user enters the Battle of Ain Jalut scene (clicks on it from the main map view).
-* This function replaces the globe view with a first-person 3D environment where the user can walk around
-* the historical battlefield. The scene persists until the user exits back to the main view.
- */
 export async function battleOfAinJalutScene(
   canvas: HTMLCanvasElement,
   app: AppBase,
