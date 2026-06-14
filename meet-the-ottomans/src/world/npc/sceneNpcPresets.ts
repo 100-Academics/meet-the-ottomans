@@ -181,7 +181,7 @@ const KIN_GERORGE_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const LENIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.lenin,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -241,7 +241,7 @@ const POLISH_HUSSAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 // Non-boss per-type overrides (used in typeSpawnOverrides below).
 const TEMPLAR_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 
@@ -281,7 +281,8 @@ const UNION_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const RUSSIAN_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(0, 0, 0),
+  modelPath: "models/npc/russianSoldier.glb",
+  modelRotation: new Vec3(-90, 0, 0),
   facingYawOffsetDegrees: 0,
   detectionRange: 1000
 };
