@@ -998,5 +998,5 @@ export const NORTHWOOD_HIGH_AIR_LADIN_SPAWN_POINT: NpcSpawnPoint[] = [
  { id: 98, team: "foe", x: 0, z: 0, maxHealth: 500, type: "AirLadin" }
 ];
 export const NORTHWOOD_HIGH_TOWER_SPAWN_POINT: NpcSpawnPoint[] = [
- { id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "towerBoss" }
+  { id: 99, team: "foe", x: 0, z: 0, maxHealth: 5000, type: "towerBoss" }
 ];
