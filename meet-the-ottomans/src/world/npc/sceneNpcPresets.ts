@@ -201,7 +201,7 @@ const STALIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 const TOWER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.towerBoss,
   modelRotation: new Vec3(0, 0, 0),
-  modelScale: new Vec3(50, 50, 50),
+  modelScale: new Vec3(500, 500, 500),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
   hitboxRadius: 2.4
@@ -1017,5 +1017,5 @@ export const NORTHWOOD_HIGH_AIR_LADIN_SPAWN_POINT: NpcSpawnPoint[] = [
  { id: 98, team: "foe", x: 0, z: 0, maxHealth: 500, type: "AirLadin" }
 ];
 export const NORTHWOOD_HIGH_TOWER_SPAWN_POINT: NpcSpawnPoint[] = [
-  { id: 99, team: "foe", x: 0, z: 0, maxHealth: 5000, type: "towerBoss" }
+  { id: 99, team: "foe", x: 0, z: 0, maxHealth: 9000, type: "towerBoss" }
 ];

@@ -2,7 +2,7 @@ import { Boss } from "./boss";
 import { Entity, Vec3, AppBase, StandardMaterial, Color, BLEND_ADDITIVE, CULLFACE_NONE } from "playcanvas";
 import type { npc } from "../npc";
 
-type TowerAttackType = "shockwave" | "pillar" | "gaze" | "resonance";
+type TowerAttackType = "shockwave" | "pillar" | "gaze" | "resonance" | "meteor" | "beam" | "rift";
 
 interface ShockwaveState {
     endTimeSeconds: number;
@@ -41,6 +41,37 @@ interface ResonanceState {
     pulseDurationMs: number;
 }
 
+interface MeteorImpact {
+    impactPosition: Vec3;
+    telegraphEntity: Entity;
+    meteorEntity: Entity | null;
+    resolved: boolean;
+}
+
+interface MeteorState {
+    endTimeSeconds: number;
+    impacts: MeteorImpact[];
+    nextImpactAtSeconds: number;
+    impactsSpawned: number;
+}
+
+interface BeamState {
+    endTimeSeconds: number;
+    sweepStart: number;
+    sweepDuration: number;
+    startAngle: number;
+    endAngle: number;
+    beamRoot: Entity | null;
+    hasHit: boolean;
+}
+
+interface RiftState {
+    endTimeSeconds: number;
+    nextPulseAtSeconds: number;
+    pulsesRemaining: number;
+    pulsePositions: Vec3[];
+}
+
 /**
  * Tower boss — an ancient monolith that speaks in an unknown tongue.
  * Phase 2 of the Northwood High School fight.
@@ -49,43 +80,68 @@ interface ResonanceState {
 export class TowerBoss extends Boss {
 
     // ── Shockwave ──
-    private readonly shockwaveDamage = 14;
-    private readonly shockwaveMaxRadius = 150;
-    private readonly shockwaveDurationMs = 1200;
-    private readonly shockwaveRingCount = 3;
-    private readonly shockwaveRingIntervalMs = 400;
+    private readonly shockwaveDamage = 24;
+    private readonly shockwaveMaxRadius = 170;
+    private readonly shockwaveDurationMs = 1300;
+    private readonly shockwaveRingCount = 4;
+    private readonly shockwaveRingIntervalMs = 320;
     private readonly shockwaveHeight = 0.6;
-    private readonly shockwaveCooldownSeconds = 6.0;
+    private readonly shockwaveCooldownSeconds = 5.5;
     private nextShockwaveAtSeconds = 0;
 
     // ── Pillar Slam ──
-    private readonly pillarDamage = 18;
-    private readonly pillarCount = 4;
-    private readonly pillarIntervalSeconds = 0.45;
-    private readonly pillarRange = 120;
-    private readonly pillarHitRadius = 6;
-    private readonly pillarTelegraphMs = 600;
-    private readonly pillarRiseMs = 500;
-    private readonly pillarCooldownSeconds = 8.0;
+    private readonly pillarDamage = 30;
+    private readonly pillarCount = 5;
+    private readonly pillarIntervalSeconds = 0.38;
+    private readonly pillarRange = 130;
+    private readonly pillarHitRadius = 8;
+    private readonly pillarTelegraphMs = 520;
+    private readonly pillarRiseMs = 520;
+    private readonly pillarCooldownSeconds = 7.5;
     private nextPillarAtSeconds = 0;
 
     // ── Ancient Gaze ──
-    private readonly gazeDamage = 10;
-    private readonly gazeRange = 150;
-    private readonly gazeSweepDuration = 2.5;
-    private readonly gazeHitRadius = 8.0;
-    private readonly gazeCooldownSeconds = 10.0;
+    private readonly gazeDamage = 20;
+    private readonly gazeRange = 170;
+    private readonly gazeSweepDuration = 2.2;
+    private readonly gazeHitRadius = 10.0;
+    private readonly gazeCooldownSeconds = 9.0;
     private nextGazeAtSeconds = 0;
 
     // ── Resonance ──
-    private readonly resonanceDamage = 8;
-    private readonly resonanceRange = 100;
-    private readonly resonancePulseInterval = 3.0;
-    private readonly resonancePulseRadius = 80;
-    private readonly resonancePulseDurationMs = 1000;
-    private readonly resonanceDurationSeconds = 9.0;
-    private readonly resonanceCooldownSeconds = 14.0;
+    private readonly resonanceDamage = 16;
+    private readonly resonanceRange = 115;
+    private readonly resonancePulseInterval = 2.35;
+    private readonly resonancePulseRadius = 92;
+    private readonly resonancePulseDurationMs = 900;
+    private readonly resonanceDurationSeconds = 8.5;
+    private readonly resonanceCooldownSeconds = 13.0;
     private nextResonanceAtSeconds = 0;
+
+    // ── Meteor Shower ──
+    private readonly meteorDamage = 28;
+    private readonly meteorImpactRadius = 16;
+    private readonly meteorCount = 5;
+    private readonly meteorDropMs = 650;
+    private readonly meteorCooldownSeconds = 11.0;
+    private readonly meteorRange = 160;
+    private nextMeteorAtSeconds = 0;
+
+    // ── Tower Beam Sweep ──
+    private readonly beamDamage = 32;
+    private readonly beamRange = 180;
+    private readonly beamDurationSeconds = 2.8;
+    private readonly beamCooldownSeconds = 12.0;
+    private nextBeamAtSeconds = 0;
+
+    // ── Rift Bursts ──
+    private readonly riftDamage = 18;
+    private readonly riftPulseRadius = 110;
+    private readonly riftPulses = 3;
+    private readonly riftPulseInterval = 0.65;
+    private readonly riftDurationSeconds = 3.0;
+    private readonly riftCooldownSeconds = 10.5;
+    private nextRiftAtSeconds = 0;
 
     // Runtime state
     private attackLockUntilSeconds = 0;
@@ -94,6 +150,9 @@ export class TowerBoss extends Boss {
     private pillarState: PillarState | null = null;
     private gazeState: GazeState | null = null;
     private resonanceState: ResonanceState | null = null;
+    private meteorState: MeteorState | null = null;
+    private beamState: BeamState | null = null;
+    private riftState: RiftState | null = null;
 
 
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
@@ -114,13 +173,27 @@ export class TowerBoss extends Boss {
     private readonly resonanceRingMaterial = this.createEffectMaterial(
         new Color(0.5, 0.4, 0.35), new Color(0.7, 0.55, 0.4), 4.5, 0.5
     );
+    private readonly meteorWarningMaterial = this.createEffectMaterial(
+        new Color(0.8, 0.45, 0.15), new Color(1, 0.75, 0.25), 4.0, 0.55
+    );
+    private readonly meteorMaterial = this.createEffectMaterial(
+        new Color(0.95, 0.35, 0.08), new Color(1, 0.8, 0.35), 8.0, 0.92
+    );
+    private readonly beamMaterial = this.createEffectMaterial(
+        new Color(0.65, 0.18, 0.1), new Color(1, 0.55, 0.2), 7.5, 0.6
+    );
+    private readonly riftMaterial = this.createEffectMaterial(
+        new Color(0.22, 0.1, 0.28), new Color(0.7, 0.35, 0.95), 5.5, 0.75
+    );
 
     private readonly activeEffects = new Set<Entity>();
 
     constructor(id: number, maxHealth: number, entity: Entity = new Entity("TowerBoss")) {
-        super(id, maxHealth, entity, "The Tower");
+            super(id, maxHealth, entity, "Mrs. Bond-Lamberty");
 
-        // The tower's language is unrecognised — rendered as question marks.
+            // The tower's language is unrecognised — rendered as question marks.
+            // NOTE: Intro taunt disabled to prevent health bar disappearance during battle.
+           // The tower's language is unrecognised — rendered as question marks.
         this.setIntroTaunt("??????????", "You are a fool for coming here.");
         this.setIntroNameTranslation("??????????", "Mrs. Bond-Lamberty");
 
@@ -186,9 +259,12 @@ export class TowerBoss extends Boss {
         if (this.pillarState) { this.updatePillar(targetEntity, currentTimeSeconds, onAttack); }
         if (this.gazeState) { this.updateGaze(targetEntity, currentTimeSeconds, onAttack); }
         if (this.resonanceState) { this.updateResonance(targetEntity, currentTimeSeconds, onAttack); }
+        if (this.meteorState) { this.updateMeteorShower(targetEntity, currentTimeSeconds, onAttack); }
+        if (this.beamState) { this.updateBeamSweep(targetEntity, currentTimeSeconds, onAttack); }
+        if (this.riftState) { this.updateRiftBursts(targetEntity, currentTimeSeconds, onAttack); }
 
         // If any state is still active, don't start a new one yet
-        if (this.shockwaveState || this.pillarState || this.gazeState || this.resonanceState) {
+        if (this.shockwaveState || this.pillarState || this.gazeState || this.resonanceState || this.meteorState || this.beamState || this.riftState) {
             this.faceTarget(targetEntity, dt);
             return;
         }
@@ -210,10 +286,13 @@ export class TowerBoss extends Boss {
             return;
         }
 
-        if (chosen === "shockwave") { this.startShockwave(currentTimeSeconds); return; }
+        if (chosen === "shockwave") { this.startShockwave(targetEntity, currentTimeSeconds); return; }
         if (chosen === "pillar") { this.startPillar(targetEntity, currentTimeSeconds); return; }
         if (chosen === "gaze") { this.startGaze(targetEntity, currentTimeSeconds); return; }
         if (chosen === "resonance") { this.startResonance(currentTimeSeconds); return; }
+        if (chosen === "meteor") { this.startMeteorShower(targetEntity, currentTimeSeconds); return; }
+        if (chosen === "beam") { this.startBeamSweep(targetEntity, currentTimeSeconds); return; }
+        if (chosen === "rift") { this.startRiftBursts(targetEntity, currentTimeSeconds); return; }
     }
 
     public override kill(): boolean {
@@ -228,9 +307,9 @@ export class TowerBoss extends Boss {
         const base = super.getCombatProfile();
         return {
             ...base,
-            attackDamage: this.shockwaveDamage,
+            attackDamage: this.beamDamage,
             attackRange: 200,
-            attackCooldown: 4,
+            attackCooldown: 3.2,
             detectionRange: Number.MAX_VALUE
         };
     }
@@ -251,16 +330,40 @@ export class TowerBoss extends Boss {
         if (now >= this.nextResonanceAtSeconds && distance <= this.resonanceRange) {
             builtinOptions.push("resonance");
         }
+        if (now >= this.nextMeteorAtSeconds && distance <= this.meteorRange) {
+            builtinOptions.push("meteor");
+        }
+        if (now >= this.nextBeamAtSeconds && distance <= this.beamRange) {
+            builtinOptions.push("beam");
+        }
+        if (now >= this.nextRiftAtSeconds && distance <= this.riftPulseRadius) {
+            builtinOptions.push("rift");
+        }
 
         if (builtinOptions.length === 0) return null;
-        return builtinOptions[Math.floor(Math.random() * builtinOptions.length)];
+        const weightedOptions = builtinOptions.map((attack) => {
+            if (attack === "meteor") return { attack, weight: 1.35 };
+            if (attack === "beam") return { attack, weight: 1.15 };
+            if (attack === "rift") return { attack, weight: 1.1 };
+            if (attack === "shockwave") return { attack, weight: 1.2 };
+            if (attack === "pillar") return { attack, weight: 1.4 };
+            if (attack === "gaze") return { attack, weight: 1.25 };
+            return { attack, weight: 1.0 };
+        });
+        const totalWeight = weightedOptions.reduce((sum, option) => sum + option.weight, 0);
+        let roll = Math.random() * totalWeight;
+        for (const option of weightedOptions) {
+            roll -= option.weight;
+            if (roll <= 0) return option.attack;
+        }
+        return weightedOptions[0].attack;
     }
 
 
 
     // ── Shockwave ──
 
-    private startShockwave(now: number): void {
+    private startShockwave(_targetEntity: Entity | null, now: number): void {
         this.shockwaveState = {
             endTimeSeconds: now + (this.shockwaveRingCount * this.shockwaveRingIntervalMs / 1000),
             waveEntities: [],
@@ -342,7 +445,6 @@ export class TowerBoss extends Boss {
                 // Apply damage during the ring's expansion
                 window.setTimeout(() => {
                     if (this.isAlive()) {
-                        this.showStatusText("??????????", 1200);
                         this.applyDamage(this.shockwaveDamage);
                     }
                 }, 400);
@@ -678,7 +780,6 @@ export class TowerBoss extends Boss {
                 const distance = Math.sqrt(dx * dx + dz * dz);
                 if (distance <= state.pulseRadius) {
                     this.applyDamage(this.resonanceDamage, onAttack);
-                    this.showStatusText("??????????", 800);
                 }
             }
         }
@@ -686,6 +787,356 @@ export class TowerBoss extends Boss {
         if (now >= state.endTimeSeconds) {
             this.resonanceState = null;
             this.nextResonanceAtSeconds = now + this.resonanceCooldownSeconds;
+        }
+    }
+
+    // ── Meteor Shower ──
+
+    private startMeteorShower(targetEntity: Entity, now: number): void {
+        const myPos = this.getEntity().getPosition();
+        const targetPos = targetEntity.getPosition();
+        const impacts: MeteorImpact[] = [];
+        const sceneApp = this.resolveSceneApp();
+
+        for (let index = 0; index < this.meteorCount; index += 1) {
+            const angle = (index / Math.max(1, this.meteorCount)) * Math.PI * 2;
+            const radius = 10 + (index % 2) * 18;
+            const impactPosition = new Vec3(
+                targetPos.x + Math.cos(angle) * radius,
+                myPos.y,
+                targetPos.z + Math.sin(angle) * radius
+            );
+
+            const telegraphEntity = new Entity(`tower-meteor-warning-${index}`);
+            telegraphEntity.addComponent("render", { type: "cylinder" } as any);
+            telegraphEntity.setLocalScale(0.2, 0.2, 0.2);
+            if (telegraphEntity.render?.meshInstances?.length) {
+                telegraphEntity.render.meshInstances[0].material = this.meteorWarningMaterial;
+            }
+            telegraphEntity.setPosition(impactPosition.x, impactPosition.y + 0.2, impactPosition.z);
+            if (sceneApp?.root) {
+                sceneApp.root.addChild(telegraphEntity);
+            }
+            this.activeEffects.add(telegraphEntity);
+
+            impacts.push({
+                impactPosition,
+                telegraphEntity,
+                meteorEntity: null,
+                resolved: false,
+            });
+        }
+
+        this.meteorState = {
+            endTimeSeconds: now + ((this.meteorCount * this.meteorDropMs) / 1000) + 1.5,
+            impacts,
+            nextImpactAtSeconds: now + 0.15,
+            impactsSpawned: 0,
+        };
+        this.attackLockUntilSeconds = this.meteorState.endTimeSeconds;
+    }
+
+    private updateMeteorShower(targetEntity: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const state = this.meteorState;
+        if (!state) return;
+
+        const sceneApp = this.resolveSceneApp();
+        if (state.impactsSpawned < state.impacts.length && now >= state.nextImpactAtSeconds) {
+            const impact = state.impacts[state.impactsSpawned];
+            state.impactsSpawned += 1;
+            state.nextImpactAtSeconds = now + (this.meteorDropMs / 1000);
+
+            window.setTimeout(() => {
+                if (!this.isAlive() || impact.resolved) return;
+                this.resolveMeteorImpact(impact, targetEntity, onAttack);
+
+                if (sceneApp?.root) {
+                    const meteor = new Entity(`tower-meteor-${Date.now()}`);
+                    meteor.addComponent("render", { type: "sphere" } as any);
+                    meteor.setLocalScale(0.9, 0.9, 0.9);
+                    if (meteor.render?.meshInstances?.length) {
+                        meteor.render.meshInstances[0].material = this.meteorMaterial;
+                    }
+                    meteor.setPosition(impact.impactPosition.x, impact.impactPosition.y + 28, impact.impactPosition.z);
+                    sceneApp.root.addChild(meteor);
+                    this.activeEffects.add(meteor);
+
+                    const dropStart = performance.now();
+                    const dropTick = () => {
+                        if (!this.isAlive() || !meteor.parent) {
+                            this.destroyEffect(meteor);
+                            return;
+                        }
+
+                        const elapsed = performance.now() - dropStart;
+                        const t = Math.min(1, elapsed / this.meteorDropMs);
+                        meteor.setPosition(
+                            impact.impactPosition.x,
+                            impact.impactPosition.y + 28 - (28 * t),
+                            impact.impactPosition.z
+                        );
+
+                        if (meteor.render?.meshInstances?.length) {
+                            const mat = meteor.render.meshInstances[0].material as StandardMaterial | undefined;
+                            if (mat) {
+                                mat.opacity = 0.95 - (t * 0.25);
+                                mat.update();
+                            }
+                        }
+
+                        if (t >= 1) {
+                            this.destroyEffect(meteor);
+                            return;
+                        }
+                        requestAnimationFrame(dropTick);
+                    };
+                    requestAnimationFrame(dropTick);
+                }
+            }, 60);
+        }
+
+        if (now >= state.endTimeSeconds) {
+            for (const impact of state.impacts) {
+                this.destroyEffect(impact.telegraphEntity);
+                if (impact.meteorEntity) {
+                    this.destroyEffect(impact.meteorEntity);
+                }
+            }
+            this.meteorState = null;
+            this.nextMeteorAtSeconds = now + this.meteorCooldownSeconds;
+        }
+    }
+
+    private resolveMeteorImpact(impact: MeteorImpact, targetEntity: Entity | null, onAttack?: (attacker: npc) => void): void {
+        if (impact.resolved) return;
+        impact.resolved = true;
+        this.destroyEffect(impact.telegraphEntity);
+
+        const sceneApp = this.resolveSceneApp();
+        if (sceneApp?.root) {
+            const impactRing = new Entity(`tower-meteor-impact-${Date.now()}`);
+            impactRing.addComponent("render", { type: "cylinder" } as any);
+            impactRing.setLocalScale(0.2, 0.18, 0.2);
+            if (impactRing.render?.meshInstances?.length) {
+                impactRing.render.meshInstances[0].material = this.meteorMaterial;
+            }
+            impactRing.setPosition(impact.impactPosition.x, impact.impactPosition.y + 0.05, impact.impactPosition.z);
+            sceneApp.root.addChild(impactRing);
+            this.activeEffects.add(impactRing);
+
+            const startMs = performance.now();
+            const pulse = () => {
+                if (!this.isAlive() || !impactRing.parent) {
+                    this.destroyEffect(impactRing);
+                    return;
+                }
+                const elapsed = performance.now() - startMs;
+                const t = Math.min(1, elapsed / 700);
+                const radius = 0.2 + (this.meteorImpactRadius * 1.4) * t;
+                impactRing.setLocalScale(radius, 0.18, radius);
+                if (impactRing.render?.meshInstances?.length) {
+                    const mat = impactRing.render.meshInstances[0].material as StandardMaterial | undefined;
+                    if (mat) {
+                        mat.opacity = 0.55 * (1 - t);
+                        mat.update();
+                    }
+                }
+                if (t >= 1) {
+                    this.destroyEffect(impactRing);
+                    return;
+                }
+                requestAnimationFrame(pulse);
+            };
+            requestAnimationFrame(pulse);
+        }
+
+        if (targetEntity) {
+            const playerPos = targetEntity.getPosition();
+            const dx = playerPos.x - impact.impactPosition.x;
+            const dz = playerPos.z - impact.impactPosition.z;
+            if (Math.sqrt(dx * dx + dz * dz) <= this.meteorImpactRadius) {
+                this.applyDamage(this.meteorDamage, onAttack);
+            }
+        }
+    }
+
+    // ── Beam Sweep ──
+
+    private startBeamSweep(targetEntity: Entity, now: number): void {
+        const myPos = this.getEntity().getPosition();
+        const beamRoot = new Entity("tower-beam-sweep");
+        const beam = new Entity("tower-beam-sweep-mesh");
+        beam.addComponent("render", { type: "box" } as any);
+        beam.setLocalScale(2, 2, 2);
+        if (beam.render?.meshInstances?.length) {
+            beam.render.meshInstances[0].material = this.beamMaterial;
+        }
+        beamRoot.addChild(beam);
+        beamRoot.setPosition(myPos.x, myPos.y + 3, myPos.z);
+
+        const sceneApp = this.resolveSceneApp();
+        if (sceneApp?.root) {
+            sceneApp.root.addChild(beamRoot);
+            this.activeEffects.add(beamRoot);
+        }
+
+        this.beamState = {
+            endTimeSeconds: now + this.beamDurationSeconds + 0.5,
+            sweepStart: now + 0.2,
+            sweepDuration: this.beamDurationSeconds,
+            startAngle: -Math.PI / 2.2,
+            endAngle: Math.PI / 2.2,
+            beamRoot,
+            hasHit: false,
+        };
+        this.attackLockUntilSeconds = this.beamState.endTimeSeconds;
+        beamRoot.lookAt(targetEntity.getPosition().x, myPos.y + 3, targetEntity.getPosition().z);
+    }
+
+    private updateBeamSweep(targetEntity: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const state = this.beamState;
+        if (!state) return;
+
+        const myPos = this.getEntity().getPosition();
+        const beamRoot = state.beamRoot;
+        if (beamRoot && beamRoot.parent) {
+            const elapsed = Math.max(0, now - state.sweepStart);
+            const t = Math.min(1, elapsed / state.sweepDuration);
+            const angle = state.startAngle + ((state.endAngle - state.startAngle) * t);
+            const dir = new Vec3(Math.sin(angle), 0, Math.cos(angle));
+            const endPoint = new Vec3(
+                myPos.x + dir.x * this.beamRange,
+                myPos.y,
+                myPos.z + dir.z * this.beamRange
+            );
+
+            beamRoot.setPosition(myPos.x, myPos.y + 3, myPos.z);
+            beamRoot.lookAt(endPoint.x, myPos.y + 3, endPoint.z);
+            beamRoot.setLocalScale(this.beamRange, 2.5, 4.5);
+
+            const beamMesh = beamRoot.children[0] as Entity | undefined;
+            if (beamMesh?.render?.meshInstances?.length) {
+                const mat = beamMesh.render.meshInstances[0].material as StandardMaterial | undefined;
+                if (mat) {
+                    mat.opacity = 0.55 + (0.2 * Math.sin(now * 8));
+                    mat.update();
+                }
+            }
+
+            if (targetEntity && !state.hasHit) {
+                const playerPos = targetEntity.getPosition();
+                const dx = playerPos.x - myPos.x;
+                const dz = playerPos.z - myPos.z;
+                const playerDistance = Math.sqrt(dx * dx + dz * dz);
+                if (playerDistance <= this.beamRange) {
+                    const angleToPlayer = Math.atan2(dx, dz);
+                    const wrapped = Math.min(Math.abs(angleToPlayer - angle), Math.abs(angleToPlayer - angle + Math.PI * 2));
+                    if (wrapped < 0.18) {
+                        state.hasHit = true;
+                        this.applyDamage(this.beamDamage, onAttack);
+                    }
+                }
+            }
+        }
+
+        if (now >= state.endTimeSeconds) {
+            if (beamRoot) {
+                this.destroyEffect(beamRoot);
+            }
+            this.beamState = null;
+            this.nextBeamAtSeconds = now + this.beamCooldownSeconds;
+        }
+    }
+
+    // ── Rift Bursts ──
+
+    private startRiftBursts(targetEntity: Entity, now: number): void {
+        const myPos = this.getEntity().getPosition();
+        const targetPos = targetEntity.getPosition();
+        const pulsePositions: Vec3[] = [];
+
+        for (let index = 0; index < this.riftPulses; index += 1) {
+            const angle = (Math.PI * 2 * index) / this.riftPulses;
+            pulsePositions.push(new Vec3(
+                targetPos.x + Math.cos(angle) * (12 + index * 8),
+                myPos.y,
+                targetPos.z + Math.sin(angle) * (12 + index * 8)
+            ));
+        }
+
+        this.riftState = {
+            endTimeSeconds: now + this.riftDurationSeconds,
+            nextPulseAtSeconds: now,
+            pulsesRemaining: this.riftPulses,
+            pulsePositions,
+        };
+        this.attackLockUntilSeconds = now + this.riftDurationSeconds;
+    }
+
+    private updateRiftBursts(targetEntity: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const state = this.riftState;
+        if (!state) return;
+
+        const sceneApp = this.resolveSceneApp();
+        if (state.pulsesRemaining > 0 && now >= state.nextPulseAtSeconds) {
+            state.pulsesRemaining -= 1;
+            state.nextPulseAtSeconds = now + this.riftPulseInterval;
+
+            const burstIndex = this.riftPulses - state.pulsesRemaining - 1;
+            const burstPos = state.pulsePositions[Math.min(burstIndex, state.pulsePositions.length - 1)];
+
+            if (sceneApp?.root) {
+                const riftRoot = new Entity(`tower-rift-${Date.now()}`);
+                const riftRing = new Entity("tower-rift-ring");
+                riftRing.addComponent("render", { type: "cylinder" } as any);
+                riftRing.setLocalScale(0.1, 0.2, 0.1);
+                if (riftRing.render?.meshInstances?.length) {
+                    riftRing.render.meshInstances[0].material = this.riftMaterial;
+                }
+                riftRoot.addChild(riftRing);
+                riftRoot.setPosition(burstPos.x, burstPos.y + 0.05, burstPos.z);
+                sceneApp.root.addChild(riftRoot);
+                this.activeEffects.add(riftRoot);
+
+                const startMs = performance.now();
+                const animate = () => {
+                    if (!this.isAlive() || !riftRoot.parent) {
+                        this.destroyEffect(riftRoot);
+                        return;
+                    }
+                    const elapsed = performance.now() - startMs;
+                    const t = Math.min(1, elapsed / 900);
+                    const radius = 0.2 + (this.riftPulseRadius - 0.2) * t;
+                    riftRing.setLocalScale(radius, 0.2, radius);
+                    if (riftRing.render?.meshInstances?.length) {
+                        const mat = riftRing.render.meshInstances[0].material as StandardMaterial | undefined;
+                        if (mat) {
+                            mat.opacity = 0.7 * (1 - t * 0.8);
+                            mat.update();
+                        }
+                    }
+                    if (t >= 1) {
+                        this.destroyEffect(riftRoot);
+                        return;
+                    }
+                    requestAnimationFrame(animate);
+                };
+                requestAnimationFrame(animate);
+            }
+
+            if (targetEntity) {
+                const playerPos = targetEntity.getPosition();
+                const dx = playerPos.x - burstPos.x;
+                const dz = playerPos.z - burstPos.z;
+                if (Math.sqrt(dx * dx + dz * dz) <= this.riftPulseRadius) {
+                    this.applyDamage(this.riftDamage, onAttack);
+                }
+            }
+        }
+
+        if (now >= state.endTimeSeconds) {
+            this.riftState = null;
+            this.nextRiftAtSeconds = now + this.riftCooldownSeconds;
         }
     }
 
@@ -786,5 +1237,8 @@ export class TowerBoss extends Boss {
         this.pillarState = null;
         this.gazeState = null;
         this.resonanceState = null;
+        this.meteorState = null;
+        this.beamState = null;
+        this.riftState = null;
     }
 }

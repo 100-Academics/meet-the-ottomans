@@ -85,7 +85,11 @@ export class Boss extends npc {
 
   public static setActiveBoss(boss: Boss | null): void {
   	if (Boss.activeBoss && Boss.activeBoss !== boss) {
-  		Boss.activeBoss.removeHealthBar();
+        const currentBar = Boss.activeBoss.healthBarEl;
+        const nextBar = boss?.healthBarEl ?? null;
+        if (!currentBar || !nextBar || currentBar !== nextBar) {
+            Boss.activeBoss.removeHealthBar();
+        }
   	}
   	Boss.activeBoss = boss;
   }
@@ -391,25 +395,30 @@ export class Boss extends npc {
     }
 
     private ensureStatusElement(): HTMLElement | null {
-        if (!this.healthBarEl) {
-            this.drawHealthBar();
-        }
+            if (!this.healthBarEl) {
+                this.drawHealthBar();
+            }
 
-        if (!this.healthBarEl) {
-            return null;
-        }
+            if (!this.healthBarEl) {
+                return null;
+            }
 
-        if (!this.statusEl) {
-            const status = document.createElement("div");
-            status.className = "boss-health-status";
-            status.style.display = "none";
-            status.style.opacity = "1";
-            this.healthBarEl.appendChild(status);
-            this.statusEl = status;
-        }
+            // During intro taunt, don't recreate status element if health bar exists
+            if (this.introTauntState === "playing" && this.statusEl && this.statusEl.parentElement === this.healthBarEl) {
+                return this.statusEl;
+            }
 
-        return this.statusEl;
-    }
+            if (!this.statusEl) {
+                const status = document.createElement("div");
+                status.className = "boss-health-status";
+                status.style.display = "none";
+                status.style.opacity = "1";
+                this.healthBarEl.appendChild(status);
+                this.statusEl = status;
+            }
+
+            return this.statusEl;
+        }
 
     private ensureTitleElement(): HTMLElement | null {
         if (!this.healthBarEl) {
@@ -562,23 +571,33 @@ export class Boss extends npc {
     if (this.introNameTranslation) {
       time += this.introNameDelayMs;
       time = this.scheduleNameTranslationSequence(
-        this.introNameTranslation.nonEnglish,
-        this.introNameTranslation.english,
-        time
-      );
-    }
+              this.introNameTranslation.nonEnglish,
+              this.introNameTranslation.english,
+              time
+            );
+          }
 
-    this.scheduleIntroStep(() => {
-      if (this.statusEl) {
-        this.statusEl.textContent = "";
-        this.statusEl.style.display = "none";
-        this.statusEl.style.opacity = "0";
-      }
-      this.introTauntState = "done";
-    }, time);
-  }
+          this.scheduleIntroStep(() => {
+                if (this.statusEl) {
+                  this.statusEl.textContent = "";
+                  this.statusEl.style.display = "none";
+                  this.statusEl.style.opacity = "0";
+                }
+                // Ensure health bar remains visible after intro taunt completes
+                if (this.healthBarEl) {
+                  this.healthBarEl.style.display = "block";
+                  this.healthBarEl.style.opacity = "1";
+                  this.healthBarEl.style.visibility = "visible";
+                }
+                // Redraw health bar to ensure it's properly restored
+                if (this.healthBarEl) {
+                  this.updateHealthBar();
+                }
+                this.introTauntState = "done";
+              }, time);
+        }
 
-  private startIntroTauntSkipTranslation(): void {
+        private startIntroTauntSkipTranslation(): void {
     let time = 0;
 
     if (this.introTaunt) {
@@ -647,61 +666,73 @@ export class Boss extends npc {
     }
 
     private buildHealthBar(bar: HTMLElement): void {
-        bar.className = "boss-health-bar";
-        bar.innerHTML = "";
-        this.statusEl = null;
+            bar.className = "boss-health-bar";
+            bar.innerHTML = "";
+            this.statusEl = null;
 
-        const title = document.createElement("div");
-        title.className = "boss-health-title";
-        title.textContent = this.title;
+            const title = document.createElement("div");
+            title.className = "boss-health-title";
+            title.textContent = this.title;
 
-        const track = document.createElement("div");
-        track.className = "boss-health-track";
+            const track = document.createElement("div");
+            track.className = "boss-health-track";
 
-        const fill = document.createElement("div");
-        fill.className = "boss-health-fill";
+            const fill = document.createElement("div");
+            fill.className = "boss-health-fill";
 
-        const status = document.createElement("div");
-        status.className = "boss-health-status";
-        status.style.display = "none";
+            const status = document.createElement("div");
+            status.className = "boss-health-status";
+            status.style.display = "none";
+            status.style.opacity = "1";
 
-        track.appendChild(fill);
-        bar.appendChild(title);
-        bar.appendChild(track);
-        bar.appendChild(status);
+            track.appendChild(fill);
+            bar.appendChild(title);
+            bar.appendChild(track);
+            bar.appendChild(status);
 
-        this.healthBarEl = bar;
-        this.titleEl = title;
-        this.fillEl = fill;
-        this.statusEl = status;
-    }
+            this.healthBarEl = bar;
+            this.titleEl = title;
+            this.fillEl = fill;
+            this.statusEl = status;
+        }
 
     public drawHealthBar(): void {
-        if (this.healthBarEl) {
-            if (!this.titleEl || !this.fillEl) {
-                this.buildHealthBar(this.healthBarEl);
+            if (this.healthBarEl) {
+                if (!this.titleEl || !this.fillEl) {
+                    this.buildHealthBar(this.healthBarEl);
+                }
+                if (this.titleEl) {
+                    this.titleEl.textContent = this.title;
+                }
+                this.updateHealthBar();
+                // Ensure health bar is always visible when drawn
+                this.healthBarEl.style.display = "block";
+                this.healthBarEl.style.opacity = "1";
+                this.healthBarEl.style.visibility = "visible";
+                return;
             }
-            if (this.titleEl) {
-                this.titleEl.textContent = this.title;
+
+            const existingBar = document.getElementById("boss-health-bar");
+            if (existingBar) {
+                this.buildHealthBar(existingBar);
+                this.updateHealthBar();
+                // Ensure health bar is always visible when drawn
+                existingBar.style.display = "block";
+                existingBar.style.opacity = "1";
+                existingBar.style.visibility = "visible";
+                return;
             }
+
+            const bar = document.createElement("div");
+            bar.id = "boss-health-bar";
+            this.buildHealthBar(bar);
+            bar.style.display = "block";
+            bar.style.opacity = "1";
+            bar.style.visibility = "visible";
+
+            document.body.appendChild(bar);
             this.updateHealthBar();
-            return;
         }
-
-        const existingBar = document.getElementById("boss-health-bar");
-        if (existingBar) {
-            this.buildHealthBar(existingBar);
-            this.updateHealthBar();
-            return;
-        }
-
-        const bar = document.createElement("div");
-        bar.id = "boss-health-bar";
-        this.buildHealthBar(bar);
-
-        document.body.appendChild(bar);
-        this.updateHealthBar();
-    }
 
     public updateHealthBar(): void {
         if (!this.fillEl) return;
@@ -744,6 +775,9 @@ export class Boss extends npc {
                 this.statusEl.style.display = "none";
                 this.statusEl.style.opacity = "0";
             }
+            if (this.healthBarEl && this.isAlive()) {
+                this.drawHealthBar();
+            }
             this.statusTimeoutId = undefined;
         }, Math.max(0, durationMs));
     }
@@ -751,6 +785,13 @@ export class Boss extends npc {
     public removeHealthBar(): void {
         this.cancelIntroTaunt();
         this.clearStatusTimeout();
+		if (Boss.activeBoss && Boss.activeBoss !== this && this.healthBarEl && Boss.activeBoss.healthBarEl === this.healthBarEl) {
+			this.statusEl = null;
+			this.healthBarEl = null;
+			this.titleEl = null;
+			this.fillEl = null;
+			return;
+		}
         this.statusEl?.remove();
         this.statusEl = null;
         this.healthBarEl?.remove();
