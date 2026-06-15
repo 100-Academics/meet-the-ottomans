@@ -31,10 +31,11 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import {
- createBattleHUD,
- removeBattleHUD,
- updateBattleHUD,
+  createBattleHUD,
+  removeBattleHUD,
+  updateBattleHUD,
 } from "../../util/battleHUD";
+import { getHighestGroundHitY } from "../../util/battleSceneHelpers";
 import { isDeathScreenVisible } from "./deathScreen";
 import { type RenderableBounds } from "../../util/battleSceneHelpers";
 import { Player } from "../../player/player";
@@ -448,19 +449,19 @@ export async function battleOfNorthwoodHighScene(
  }
  });
 
-   // Ambient lighting — cold and flat
-   app.scene.ambientLight = new Color(0.15, 0.15, 0.15);
-   if (app.systems.light) {
-     const light = new Entity("directional-light");
-     light.addComponent("light", {
-       type: "directional",
-       color: new Color(0.9, 0.9, 0.92),
-       intensity: 1,
-       castShadows: true,
-     });
-     light.setLocalEulerAngles(45, 30, 0);
-     app.root.addChild(light);
-   }
+  // Ambient lighting — cold and flat
+  app.scene.ambientLight = new Color(0.15, 0.15, 0.15);
+  if (app.systems.light) {
+    const light = new Entity("directional-light");
+    light.addComponent("light", {
+      type: "directional",
+      color: new Color(0.9, 0.9, 0.92),
+      intensity: 1,
+      castShadows: true,
+    });
+    light.setLocalEulerAngles(45, 30, 0);
+    app.root.addChild(light);
+  }
 
    // Pick the secret's position INSIDE the synthetic map bounds (not the same
    // spot every battle) and ground-snap it 0.5 units above the surface so it
