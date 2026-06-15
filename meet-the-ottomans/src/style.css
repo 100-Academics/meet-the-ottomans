@@ -480,6 +480,341 @@ canvas#application-canvas {
   z-index: 10;
 }
 
+/* Death screen — atmospheric overlay */
+#death-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  padding: clamp(1rem, 4vw, 3rem);
+  font-family: "Spectral", serif;
+  color: #f6efe4;
+}
+
+#death-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(120, 40, 30, 0.4), transparent 55%),
+    radial-gradient(circle at 85% 90%, rgba(40, 20, 60, 0.35), transparent 50%),
+    linear-gradient(135deg, rgba(7, 6, 6, 0.96), rgba(8, 8, 12, 0.95));
+  z-index: 0;
+}
+
+#death-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.04) 0,
+    rgba(255, 255, 255, 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.12;
+  animation: death-scan 6s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes death-scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 12px; }
+}
+
+.death-card {
+  position: relative;
+  z-index: 2;
+  width: min(700px, 90vw);
+  padding: clamp(1.5rem, 3vw, 2.8rem);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(11, 8, 8, 0.92), rgba(10, 10, 16, 0.92));
+  border: 1px solid rgba(239, 190, 120, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 40px rgba(255, 80, 80, 0.08);
+  backdrop-filter: blur(8px);
+  animation: death-rise 0.8s ease both;
+  text-align: center;
+}
+
+@keyframes death-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.death-title {
+  font-family: "Cinzel Decorative", serif;
+  font-size: clamp(2.5rem, 4vw, 3.8rem);
+  margin: 0 0 0.3rem 0;
+  text-shadow: 0 0 30px rgba(255, 60, 60, 0.3), 0 0 12px rgba(255, 0, 0, 0.15);
+  color: #f6efe4;
+}
+
+.death-message {
+  color: rgba(250, 242, 228, 0.7);
+  font-size: clamp(0.95rem, 1.8vw, 1.1rem);
+  margin: 0 0 1.2rem 0;
+  font-style: italic;
+}
+
+.death-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 200, 100, 0.3), transparent);
+  margin: 0.5rem 0 1.2rem 0;
+  border: none;
+}
+
+.death-quiz-intro {
+  color: #f3d59b;
+  margin: 0 0 0.5rem 0;
+  font-size: clamp(0.9rem, 1.6vw, 1rem);
+}
+
+.death-period-info {
+  color: #9aa7b3;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+}
+
+.death-progress {
+  color: #f6efe4;
+  margin: 0 0 1rem 0;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+
+.death-question {
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  line-height: 1.6;
+  margin: 0 0 1.2rem 0;
+  color: rgba(250, 242, 228, 0.9);
+}
+
+.death-feedback {
+  min-height: 1.5rem;
+  margin: 1rem 0 0 0;
+  color: #f3d59b;
+  font-style: italic;
+}
+
+.death-choices {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.3rem;
+}
+
+.death-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.3rem;
+}
+
+.death-btn {
+  font-size: 0.95rem;
+  padding: 0.55rem 1.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 210, 140, 0.35);
+  background: rgba(25, 21, 18, 0.8);
+  color: #f6efe4;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: "Spectral", serif;
+}
+
+.death-btn:hover {
+  border-color: rgba(255, 230, 170, 0.75);
+  background: rgba(40, 35, 30, 0.9);
+}
+
+.death-btn.primary {
+  background: linear-gradient(120deg, #b46b1f, #e5b76a);
+  color: #0f0a06;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(198, 120, 25, 0.35);
+}
+
+.death-btn.primary:hover {
+  background: linear-gradient(120deg, #c87a28, #edc47a);
+}
+
+.death-btn.ghost {
+  background: transparent;
+  color: rgba(246, 239, 228, 0.7);
+}
+
+.death-btn.ghost:hover {
+  background: rgba(246, 239, 228, 0.08);
+  border-color: rgba(250, 210, 140, 0.5);
+}
+
+/* End game screen — all battles completed */
+#end-game-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  padding: clamp(1rem, 4vw, 3rem);
+  font-family: "Spectral", serif;
+  color: #f6efe4;
+}
+
+#end-game-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(120, 60, 20, 0.4), transparent 55%),
+    radial-gradient(circle at 85% 90%, rgba(60, 30, 80, 0.35), transparent 50%),
+    linear-gradient(135deg, rgba(7, 6, 6, 0.96), rgba(8, 8, 12, 0.95));
+  z-index: 0;
+}
+
+#end-game-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.04) 0,
+    rgba(255, 255, 255, 0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  opacity: 0.12;
+  animation: end-scan 6s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@keyframes end-scan {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 12px; }
+}
+
+.end-card {
+  position: relative;
+  z-index: 2;
+  width: min(750px, 90vw);
+  padding: clamp(1.8rem, 3vw, 3rem);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(11, 9, 6, 0.92), rgba(10, 12, 16, 0.92));
+  border: 1px solid rgba(239, 190, 120, 0.25);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55), inset 0 0 40px rgba(255, 200, 100, 0.06);
+  backdrop-filter: blur(8px);
+  animation: end-rise 0.8s ease both;
+  text-align: center;
+}
+
+@keyframes end-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.end-title {
+  font-family: "Cinzel Decorative", serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  margin: 0 0 0.5rem 0;
+  text-shadow: 0 0 30px rgba(255, 198, 120, 0.35), 0 0 12px rgba(255, 200, 100, 0.15);
+  color: #f6efe4;
+}
+
+.end-message {
+  color: rgba(250, 242, 228, 0.75);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  margin: 0 0 0.8rem 0;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.end-divider {
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 200, 100, 0.3), transparent);
+  margin: 0.8rem 0 1.2rem 0;
+  border: none;
+}
+
+.end-body {
+  color: rgba(250, 242, 228, 0.85);
+  font-size: clamp(0.95rem, 1.6vw, 1.1rem);
+  line-height: 1.7;
+  margin: 0 0 1rem 0;
+}
+
+.end-progress {
+  color: #9aa7b3;
+  font-size: 0.85rem;
+  margin: 0 0 1.5rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.end-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.end-btn {
+  font-size: 0.95rem;
+  padding: 0.6rem 1.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 210, 140, 0.35);
+  background: rgba(25, 21, 18, 0.8);
+  color: #f6efe4;
+  pointer-events: auto;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: "Spectral", serif;
+}
+
+.end-btn:hover {
+  border-color: rgba(255, 230, 170, 0.75);
+  background: rgba(40, 35, 30, 0.9);
+}
+
+.end-btn.primary {
+  background: linear-gradient(120deg, #b46b1f, #e5b76a);
+  color: #0f0a06;
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(198, 120, 25, 0.35);
+}
+
+.end-btn.primary:hover {
+  background: linear-gradient(120deg, #c87a28, #edc47a);
+}
+
+.end-btn.ghost {
+  background: transparent;
+  color: rgba(246, 239, 228, 0.7);
+}
+
+.end-btn.ghost:hover {
+  background: rgba(246, 239, 228, 0.08);
+  border-color: rgba(250, 210, 140, 0.5);
+}
+
 /* Battle hover label */
 #battle-hover-label {
   background: rgba(0,0,0,0.85);

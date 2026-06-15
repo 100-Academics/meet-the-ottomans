@@ -52,7 +52,7 @@ import {
 } from "../npc/sceneNpcPresets";
 // import { AmericanRevolutionist } from "../npc/troops/americanRevolutionist";
 import { npc } from "../npc/npc";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
 
 // @ts-ignore
@@ -398,7 +398,7 @@ export async function battleOfYorktownScene(
     if (remainingFoes.length === 0 && isBossSpawned) {
       victoryHandled = true;
       removeBattleHUD();
-      changeScene(canvas, app, 777);
+      triggerVictory('Battle of Yorktown', canvas, app);
     } else if (remainingFoes.length === 0 && !isBossSpawned) {
       spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
         console.error(err),

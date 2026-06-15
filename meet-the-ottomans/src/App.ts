@@ -5,10 +5,12 @@ import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
 import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts";
 import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScreen.ts";
+import { hideEndGameScreen, showEndGameScreen } from "./world/scenes/endGameScreen.ts";
 import { Boss } from "./world/npc/bosses/boss.ts";
 import { unloadAll } from "./util/unloadall.ts";
 import { removeBattleHUD } from "./util/battleHUD";
 import { DevConsole } from "./util/devConsole";
+import { markBattleComplete, isAllNonSecretComplete } from "./util/battleProgress";
 
 // Suppress unhandled promise rejections that can arise from async events in the game loop.
 // This prevents noisy "A listener indicated an asynchronous response..." errors in the console.
@@ -102,9 +104,10 @@ export async function changeScene(
  app: AppBase,
  sceneNum: number,): Promise<unknown> {
  // Clear transient UI and runtime listeners so a scene switch starts clean.
- hideDeathScreen();
- hideVictoryScreen();
- removeBattleHUD();
+  hideDeathScreen();
+  hideVictoryScreen();
+  hideEndGameScreen();
+  removeBattleHUD();
  Boss.setActiveBoss(null);
  DevConsole.setPlayer(null);
  DevConsole.setNpcs([]);
@@ -135,7 +138,23 @@ export async function changeScene(
       onMainMenu: () => changeScene(canvas, app, 0),
       message: victoryMessage
     });
+  } else if (sceneNum === 888) {
+    return await showEndGameScreen({
+      app,
+      onProceed: () => changeScene(canvas, app, 0),
+      onReturnToMap: () => changeScene(canvas, app, 0),
+      onMainMenu: () => changeScene(canvas, app, -2),
+    });
   }
 
   return undefined;
+}
+
+export function triggerVictory(battleName: string, canvas: HTMLCanvasElement, app: AppBase): void {
+  markBattleComplete(battleName);
+  if (battleName !== 'Northwood High School' && isAllNonSecretComplete()) {
+    changeScene(canvas, app, 888);
+  } else {
+    changeScene(canvas, app, 777);
+  }
 }

@@ -28,6 +28,7 @@ import { NPC_TYPE_MODEL_PATHS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS } from '../world
 import { spawnSceneNpcs } from '../world/npc/sceneNpcSystem';
 import type { NpcSpawnPoint } from '../world/npc/sceneNpcSystem';
 import { getSecretsFound, resetSecretsFound, setSecretsFound } from '../world/secrets';
+import { markAllNonSecretComplete } from './battleProgress';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -1071,7 +1072,7 @@ export class DevConsole {
     }, {
       hint: '<sceneNumber>',
       args: [
-        { name: 'sceneNumber', description: '-2=title, 0=globe, 666=death, 777=victory, or battle ID', completions: ['-2', '0', '666', '777'] },
+        { name: 'sceneNumber', description: '-2=title, 0=globe, 666=death, 777=victory, 888=end game, or battle ID', completions: ['-2', '0', '666', '777', '888'] },
       ],
     });
 
@@ -1413,6 +1414,15 @@ export class DevConsole {
     DevConsole.register("unlockAllSecrets", "Unlock all secrets", () => {
       setSecretsFound(21);
       return `All ${getSecretsFound()} secrets unlocked`;
+    });
+
+    // ---- skipToSecretBoss ----
+    DevConsole.register('skipToSecretBoss', 'Mark all non-secret battles complete and show the end-game screen', () => {
+      markAllNonSecretComplete();
+      const canvas = DevConsole._app?.graphicsDevice.canvas as HTMLCanvasElement | undefined;
+      if (!canvas || !DevConsole._app) return 'No app reference available';
+      changeScene(canvas, DevConsole._app, 888);
+      return 'All battles marked complete. Taking you to the end-game screen...';
     });
 
     // ---- exit ----

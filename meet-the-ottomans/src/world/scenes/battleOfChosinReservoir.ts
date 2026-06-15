@@ -55,7 +55,7 @@ import {
 } from "../npc/sceneNpcPresets";
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
 
 const groundModelPath = "/world/battlefields/ChosinResevoir.glb";
@@ -467,7 +467,7 @@ bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
     if (remainingFoes.length === 0 && isBossSpawned) {
       victoryHandled = true;
       removeBattleHUD();
-      changeScene(canvas, app, 777);
+      triggerVictory('Battle of Chosin Reservoir', canvas, app);
     } else if (remainingFoes.length === 0 && !isBossSpawned) {
       spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
         console.error(err),
