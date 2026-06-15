@@ -456,6 +456,13 @@ export async function spawnSceneNpcs(
         koreanSoldier.setHitboxRadius(hitboxRadius);
         applyDetectionRangeOverride(koreanSoldier, detectionRangeOverride);
         npcs.push(koreanSoldier);
+    } else if (spawn.type === "vietnameseSoldier") {
+        console.log(`Spawning Vietnamese Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+        const vietnameseSoldier = new KoreanSoldier(spawn.id, npcModel.modelEntity);
+        vietnameseSoldier.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+        vietnameseSoldier.setHitboxRadius(hitboxRadius);
+        applyDetectionRangeOverride(vietnameseSoldier, detectionRangeOverride);
+        npcs.push(vietnameseSoldier);
     } else if (spawn.type === "russianSoldier") {
         console.log(`Spawning Russian Soldier NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
         const russianSoldier = new RussianSoldier(spawn.id, npcModel.modelEntity);

@@ -1162,3 +1162,309 @@ abstract class TowerBorrowedAttack {
         return this.makeEntity("cylinder" as any, position, scale, material, name);
     }
 }
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  Concrete borrowed attacks — pulled from other bosses.
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+// ─── Jesus — holySpire (AOJ orb slams down on player) ─────────────────────
+
+class HolySpireBorrow extends TowerBorrowedAttack {
+    public readonly id = "jesus.holySpire";
+    public readonly label = "Holy Spire";
+    public readonly cooldownSeconds = 4.1;
+    public readonly range = 180;
+
+    private readonly damage = 28;
+    private readonly windupMs = 620;
+    private readonly durationMs = 500;
+    private readonly hitRadius = 7.5;
+
+    private readonly material = this.tower.createEffectMaterial(
+        new Color(1, 0.92, 0.4), new Color(1, 0.98, 0.55), 3.8, 0.82
+    );
+
+    private centerPos: Vec3 = new Vec3();
+    private startSec = 0;
+    private hitApplied = false;
+    private doneAtSec = 0;
+
+    public start(target: Entity, now: number): void {
+        this.running = true;
+        this.startSec = now;
+        this.hitApplied = false;
+        this.doneAtSec = now + (this.windupMs + this.durationMs) / 1000;
+
+        const tPos = target.getPosition();
+        this.centerPos = new Vec3(tPos.x, tPos.y + 1.5, tPos.z);
+        this.makeSphere(this.centerPos, [0.45, 0.45, 0.45], this.material, "tower-borrow-spire-orb");
+
+        this.tower.showStatusText("??????????", 1200);
+    }
+
+    public tick(_t: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const elapsedMs = (now - this.startSec) * 1000;
+        const windupT = Math.min(1, Math.max(0, elapsedMs / this.windupMs));
+        const orb = this.tracked.values().next().value as Entity | undefined;
+        if (orb && orb.parent) {
+            const scale = 0.45 + windupT * 5.8;
+            orb.setLocalScale(scale, scale, scale);
+            // Pulse impact at end of windup
+            if (windupT >= 1 && !this.hitApplied) {
+                this.hitApplied = true;
+                const playerPos = this.centerPos.clone();
+                playerPos.y -= 1.5;
+                this.tower.applyDamage(this.damage, onAttack);
+            }
+        }
+        if (!this.hitApplied && elapsedMs >= this.windupMs) {
+            // Apply damage exactly once when windup ends.
+            this.hitApplied = true;
+            this.tower.applyDamage(this.damage, onAttack);
+        }
+        if (now >= this.doneAtSec) {
+            this.running = false;
+        }
+    }
+}
+
+// ─── Jesus — holyRay (charged beam from tower toward player) ───────────────
+
+class HolyRayBorrow extends TowerBorrowedAttack {
+    public readonly id = "jesus.holyRay";
+    public readonly label = "Holy Ray";
+    public readonly cooldownSeconds = 5.6;
+    public readonly range = 240;
+
+    private readonly damage = 24;
+    private readonly windupMs = 450;
+    private readonly travelMs = 430;
+    private readonly durationMs = 820;
+    private readonly hitRadius = 6.5;
+    private readonly overshoot = 160;
+
+    private readonly material = this.tower.createEffectMaterial(
+        new Color(1, 0.97, 0.72), new Color(1, 0.99, 0.86), 6.4, 0.94
+    );
+
+    private origin: Vec3 = new Vec3();
+    private beamEnd: Vec3 = new Vec3();
+    private startSec = 0;
+    private hitApplied = false;
+    private doneAtSec = 0;
+
+    public start(target: Entity, now: number): void {
+        this.running = true;
+        this.startSec = now;
+        this.hitApplied = false;
+        this.doneAtSec = now + (this.windupMs + this.durationMs) / 1000;
+
+        const towerPos = this.tower.getEntity().getPosition();
+        this.origin = new Vec3(towerPos.x, towerPos.y + 4.4, towerPos.z);
+        const targetPos = target.getPosition();
+        const direction = targetPos.clone().sub(this.origin);
+        const totalLength = Math.max(direction.length() + this.overshoot, 30);
+        const normalized = direction.lengthSq() > 0.0001 ? direction.normalize() : new Vec3(0, 0, 1);
+        this.beamEnd = this.origin.clone().add(normalized.mulScalar(totalLength));
+
+        this.tower.showStatusText("??????????", 1200);
+    }
+
+    public tick(target: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const elapsedMs = (now - this.startSec) * 1000;
+        if (elapsedMs >= this.windupMs && !this.hitApplied && target) {
+            // Beam is now active; perform a ray hit check against target.
+            const tPos = target.getPosition();
+            const ray = this.beamEnd.clone().sub(this.origin);
+            const rayLenSq = ray.lengthSq();
+            if (rayLenSq > 0.001) {
+                const toTarget = tPos.clone().sub(this.origin);
+                const proj = toTarget.dot(ray) / rayLenSq;
+                if (proj >= 0 && proj <= 1) {
+                    const closest = this.origin.clone().add(ray.clone().mulScalar(proj));
+                    if (closest.distance(tPos) <= this.hitRadius) {
+                        this.hitApplied = true;
+                        this.tower.applyDamage(this.damage, onAttack);
+                    }
+                }
+            }
+        }
+
+        // Spawn beam visual once at fire time.
+        if (elapsedMs >= this.windupMs && elapsedMs - this.windupMs < 60) {
+            const direction = this.beamEnd.clone().sub(this.origin);
+            const fullDistance = direction.length();
+            if (fullDistance > 0.5) {
+                const beamPos = this.origin.clone();
+                const beam = this.makeCylinder(beamPos, [this.hitRadius, fullDistance, this.hitRadius], this.material, "tower-borrow-ray-beam");
+                if (beam) {
+                    beam.lookAt(this.beamEnd.x, this.beamEnd.y, this.beamEnd.z);
+                    window.setTimeout(() => {
+                        if (beam.parent) this.animateFadeOut(beam, 240);
+                    }, this.durationMs - 240);
+                }
+            }
+        }
+
+        if (now >= this.doneAtSec) {
+            this.running = false;
+        }
+    }
+}
+
+// ─── Jesus — divineLight (sky strike at player position) ───────────────────
+
+class DivineLightBorrow extends TowerBorrowedAttack {
+    public readonly id = "jesus.divineLight";
+    public readonly label = "Divine Light";
+    public readonly cooldownSeconds = 7.2;
+    public readonly range = 220;
+
+    private readonly damage = 34;
+    private readonly windupMs = 900;
+    private readonly durationMs = 700;
+    private readonly areaRadius = 12;
+    private readonly beamRadius = 5.5;
+    private readonly skyHeight = 60;
+
+    private readonly beamMaterial = this.tower.createEffectMaterial(
+        new Color(0.95, 0.98, 1), new Color(1, 1, 1), 6.8, 0.92
+    );
+    private readonly telegraphMaterial = this.tower.createEffectMaterial(
+        new Color(0.82, 0.92, 1), new Color(0.95, 0.98, 1), 4.0, 0.42
+    );
+
+    private centerPos: Vec3 = new Vec3();
+    private startSec = 0;
+    private hitApplied = false;
+    private doneAtSec = 0;
+
+    public start(target: Entity, now: number): void {
+        this.running = true;
+        this.startSec = now;
+        this.hitApplied = false;
+        this.doneAtSec = now + (this.windupMs + this.durationMs) / 1000;
+
+        const tPos = target.getPosition();
+        this.centerPos = new Vec3(tPos.x, tPos.y + 0.05, tPos.z);
+
+        this.makeTorus(this.centerPos, [this.areaRadius, 0.6, this.areaRadius], this.telegraphMaterial, "tower-borrow-divine-telegraph");
+
+        this.tower.showStatusText("??????????", 1200);
+    }
+
+    public tick(target: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const elapsedMs = (now - this.startSec) * 1000;
+        if (elapsedMs >= this.windupMs && !this.hitApplied && target) {
+            this.hitApplied = true;
+            // Apply damage in area and spawn the beam visual.
+            const tPos = target.getPosition();
+            const dx = tPos.x - this.centerPos.x;
+            const dz = tPos.z - this.centerPos.z;
+            if (Math.sqrt(dx * dx + dz * dz) <= this.areaRadius) {
+                this.tower.applyDamage(this.damage, onAttack);
+            }
+            const beamOrigin = new Vec3(this.centerPos.x, this.centerPos.y + this.skyHeight, this.centerPos.z);
+            const beam = this.makeCylinder(beamOrigin, [this.beamRadius, this.skyHeight, this.beamRadius], this.beamMaterial, "tower-borrow-divine-beam");
+            void beam; // visual-only
+            window.setTimeout(() => {
+                for (const e of this.tracked) {
+                    if (!e.parent) continue;
+                    if (e.getPosition().y > this.centerPos.y + 1) {
+                        this.animateFadeOut(e, this.durationMs);
+                    }
+                }
+            }, 0);
+        }
+        if (now >= this.doneAtSec) {
+            this.running = false;
+        }
+    }
+}
+
+// ─── KingGeser — lightning (3 telegraphed sky strikes) ─────────────────────
+
+class GeserLightningBorrow extends TowerBorrowedAttack {
+    public readonly id = "geser.lightning";
+    public readonly label = "Geser Lightning";
+    public readonly cooldownSeconds = 8.5;
+    public readonly range = 160;
+
+    private readonly damage = 18;
+    private readonly windupMs = 700;
+    private readonly strikeSpacingMs = 650;
+    private readonly strikeCount = 3;
+    private readonly strikeRadius = 4.4;
+    private readonly boltHeight = 18;
+    private readonly recoverMs = 400;
+    private readonly scatterRadius = 3.5;
+
+    private readonly boltMaterial = this.tower.createEffectMaterial(
+        new Color(0.85, 0.95, 1), new Color(0.95, 1, 1), 8.0, 0.95
+    );
+    private readonly telegraphMaterial = this.tower.createEffectMaterial(
+        new Color(0.4, 0.7, 1), new Color(0.55, 0.85, 1), 4.4, 0.6
+    );
+
+    private startSec = 0;
+    private doneAtSec = 0;
+    private readonly strikePositions: (Vec3 | null)[] = [null, null, null];
+
+    public start(target: Entity, now: number): void {
+        this.running = true;
+        this.startSec = now;
+        const firstStrikeAt = now + this.windupMs / 1000;
+        const lastStrikeAt = firstStrikeAt + (this.strikeCount - 1) * this.strikeSpacingMs / 1000;
+        this.doneAtSec = lastStrikeAt + this.recoverMs / 1000;
+
+        for (let i = 0; i < this.strikeCount; i++) {
+            const pos = this.computeStrikePos(target);
+            this.strikePositions[i] = pos;
+            const telegraphRingPos = new Vec3(pos.x, pos.y + 0.05, pos.z);
+            const ring = this.makeRing(telegraphRingPos, [this.strikeRadius, 0.18, this.strikeRadius], this.telegraphMaterial, `tower-borrow-geser-ring-${i}`);
+            if (ring) {
+                window.setTimeout(() => {
+                    if (ring.parent) this.animateFadeOut(ring, 200);
+                }, this.windupMs + 200);
+            }
+        }
+
+        this.tower.showStatusText("??????????", 1200);
+    }
+
+    public tick(target: Entity | null, now: number, onAttack?: (attacker: npc) => void): void {
+        const elapsedMs = (now - this.startSec) * 1000;
+        for (let i = 0; i < this.strikeCount; i++) {
+            const strikeAtMs = this.windupMs + i * this.strikeSpacingMs;
+            if (elapsedMs >= strikeAtMs && elapsedMs - strikeAtMs < 60) {
+                const pos = this.strikePositions[i];
+                if (!pos) continue;
+                const boltOrigin = new Vec3(pos.x, pos.y, pos.z);
+                const bolt = this.makeCylinder(boltOrigin, [0.55, this.boltHeight, 0.55], this.boltMaterial, `tower-borrow-geser-bolt-${i}`);
+                void bolt;
+                if (target) {
+                    const tPos = target.getPosition();
+                    const dx = tPos.x - pos.x;
+                    const dz = tPos.z - pos.z;
+                    if (Math.sqrt(dx * dx + dz * dz) <= this.strikeRadius) {
+                        this.tower.applyDamage(this.damage, onAttack);
+                    }
+                }
+            }
+        }
+        if (now >= this.doneAtSec) {
+            this.running = false;
+        }
+    }
+
+    private computeStrikePos(target: Entity): Vec3 {
+        const tPos = target.getPosition();
+        const angle = Math.random() * Math.PI * 2;
+        const radius = Math.random() * this.scatterRadius;
+        return new Vec3(
+            tPos.x + Math.cos(angle) * radius,
+            tPos.y + 0.05,
+            tPos.z + Math.sin(angle) * radius
+        );
+    }
+}

@@ -27,6 +27,7 @@ const NPC_MODEL_PATHS = {
   napoleon: "models/npc/boss/Napolean.glb",
   uncleSam: "models/npc/boss/UncleSam.glb",
   vietnamDragonKing: "models/npc/boss/dragon_king.glb",
+  vietnameseSoldier: "models/npc/VietnamSoldier.glb",
   binLadin: "models/npc/boss/osama_bin_laden.glb",
   airLadin: "models/npc/boss/osama_bin_laden.glb",
   cainAndAbel: "models/npc/boss/CainAndAbel.glb",
@@ -55,7 +56,7 @@ const KHAN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const KING_GESER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.kingGeser,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -64,7 +65,7 @@ const KING_GESER_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const CHRIST_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.christ,
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
@@ -128,7 +129,7 @@ const UNCLE_SAM_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 const VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.vietnamDragonKing,
   modelRotation: new Vec3(-90, 0, 0),
-  modelScale: new Vec3(4, 4, 4),
+  modelScale: new Vec3(1, 1, 1),
   modelHeightOffset: 11,
   facingYawOffsetDegrees: 0,
   hitboxRadius: 2.4
@@ -323,6 +324,7 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   napoleon: NPC_MODEL_PATHS.napoleon,
   uncleSam: NPC_MODEL_PATHS.uncleSam,
   vietnamDragonKing: NPC_MODEL_PATHS.vietnamDragonKing,
+  vietnameseSoldier: NPC_MODEL_PATHS.vietnameseSoldier,
   binLadin: NPC_MODEL_PATHS.binLadin,
   cainAndAbel: NPC_MODEL_PATHS.cainAndAbel,
   kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII,
@@ -350,6 +352,12 @@ const MAMLUK_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   detectionRange: 1000
 };
 
+const VIETNAMESE_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelRotation: new Vec3(0, 0, 0),
+  facingYawOffsetDegrees: 0,
+  detectionRange: 1000
+};
+
 // NPC type -> spawn overrides. Allows the spawn system to accept a type->overrides map.
 export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   mongol: MONGOL_SPAWN_OVERRIDES,
@@ -370,6 +378,7 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   napoleon: NAPOLEON_BOSS_SPAWN_OVERRIDES,
   uncleSam: UNCLE_SAM_BOSS_SPAWN_OVERRIDES,
   vietnamDragonKing: VIETNAM_DRAGON_KING_BOSS_SPAWN_OVERRIDES,
+  vietnameseSoldier: VIETNAMESE_SOLDIER_SPAWN_OVERRIDES,
   binLadin: BIN_LADIN_BOSS_SPAWN_OVERRIDES,
   cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
   kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
@@ -531,7 +540,7 @@ const STALINGRAD_ENEMY_TYPE = "russianSoldier";
 const THREE_EMPERORS_ENEMY_TYPE = "french";
 const VERDUN_ENEMY_TYPE = "modernFrenchSoldier";
 const YORKTOWN_ENEMY_TYPE = "americanRevolutionist";
-const SAIGON_ENEMY_TYPE = "modernishsoldier";
+const SAIGON_ENEMY_TYPE = "vietnameseSoldier";
 const ANACONDA_ENEMY_TYPE = "huntingrifledude";
 const ARNON_ENEMY_TYPE = "mongol";
 const AGINCOURT_ENEMY_TYPE = "french";
@@ -578,21 +587,21 @@ export const AIN_JALUT_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 8, team: "foe", x: 5, z: -3, type: AIN_JALUT_ENEMY_TYPE },
   { id: 9, team: "foe", x: -5, z: -3, type: AIN_JALUT_ENEMY_TYPE },
   { id: 10, team: "foe", x: 10, z: 0, type: AIN_JALUT_ENEMY_TYPE },
-  { id: 11, team: "foe", x: -10, z: 0, type: "mongol" },
-  { id: 12, team: "foe", x: 0, z: 6, type: "mongol" },
-  { id: 13, team: "foe", x: 0, z: -6, type: "mongol" },
-  { id: 14, team: "foe", x: 8, z: 6, type: "mongol" },
-  { id: 15, team: "foe", x: -8, z: 6, type: "mongol" },
-  { id: 16, team: "foe", x: 8, z: -6, type: "mongol" },
-  { id: 17, team: "foe", x: -8, z: -6, type: "mongol" },
-  { id: 18, team: "foe", x: 15, z: 3, type: "mongol" },
-  { id: 19, team: "foe", x: -15, z: 3, type: "mongol" },
-  { id: 20, team: "foe", x: 15, z: -3, type: "mongol" },
-  { id: 21, team: "foe", x: -15, z: -3, type: "mongol" },
-  { id: 22, team: "foe", x: 3, z: 10, type: "mongol" },
-  { id: 23, team: "foe", x: -3, z: 10, type: "mongol" },
-  { id: 24, team: "foe", x: 3, z: -10, type: "mongol" },
-  { id: 25, team: "foe", x: -3, z: -10, type: "mongol" },
+  // { id: 11, team: "foe", x: -10, z: 0, type: "mongol" },
+  // { id: 12, team: "foe", x: 0, z: 6, type: "mongol" },
+  // { id: 13, team: "foe", x: 0, z: -6, type: "mongol" },
+  // { id: 14, team: "foe", x: 8, z: 6, type: "mongol" },
+  // { id: 15, team: "foe", x: -8, z: 6, type: "mongol" },
+  // { id: 16, team: "foe", x: 8, z: -6, type: "mongol" },
+  // { id: 17, team: "foe", x: -8, z: -6, type: "mongol" },
+  // { id: 18, team: "foe", x: 15, z: 3, type: "mongol" },
+  // { id: 19, team: "foe", x: -15, z: 3, type: "mongol" },
+  // { id: 20, team: "foe", x: 15, z: -3, type: "mongol" },
+  // { id: 21, team: "foe", x: -15, z: -3, type: "mongol" },
+  // { id: 22, team: "foe", x: 3, z: 10, type: "mongol" },
+  // { id: 23, team: "foe", x: -3, z: 10, type: "mongol" },
+  // { id: 24, team: "foe", x: 3, z: -10, type: "mongol" },
+  // { id: 25, team: "foe", x: -3, z: -10, type: "mongol" },
 ];
 export const AIN_JALUT_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 30, maxHealth: 500, type: "kingGeser" }];
 
@@ -920,6 +929,16 @@ export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
   { id: 3, team: "foe", x: 12, z: -6, type: YORKTOWN_ENEMY_TYPE },
   { id: 4, team: "foe", x: 15, z: -6, type: YORKTOWN_ENEMY_TYPE },
   { id: 5, team: "foe", x: 18, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 6, team: "foe", x: 6, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 7, team: "foe", x: 9, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 8, team: "foe", x: 12, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 9, team: "foe", x: 15, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 10, team: "foe", x: 18, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 11, team: "foe", x: 6, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 12, team: "foe", x: 9, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 13, team: "foe", x: 12, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 14, team: "foe", x: 15, z: -6, type: YORKTOWN_ENEMY_TYPE },
+  { id: 15, team: "foe", x: 18, z: -6, type: YORKTOWN_ENEMY_TYPE },
 ];
 export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "georgeWashington" }];
 

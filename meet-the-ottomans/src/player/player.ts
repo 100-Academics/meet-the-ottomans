@@ -18,8 +18,8 @@ export class Player{
  private health = this.maxHealth;
  private team = 'friend'; // Player is always on the 'friend' team
  private readonly swordWeapon = new Sword(4, 25);
- private readonly gunWeapon = new Gun(50, 100, 12);
- private readonly bowWeapon = new Bow(50, 100, 20, 250);
+ private readonly gunWeapon = new Gun(50, 1000, 12);
+ private readonly bowWeapon = new Bow(50, 1000, 20, 250);
  private readonly oldGunWeapon = new Gun(15, 60, 12, "Gun"); // Weaker gun for early time periods
  private equippedWeapon: Weapon = this.swordWeapon;
  private deathQuizTimePeriod = -1;
