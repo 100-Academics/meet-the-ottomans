@@ -2,12 +2,6 @@ import { AppBase } from 'playcanvas';
 import { removeBattleHUD } from '../../util/battleHUD';
 import { Question } from '../../util/question';
 
-/**
- * Simple "You Died" overlay utilities.
- * - `showDeathScreen` adds a full-screen overlay with Restart/Main Menu buttons.
- * - `hideDeathScreen` removes the overlay.
- */
-
 export function showDeathScreen(options?: {
   app?: AppBase;
   onMainMenu?: () => void;
@@ -27,79 +21,56 @@ export function showDeathScreen(options?: {
   if (hoverLabel) {
     hoverLabel.remove();
   }
-  if (document.getElementById('death-screen')) return; // already shown
+  if (document.getElementById('death-screen')) return;
 
   const { onMainMenu, onRestart, timePeriod = -1, message = 'You have died' } = options ?? {};
 
   const overlay = document.createElement('div');
   overlay.id = 'death-screen';
-  overlay.className = 'overlay absolute';
-  overlay.style.pointerEvents = 'auto';
-  overlay.style.position = 'fixed';
-  overlay.style.inset = '0';
-  overlay.style.zIndex = '9999';
-  overlay.style.background = '#050505';
 
   const card = document.createElement('div');
-  card.style.width = 'min(700px, 90vw)';
-  card.style.margin = '2rem auto';
-  card.style.pointerEvents = 'auto';
-  card.style.textAlign = 'center';
-  card.style.backdropFilter = 'blur(4px)';
-  card.style.background = 'rgba(0, 0, 0, 0.35)';
-  card.style.padding = '1.25rem 1.5rem';
-  card.style.borderRadius = '12px';
+  card.className = 'death-card';
 
   const title = document.createElement('h1');
+  title.className = 'death-title';
   title.textContent = 'You Died!';
-  title.style.fontSize = '3rem';
-  title.style.margin = '0.2rem 0 0.4rem 0';
 
   const desc = document.createElement('p');
+  desc.className = 'death-message';
   desc.textContent = message;
-  desc.style.color = '#ccc';
-  desc.style.margin = '0 0 1rem 0';
+
+  const divider = document.createElement('hr');
+  divider.className = 'death-divider';
 
   const quizIntro = document.createElement('p');
+  quizIntro.className = 'death-quiz-intro';
   quizIntro.textContent = 'Answer 3 questions correctly to continue.';
-  quizIntro.style.color = '#f3d59b';
-  quizIntro.style.margin = '0 0 0.5rem 0';
 
   const periodLabel = document.createElement('p');
+  periodLabel.className = 'death-period-info';
   periodLabel.textContent = timePeriod >= 0
     ? `Questions pulled from time period ${timePeriod}.`
     : 'Questions pulled from the full pool.';
-  periodLabel.style.color = '#9aa7b3';
-  periodLabel.style.margin = '0 0 0.75rem 0';
 
   const progress = document.createElement('p');
+  progress.className = 'death-progress';
   progress.textContent = 'Question 0 of 3';
-  progress.style.color = '#fff';
-  progress.style.margin = '0 0 1rem 0';
 
   const questionText = document.createElement('p');
-  questionText.style.fontSize = '1.15rem';
-  questionText.style.lineHeight = '1.5';
-  questionText.style.margin = '0 0 1rem 0';
+  questionText.className = 'death-question';
 
   const choiceRow = document.createElement('div');
-  choiceRow.className = 'btn-row';
-  choiceRow.style.justifyContent = 'center';
-  choiceRow.style.flexWrap = 'wrap';
-  choiceRow.style.gap = '0.5rem';
+  choiceRow.className = 'death-choices';
 
   const feedback = document.createElement('p');
-  feedback.style.minHeight = '1.5rem';
-  feedback.style.margin = '1rem 0 0 0';
-  feedback.style.color = '#f3d59b';
+  feedback.className = 'death-feedback';
 
   const actionRow = document.createElement('div');
-  actionRow.className = 'btn-row';
-  actionRow.style.justifyContent = 'center';
+  actionRow.className = 'death-actions';
   actionRow.style.display = 'none';
 
   const restartButton = document.createElement('button');
-  restartButton.className = 'btn';
+  restartButton.className = 'death-btn primary';
   restartButton.textContent = 'Revive';
   restartButton.addEventListener('click', () => {
     if (onRestart) {
@@ -114,7 +85,7 @@ export function showDeathScreen(options?: {
   });
 
   const menuButton = document.createElement('button');
-  menuButton.className = 'btn';
+  menuButton.className = 'death-btn ghost';
   menuButton.textContent = 'Main Menu';
   menuButton.addEventListener('click', () => {
     if (onMainMenu) return onMainMenu();
@@ -153,7 +124,7 @@ export function showDeathScreen(options?: {
 
     for (const choice of nextQuestion.choices) {
       const choiceButton = document.createElement('button');
-      choiceButton.className = 'btn';
+      choiceButton.className = 'death-btn';
       choiceButton.textContent = choice;
       choiceButton.addEventListener('click', () => {
         if (choice === nextQuestion.correctAnswer) {
@@ -174,6 +145,7 @@ export function showDeathScreen(options?: {
 
   card.appendChild(title);
   card.appendChild(desc);
+  card.appendChild(divider);
   card.appendChild(quizIntro);
   card.appendChild(periodLabel);
   card.appendChild(progress);
@@ -182,15 +154,7 @@ export function showDeathScreen(options?: {
   card.appendChild(feedback);
   card.appendChild(actionRow);
 
-  // center vertically
-  const topGap = document.createElement('div');
-  topGap.className = 'grow';
-  const botGap = document.createElement('div');
-  botGap.className = 'grow';
-
-  overlay.appendChild(topGap);
   overlay.appendChild(card);
-  overlay.appendChild(botGap);
 
   document.body.appendChild(overlay);
 

@@ -42,7 +42,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, RIDANIYA_BOSS_SPAWN_POINT, RIDANIYA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { Secret } from "../secrets";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Ridaniya.glb';
@@ -453,7 +453,7 @@ await waitForAmmoReady(app, "ground");
 		if (remainingFoes.length === 0 && baybarsSpawned && (baybarsSpawnFrame ?? 0) > 2) {
 			removeBattleHUD();
 			victoryHandled = true;
-			changeScene(canvas, app, 777);
+			triggerVictory('Battle of Ridaniya', canvas, app);
 		}
 	};
 

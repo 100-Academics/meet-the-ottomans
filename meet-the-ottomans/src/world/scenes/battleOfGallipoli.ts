@@ -53,7 +53,7 @@ import {
   GALLIPOLI_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
 
 const groundModelPath = "/world/battlefields/Gallipoli.glb";
@@ -420,7 +420,7 @@ export async function battleOfGallipoliScene(
     if (remainingFoes.length === 0 && isBossSpawned) {
       victoryHandled = true;
       removeBattleHUD();
-      changeScene(canvas, app, 777);
+      triggerVictory('Battle of Gallipoli', canvas, app);
     } else if (remainingFoes.length === 0 && !isBossSpawned) {
       spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
         console.error(err),

@@ -44,7 +44,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS, VIENNA_BOSS_SPAWN_POINT, VIENNA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Vienna.glb';
@@ -499,7 +499,7 @@ const npcSpawnOptions = {
 		if (remainingFoes.length === 0 && isBossSpawned) {
 			victoryHandled = true;
 			removeBattleHUD();
-			changeScene(canvas, app, 777);
+			triggerVictory('Siege of Vienna', canvas, app);
 		}
 		else if (remainingFoes.length === 0 && !isBossSpawned) {
 			// spawn the boss asynchronously

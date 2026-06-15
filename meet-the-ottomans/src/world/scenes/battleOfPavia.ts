@@ -42,7 +42,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sc
 import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, PAVIA_BOSS_SPAWN_POINT } from "../npc/sceneNpcPresets";
 import { Boss } from "../npc/bosses/boss";
 import { Secret } from "../secrets";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
@@ -524,7 +524,7 @@ const victoryCheck = async () => {
   if (remainingFoes.length === 0 && caesarSpawned && (caesarSpawnFrame ?? 0) > 2) {
     removeBattleHUD();
     victoryHandled = true;
-    changeScene(canvas, app, 777);
+    triggerVictory('Battle of Pavia (Italian Wars)', canvas, app);
   }
 };
 app.on('update', victoryCheck);
