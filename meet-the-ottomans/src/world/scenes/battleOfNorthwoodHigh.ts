@@ -36,11 +36,12 @@ import {
  updateBattleHUD,
 } from "../../util/battleHUD";
 import { isDeathScreenVisible } from "./deathScreen";
+import { type RenderableBounds } from "../../util/battleSceneHelpers";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
-import { Secret } from "../secrets";
+import { Secret, pickSecretPosition } from "../secrets";
 import {
  AIR_LADIN_BOSS_SPAWN_OVERRIDES,
  TOWER_BOSS_SPAWN_OVERRIDES,
@@ -195,6 +196,17 @@ export async function battleOfNorthwoodHighScene(
  const player = new Player(app, playerSpawn);
  let respawnPosition = playerSpawn.clone();
  let respawnGroundY = 0;
+ // NorthwoodHigh's "ground" is a procedural white box. There's no GLB mesh
+ // to query for bounds, so we build synthetic ones from the floor sizes.
+ // PHASE2 is the larger of the two and stays in effect once the boss swaps in.
+ let bounds: RenderableBounds | undefined = {
+   minX: -PHASE2_FLOOR_SIZE / 2,
+   maxX: PHASE2_FLOOR_SIZE / 2,
+   minZ: -PHASE2_FLOOR_SIZE / 2,
+   maxZ: PHASE2_FLOOR_SIZE / 2,
+   minY: 0,
+   maxY: 1,
+ };
  player.setDeathQuizContext(7, () => {
   player.revive(respawnPosition);
   if (cameraController) cameraController.groundHeight = respawnGroundY;
@@ -450,12 +462,10 @@ export async function battleOfNorthwoodHighScene(
      app.root.addChild(light);
    }
 
-   // Ground-snap the secret so its base sits on the actual battlefield surface;
-   // the player spawn lands around y≈8 in this scene, so a hardcoded y=1 would
-   // bury the model. We use the same raycast helper the player spawn uses
-   // (`getHighestGroundHitY` against the 'ground'-tagged entity) and fall back
-   // to the player's surface Y if the raycast at this X/Z misses.
-   const secretGroundY = getHighestGroundHitY(app, 3, -5, 'ground') ?? respawnGroundY;
+   // Pick the secret's position INSIDE the synthetic map bounds (not the same
+   // spot every battle) and ground-snap it 0.5 units above the surface so it
+   // doesn't z-fight with the floor mesh.
+   const secretPosition = pickSecretPosition(app, bounds, respawnGroundY);
    // The loader applies a default rotation of (0, 90, 90) when none is given
    // (see src/util/loadModel.ts), which tips jar.glb on its side. Setting
    // (0, 0, 0) tells the loader to use the model's raw .glb orientation so it
@@ -465,7 +475,7 @@ export async function battleOfNorthwoodHighScene(
      app,
      cameraEntity: player.getCameraEntity(),
      modelPath: "models/jar.glb",
-     position: new Vec3(3, secretGroundY + 1, -5),
+     position: secretPosition,
      scale: new Vec3(0.5, 0.5, 0.5),
      rotation: secretRotation
    });

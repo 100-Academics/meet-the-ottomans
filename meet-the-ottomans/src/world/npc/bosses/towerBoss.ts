@@ -122,31 +122,31 @@ export class TowerBoss extends Boss {
         super(id, maxHealth, entity, "The Tower");
 
         // The tower's language is unrecognised — rendered as question marks.
-        this.setIntroTaunt("??????????", "......");
-        this.setIntroNameTranslation("??????????", "The Tower");
+        this.setIntroTaunt("??????????", "You are a fool for coming here.");
+        this.setIntroNameTranslation("??????????", "Mrs. Bond-Lamberty");
 
         this.setTauntSet({
             highHealth: [
-                "??????????",
-                "??????????",
-                "??????????"
+                "I have seen your faults. I know you will fail.",
+                "Back down now and you may pass the class",
+                "You are not ready for this DBQ."
             ],
             bossLowPlayerHigh: [
-                "??????????",
-                "??????????"
+                "You surprise me.",
+                "I did not expect this, your knowledge is impressive."
             ],
             playerLowBossHigh: [
-                "??????????",
-                "??????????"
+                "It is clear you have not studied enough.",
+                "I was right about you. You will fall."
             ],
             bothLow: [
-                "??????????"
+                "A battle of wits that neither may survive."
             ],
             death: [
-                "??????????"
+                "You get an E."
             ],
             bossDeath: [
-                "??????????"
+                "You have defeated me. You will recieve an A."
             ]
         });
 
@@ -710,7 +710,7 @@ export class TowerBoss extends Boss {
 
     // ── Helpers (patterned after King Geser etc.) ──
 
-    private applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
+    protected applyDamage(damage: number, onAttack?: (attacker: npc) => void): void {
         if (this.onPlayerAttack) {
             this.onPlayerAttack(this, damage);
             return;
@@ -724,7 +724,7 @@ export class TowerBoss extends Boss {
         return null;
     }
 
-    private computeFlatDistance(targetEntity: Entity | null): number {
+    protected computeFlatDistance(targetEntity: Entity | null): number {
         if (!targetEntity) return Infinity;
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
@@ -733,7 +733,7 @@ export class TowerBoss extends Boss {
         return Math.sqrt(dx * dx + dz * dz);
     }
 
-    private faceTarget(targetEntity: Entity | null, dt: number): void {
+    protected faceTarget(targetEntity: Entity | null, dt: number): void {
         if (!targetEntity) return;
         const myPos = this.getEntity().getPosition();
         const targetPos = targetEntity.getPosition();
@@ -754,7 +754,7 @@ export class TowerBoss extends Boss {
         return from + diff * t;
     }
 
-    private createEffectMaterial(
+    protected createEffectMaterial(
         diffuse: Color,
         emissive: Color,
         emissiveIntensity: number,
@@ -773,7 +773,7 @@ export class TowerBoss extends Boss {
         return material;
     }
 
-    private resolveSceneApp(): AppBase | undefined {
+    protected resolveSceneApp(): AppBase | undefined {
         const selfEntity = this.getEntity() as any;
         const selfApp = (selfEntity?.app ?? selfEntity?._app) as AppBase | undefined;
         if (selfApp?.root) return selfApp;
@@ -782,7 +782,7 @@ export class TowerBoss extends Boss {
         return undefined;
     }
 
-    private destroyEffect(effect?: Entity | null): void {
+    protected destroyEffect(effect?: Entity | null): void {
         if (!effect) return;
         this.activeEffects.delete(effect);
         try {

@@ -18,7 +18,7 @@
  * SCROLL OUTPUT: PageUp / PageDown or mouse wheel
  */
 
-import { AppBase, Vec3 } from 'playcanvas';
+import { AppBase, Vec3} from 'playcanvas';
 import { changeScene } from '../App';
 import { Player } from '../player/player';
 import { Boss } from '../world/npc/bosses/boss';
@@ -389,7 +389,7 @@ export class DevConsole {
       } else {
         DevConsole._navigateHistory(1);
       }
-    } else if (e.key === 'Tab') {
+    } else if (e.key === "/") {
       e.preventDefault();
       DevConsole._autoComplete();
     } else if (e.key === 'Escape') {

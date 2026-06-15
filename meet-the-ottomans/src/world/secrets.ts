@@ -1,5 +1,9 @@
 import { AppBase, Entity, Vec3 } from "playcanvas";
 import { loadModel, type Model } from "../util/loadModel";
+import {
+    getHighestGroundHitY,
+    type RenderableBounds,
+} from "../util/battleSceneHelpers";
 
 // ── Global counter ──
 //
@@ -248,4 +252,49 @@ export async function spawnSecret(options: SecretOptions): Promise<Secret> {
     const secret = new Secret(options);
     await secret.spawn();
     return secret;
+}
+
+// ── pickSecretPosition ──
+//
+// Picks a random ground-snapped Vec3 inside the map's renderable bounds so the
+// secret doesn't show up in the same spot every battle. The secret model
+// sits half a unit above the surface, which is just enough clearance to avoid
+// Z-fighting with the terrain mesh while still looking like it's "on" the ground.
+//
+//   - `bounds`: AABB returned by `getRenderableBounds(ground.modelEntity)`. When
+//     `undefined` (ground failed to load), we fall back to a position near the
+//     player's spawn.
+//   - `fallbackY`: Y value used if the raycast at the random (x, z) misses.
+//     Pass `respawnGroundY` — that way the secret at least lands somewhere on
+//     the player's known surface.
+const SECRET_GROUND_OFFSET = 0.5;
+// Inset from the map edges so the secret doesn't clip into a wall, ledge, or
+// fall into a hole just outside the AABB. Maps are usually much larger than
+// this so the inset is invisible to the player, but it keeps the secret safely
+// inside the playable area.
+const SECRET_BOUND_MARGIN = 3;
+
+export function pickSecretPosition(
+    app: AppBase,
+    bounds: RenderableBounds | undefined,
+    fallbackY: number,
+): Vec3 {
+    if (!bounds) {
+        // No bounds at all (ground model failed to load) — drop the secret at
+        // the player's spawn with our standard offset rather than at a
+        // hardcoded origin.
+        return new Vec3(0, fallbackY + SECRET_GROUND_OFFSET, 0);
+    }
+
+    // Clamp the insets so impossibly small maps (or a bounds regression) can
+    // still produce a valid X/Z range instead of `min > max`.
+    const minX = bounds.minX + SECRET_BOUND_MARGIN;
+    const maxX = bounds.maxX - SECRET_BOUND_MARGIN;
+    const minZ = bounds.minZ + SECRET_BOUND_MARGIN;
+    const maxZ = bounds.maxZ - SECRET_BOUND_MARGIN;
+    const x = minX + Math.random() * Math.max(0, maxX - minX);
+    const z = minZ + Math.random() * Math.max(0, maxZ - minZ);
+
+    const groundY = getHighestGroundHitY(app, x, z, "ground") ?? fallbackY;
+    return new Vec3(x, groundY + SECRET_GROUND_OFFSET, z);
 }
