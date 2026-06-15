@@ -47,8 +47,8 @@ import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { changeScene } from "../../App";
 import { DevConsole } from "../../util/devConsole";
-import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
-import { Secret } from "../secrets";
+import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { Secret, pickSecretPosition } from "../secrets";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
 
@@ -212,6 +212,9 @@ export async function battleOfLegnicaScene(
   const player = new Player(app, playerSpawn);
   let respawnPosition = playerSpawn.clone();
   let respawnGroundY = 0;
+  // Bounds of the rendered ground mesh — hoisted here so it's still in scope
+  // when the secret spawns well after the ground's load() promise resolves.
+  let bounds: RenderableBounds | undefined;
   player.setDeathQuizContext(3, () => {
     player.revive(respawnPosition);
     if (cameraController) {
@@ -289,7 +292,7 @@ export async function battleOfLegnicaScene(
     // Try to spawn the player on top of the ground
     let spawnResolved = false;
     const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;  // Slightly above ground
-    const bounds = getRenderableBounds(ground.modelEntity);
+    bounds = getRenderableBounds(ground.modelEntity);
     
     // If we got the bounds, spawn at the center of the ground surface
     if (bounds) {
@@ -401,12 +404,10 @@ export async function battleOfLegnicaScene(
     app.root.addChild(light);
   }
 
-  // Ground-snap the secret so its base sits on the actual battlefield surface;
-  // the player spawn lands around y≈8 in this scene, so a hardcoded y=1 would
-  // bury the model. We use the same raycast helper the player spawn uses
-  // (`getHighestGroundHitY` against the 'ground'-tagged entity) and fall back
-  // to the player's surface Y if the raycast at this X/Z misses.
-  const secretGroundY = getHighestGroundHitY(app, 3, -5, 'ground') ?? respawnGroundY;
+  // Pick the secret's position INSIDE the map's bounds (not the same spot
+  // every battle) and ground-snap it 0.5 units above the surface so it
+  // doesn't z-fight with the terrain.
+  const secretPosition = pickSecretPosition(app, bounds, respawnGroundY);
   // The loader applies a default rotation of (0, 90, 90) when none is given
   // (see src/util/loadModel.ts), which tips jar.glb on its side. Setting
   // (0, 0, 0) tells the loader to use the model's raw .glb orientation so it
@@ -416,7 +417,7 @@ export async function battleOfLegnicaScene(
     app,
     cameraEntity: player.getCameraEntity(),
     modelPath: "models/jar.glb",
-    position: new Vec3(3, secretGroundY+0.5, -5),
+    position: secretPosition,
     scale: new Vec3(0.5, 0.5, 0.5),
     rotation: secretRotation
   });

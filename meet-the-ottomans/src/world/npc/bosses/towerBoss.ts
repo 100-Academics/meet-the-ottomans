@@ -42,9 +42,21 @@ interface ResonanceState {
 }
 
 /**
+ * A choice from the unified Tower attack pool: either a built-in attack
+ * (shockwave / pillar / gaze / resonance) or a borrowed attack borrowed
+ * from one of the other bosses.
+ */
+type TowerAttackChoice =
+    | { kind: "builtin"; type: TowerAttackType }
+    | { kind: "borrowed"; attack: TowerBorrowedAttack };
+
+/**
  * Tower boss — an ancient monolith that speaks in an unknown tongue.
  * Phase 2 of the Northwood High School fight.
  * The tower is immovable, so all its attacks are ranged or arena-wide.
+ *
+ * In addition to its own four signature attacks, the Tower pulls from the
+ * full repertoire of every other boss via {@link TowerBorrowedAttack}.
  */
 export class TowerBoss extends Boss {
 
@@ -90,12 +102,17 @@ export class TowerBoss extends Boss {
     // Runtime state
     private attackLockUntilSeconds = 0;
     private lastAttackType: TowerAttackType | null = null;
+    private lastBorrowedAttackId: string | null = null;
     private lastAttackAtSeconds = -Infinity;
 
     private shockwaveState: ShockwaveState | null = null;
     private pillarState: PillarState | null = null;
     private gazeState: GazeState | null = null;
     private resonanceState: ResonanceState | null = null;
+
+    // Borrowed-attack pool: pulls from every other boss's repertoire.
+    private readonly borrowedAttacks: TowerBorrowedAttack[];
+    private currentBorrowedAttack: TowerBorrowedAttack | null = null;
 
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
 
@@ -153,6 +170,28 @@ export class TowerBoss extends Boss {
         // The tower is immovable — it only watches.
         this.aiConfig.chaseMoveSpeed = 0;
         this.aiConfig.idleMoveSpeed = 0;
+
+        // Pull attacks from every other boss in the game and use them at random.
+        this.borrowedAttacks = [
+            new HolySpireBorrow(this),
+            new HolyRayBorrow(this),
+            new DivineLightBorrow(this),
+            new GeserLightningBorrow(this),
+            new FireStrikeBorrow(this),
+            new FireRainBorrow(this),
+            new LibertyStrikeBorrow(this),
+            new ValleyForgeBorrow(this),
+            new CannonBarrageBorrow(this),
+            new PlagueBorrow(this),
+            new PartingWaveBorrow(this),
+            new MannaHailBorrow(this),
+            new IedBlastBorrow(this),
+            new AkSprayBorrow(this),
+            new RedArmySurgeBorrow(this),
+            new IronCurtainBorrow(this),
+            new CauseWinterBorrow(this),
+            new AbelLightningBorrow(this)
+        ];
     }
 
     public override updateCombatAI(
@@ -182,6 +221,20 @@ export class TowerBoss extends Boss {
         if (!this.isAlive()) return;
         const dt = Math.max(0, Math.min(deltaTime, 0.05));
 
+        // Tick borrowed attack: runs to completion via the abstraction.
+        if (this.currentBorrowedAttack) {
+            this.currentBorrowedAttack.tick(targetEntity, currentTimeSeconds, onAttack);
+            if (!this.currentBorrowedAttack.isActive()) {
+                this.currentBorrowedAttack.cleanup();
+                this.currentBorrowedAttack.completeCooldown(currentTimeSeconds);
+                this.currentBorrowedAttack = null;
+                // Brief lock so we don't instantly roll another attack.
+                this.attackLockUntilSeconds = Math.max(this.attackLockUntilSeconds, currentTimeSeconds + 0.4);
+            }
+            this.faceTarget(targetEntity, dt);
+            return;
+        }
+
         // Update active attack states
         if (this.shockwaveState) { this.updateShockwave(targetEntity, currentTimeSeconds); }
         if (this.pillarState) { this.updatePillar(targetEntity, currentTimeSeconds, onAttack); }
@@ -190,6 +243,7 @@ export class TowerBoss extends Boss {
 
         // If any state is still active, don't start a new one yet
         if (this.shockwaveState || this.pillarState || this.gazeState || this.resonanceState) {
+            this.faceTarget(targetEntity, dt);
             return;
         }
 
@@ -204,20 +258,39 @@ export class TowerBoss extends Boss {
             return;
         }
 
-        const distance = this.computeFlatDistance(targetEntity);
-        const chosen = this.pickNextAttack(distance, currentTimeSeconds);
-        if (chosen === "shockwave") { this.startShockwave(currentTimeSeconds); return; }
-        if (chosen === "pillar") { this.startPillar(targetEntity, currentTimeSeconds); return; }
-        if (chosen === "gaze") { this.startGaze(targetEntity, currentTimeSeconds); return; }
-        if (chosen === "resonance") { this.startResonance(currentTimeSeconds); return; }
+        const chosen = this.pickNextAttack(targetEntity, currentTimeSeconds);
+        if (!chosen) {
+            this.faceTarget(targetEntity, dt);
+            return;
+        }
 
-        // No attack chosen: just face the target (tower doesn't move)
+        if (chosen.kind === "builtin") {
+            if (chosen.type === "shockwave") { this.startShockwave(currentTimeSeconds); return; }
+            if (chosen.type === "pillar") { this.startPillar(targetEntity, currentTimeSeconds); return; }
+            if (chosen.type === "gaze") { this.startGaze(targetEntity, currentTimeSeconds); return; }
+            if (chosen.type === "resonance") { this.startResonance(currentTimeSeconds); return; }
+            return;
+        }
+
+        // Borrowed attack
+        this.lastBorrowedAttackId = chosen.attack.id;
+        this.attackLockUntilSeconds = currentTimeSeconds + 0.5;
+        this.currentBorrowedAttack = chosen.attack;
+        chosen.attack.start(targetEntity, currentTimeSeconds, onAttack);
         this.faceTarget(targetEntity, dt);
     }
 
     public override kill(): boolean {
         const didKill = super.kill();
-        if (didKill) this.cleanupEffects();
+        if (didKill) {
+            // Tear down any in-flight borrowed attack before the full cleanup.
+            if (this.currentBorrowedAttack) {
+                this.currentBorrowedAttack.cleanup();
+                this.currentBorrowedAttack = null;
+            }
+            this.cleanupBorrowedAttacks();
+            this.cleanupEffects();
+        }
         return didKill;
     }
 
@@ -232,38 +305,66 @@ export class TowerBoss extends Boss {
         };
     }
 
-    private pickNextAttack(distance: number, now: number): TowerAttackType | null {
-        const options: Array<{ type: TowerAttackType; weight: number }> = [];
+    private pickNextAttack(targetEntity: Entity | null, now: number): TowerAttackChoice | null {
+        const distance = this.computeFlatDistance(targetEntity);
+        const builtinOptions: TowerAttackType[] = [];
 
         if (now >= this.nextShockwaveAtSeconds) {
-            options.push({ type: "shockwave", weight: 1.2 });
+            builtinOptions.push("shockwave");
         }
         if (now >= this.nextPillarAtSeconds && distance <= this.pillarRange) {
-            options.push({ type: "pillar", weight: 1.5 });
+            builtinOptions.push("pillar");
         }
         if (now >= this.nextGazeAtSeconds && distance <= this.gazeRange) {
-            options.push({ type: "gaze", weight: 1.3 });
+            builtinOptions.push("gaze");
         }
         if (now >= this.nextResonanceAtSeconds && distance <= this.resonanceRange) {
-            options.push({ type: "resonance", weight: 0.8 });
+            builtinOptions.push("resonance");
         }
 
-        if (options.length === 0) return null;
-
-        // Penalize repeating the same attack
-        if (this.lastAttackType && (now - this.lastAttackAtSeconds) < 2.0) {
-            for (const o of options) {
-                if (o.type === this.lastAttackType) o.weight *= 0.4;
+        const validBorrowed: TowerBorrowedAttack[] = [];
+        for (const attack of this.borrowedAttacks) {
+            if (attack.isSelectable(targetEntity, now)) {
+                validBorrowed.push(attack);
             }
         }
 
-        const totalWeight = options.reduce((s, o) => s + o.weight, 0);
-        let roll = Math.random() * totalWeight;
-        for (const o of options) {
-            roll -= o.weight;
-            if (roll <= 0) return o.type;
+        // Build the unified pool. Every entry — built-in or borrowed — has equal
+        // weight, so the Tower rolls uniformly across its full repertoire.
+        const totalChoices = builtinOptions.length + validBorrowed.length;
+        if (totalChoices === 0) return null;
+
+        // Anti-repeat: penalise the most-recently-used attack id by removing it
+        // from contention (only when other options exist).
+        const recentBuiltin = (this.lastAttackType && (now - this.lastAttackAtSeconds) < 2.0)
+            ? this.lastAttackType
+            : null;
+        const recentBorrowed = (this.lastBorrowedAttackId && (now - this.lastAttackAtSeconds) < 2.0)
+            ? this.lastBorrowedAttackId
+            : null;
+
+        const filteredBuiltin = recentBuiltin
+            ? builtinOptions.filter(t => t !== recentBuiltin)
+            : builtinOptions;
+        const filteredBorrowed = recentBorrowed
+            ? validBorrowed.filter(a => a.id !== recentBorrowed)
+            : validBorrowed;
+
+        const finalChooseable = filteredBuiltin.length + filteredBorrowed.length;
+        if (finalChooseable === 0) {
+            // Fall back to the unfiltered pool if every option was the recent one.
+            const allReady: TowerAttackChoice[] = [
+                ...builtinOptions.map(t => ({ kind: "builtin" as const, type: t })),
+                ...validBorrowed.map(a => ({ kind: "borrowed" as const, attack: a }))
+            ];
+            return allReady[Math.floor(Math.random() * allReady.length)] ?? null;
         }
-        return options[0].type;
+
+        const roll = Math.floor(Math.random() * finalChooseable);
+        if (roll < filteredBuiltin.length) {
+            return { kind: "builtin", type: filteredBuiltin[roll] };
+        }
+        return { kind: "borrowed", attack: filteredBorrowed[roll - filteredBuiltin.length] };
     }
 
     // ── Shockwave ──
@@ -792,7 +893,7 @@ export class TowerBoss extends Boss {
         }
     }
 
-    private cleanupEffects(): void {
+    protected cleanupEffects(): void {
         for (const effect of this.activeEffects) {
             try {
                 effect.destroy();
