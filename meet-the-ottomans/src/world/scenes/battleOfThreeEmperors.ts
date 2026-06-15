@@ -53,7 +53,6 @@ import {
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { changeScene } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = "/world/battlefields/Austerlitz.glb";

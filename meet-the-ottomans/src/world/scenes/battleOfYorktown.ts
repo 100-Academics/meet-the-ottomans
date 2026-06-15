@@ -43,7 +43,6 @@ import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import { Boss } from "../npc/bosses/boss";
-import { Secret } from "../secrets";
 import {
   DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
   DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS,

@@ -907,4 +907,258 @@ export class TowerBoss extends Boss {
         this.gazeState = null;
         this.resonanceState = null;
     }
+
+    /**
+     * Tear down every borrowed attack — runs both on boss death (via kill())
+     * and any time a borrowed attack was thrown into an unrecoverable state
+     * (e.g. the Tower being killed mid-cast).
+     */
+    protected cleanupBorrowedAttacks(): void {
+        if (!this.borrowedAttacks) return;
+        for (const attack of this.borrowedAttacks) {
+            try {
+                attack.cleanup();
+            } catch (e) {
+                // ignore — borrowed attacks may have already torn themselves down
+            }
+        }
+    }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  TOWER BORROWED-ATTACK SYSTEM
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//
+// Every concrete class below reimplements — at Tower scale and in the Tower's
+// own quaternary palette bridge — an attack pattern taken from a different
+// boss in `meet-the-ottomans/src/world/npc/bosses/`. Each borrows behaviour
+// (timings, damage, range) from its source rather than the source's exact
+// VFX, so the Tower's fight feels like an eclectic bestiary restage.
+//
+// The Tower itself is immovable, so only ranged / AoE / sky-strike / beam
+// patterns transfer cleanly. Movement-dependent attacks (dashes, shadow
+// dashes, fire dashes, civil charge, aerial reposition, invisibility chases)
+// are intentionally excluded.
+
+abstract class TowerBorrowedAttack {
+    public abstract readonly id: string;
+    public abstract readonly label: string;
+    public abstract readonly cooldownSeconds: number;
+    public abstract readonly range: number;
+
+    /** Earliest {@code currentTimeSeconds} value at which this attack may fire again. */
+    protected nextReadyAtSeconds = 0;
+    /** True while the attack's timeline is in flight. */
+    protected running = false;
+    /** Visual entities spawned by this attack — tracked so cleanup can reap them. */
+    protected readonly tracked: Set<Entity> = new Set();
+
+    constructor(protected readonly tower: TowerBoss) {}
+
+    public isActive(): boolean {
+        return this.running;
+    }
+
+    /** Can the Tower legally start this attack right now? */
+    public isSelectable(target: Entity | null, now: number): boolean {
+        if (this.running) return false;
+        if (now < this.nextReadyAtSeconds) return false;
+        if (!target) return false;
+        return this.tower.computeFlatDistance(target) <= this.range;
+    }
+
+    /** Stamp the post-finish cooldown so the next roll respects it. */
+    public completeCooldown(now: number): void {
+        this.nextReadyAtSeconds = now + this.cooldownSeconds;
+    }
+
+    /** Track a spawned entity so {@link cleanup} can reap it. */
+    protected trackEntity(entity: Entity): Entity {
+        this.tracked.add(entity);
+        return entity;
+    }
+
+    protected untrackEntity(entity: Entity | null | undefined): void {
+        if (!entity) return;
+        this.tracked.delete(entity);
+    }
+
+    /** Spawn the initial VFX / state for the attack. */
+    public abstract start(target: Entity, now: number, onAttack?: (attacker: npc) => void): void;
+
+    /** Per-frame update; the attack flips {@link running} to false when its timeline ends. */
+    public abstract tick(target: Entity | null, now: number, onAttack?: (attacker: npc) => void): void;
+
+    /** Destroy any VFX, completing the attack even if its timeline didn't finish. */
+    public cleanup(): void {
+        for (const entity of this.tracked) {
+            this.tower.destroyEffect(entity);
+        }
+        this.tracked.clear();
+        this.running = false;
+    }
+
+    // ── Tracked-entity helpers (sub-classes use these to spawn VFX safely). ──
+
+    protected makeRing(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("cylinder", position, scale, material, name);
+    }
+
+    protected makeSphere(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("sphere", position, scale, material, name);
+    }
+
+    protected makeBox(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("box", position, scale, material, name);
+    }
+
+    protected makeTorus(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("torus", position, scale, material, name);
+    }
+
+    protected makeCone(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("cone", position, scale, material, name);
+    }
+
+    protected makeCapsule(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("capsule", position, scale, material, name);
+    }
+
+    private makeEntity(
+        kind: "cylinder" | "sphere" | "box" | "torus" | "cone" | "capsule",
+        position: Vec3,
+        scale: number | [number, number, number],
+        material: StandardMaterial,
+        name: string
+    ): Entity | null {
+        const scene = this.tower.resolveSceneApp();
+        const e = new Entity(name);
+        e.addComponent("render", { type: kind } as any);
+        const [sx, sy, sz] = Array.isArray(scale) ? scale : [scale, scale, scale];
+        e.setLocalScale(sx, sy, sz);
+        const meshInst = e.render?.meshInstances?.[0];
+        if (meshInst) {
+            meshInst.material = material;
+        }
+        e.setPosition(position.x, position.y, position.z);
+        if (scene?.root) {
+            scene.root.addChild(e);
+        }
+        this.tracked.add(e);
+        return e;
+    }
+
+    /** Fades a tracked entity's material opacity from current to 0 across durationMs. */
+    protected animateFadeOut(entity: Entity, durationMs: number, onDone?: () => void): void {
+        const mat = entity.render?.meshInstances?.[0]?.material as StandardMaterial | undefined;
+        if (!mat) return;
+        const startOpacity = mat.opacity ?? 1.0;
+        const start = performance.now();
+        const tick = () => {
+            if (!entity.parent) {
+                if (onDone) onDone();
+                return;
+            }
+            const t = Math.min(1, (performance.now() - start) / durationMs);
+            mat.opacity = startOpacity * (1 - t);
+            mat.update();
+            if (t >= 1) {
+                if (onDone) onDone();
+                return;
+            }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    /** Lerps {@code entity}'s position from start to end over durationMs. */
+    protected animateMoveTo(entity: Entity, end: Vec3, durationMs: number, onDone?: () => void): void {
+        const start = entity.getPosition().clone();
+        const startMs = performance.now();
+        const tick = () => {
+            if (!entity.parent) {
+                if (onDone) onDone();
+                return;
+            }
+            const t = Math.min(1, (performance.now() - startMs) / durationMs);
+            const eased = t * t * (3 - 2 * t);
+            entity.setPosition(
+                start.x + (end.x - start.x) * eased,
+                start.y + (end.y - start.y) * eased,
+                start.z + (end.z - start.z) * eased
+            );
+            if (t >= 1) {
+                if (onDone) onDone();
+                return;
+            }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    /** Lerps an entity's Y to simulate a falling object with peak arc. */
+    protected animateFall(entity: Entity, peakHeight: number, durationMs: number, onDone?: () => void): void {
+        const start = entity.getPosition().clone();
+        const startMs = performance.now();
+        const tick = () => {
+            if (!entity.parent) {
+                if (onDone) onDone();
+                return;
+            }
+            const t = Math.min(1, (performance.now() - startMs) / durationMs);
+            const yArc = peakHeight * Math.sin(t * Math.PI) * 2 - peakHeight * 0.5;
+            entity.setPosition(start.x, start.y + yArc, start.z);
+            if (t >= 1) {
+                if (onDone) onDone();
+                return;
+            }
+            requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+    }
+
+    /**
+     * Sweeps a cylinder beam visual from {@code origin} to {@code end} over {@code travelMs}.
+     * Beam length grows from 0 → full while opacity stays full. After travel finishes,
+     * the beam fades over durationMs.
+     */
+    protected animateBeamSweep(origin: Vec3, end: Vec3, beamRadius: number, height: number, travelMs: number, holdMs: number, material: StandardMaterial, name: string): void {
+        const scene = this.tower.resolveSceneApp();
+        const direction = end.clone().sub(origin);
+        const fullDistance = direction.length();
+        if (fullDistance <= 0.5) return;
+
+        const beam = this.makeCylinder(origin, [beamRadius, fullDistance, beamRadius], material, name);
+        if (!beam) return;
+        // Cylinder defaults run along Y; we want it along the beam direction.
+        beam.setLocalPosition(origin.x, origin.y, origin.z);
+        beam.lookAt(end.x, end.y, end.z);
+
+        const startPos = origin.clone();
+        // Re-parent so we can rotate it via setLocalPosition then orient via lookAt.
+        const startMs = performance.now();
+        const tick = () => {
+            if (!beam.parent) return;
+            const elapsed = performance.now() - startMs;
+            const t = Math.min(1, elapsed / travelMs);
+            // Don't move the beam; only fade in/out via length scale change if desired.
+            if (t >= 1) {
+                // Hold for holdMs then fade.
+                window.setTimeout(() => {
+                    if (beam.parent) {
+                        this.animateFadeOut(beam, 200);
+                    }
+                }, holdMs);
+                return;
+            }
+            requestAnimationFrame(tick);
+        };
+        // Suppress unused-var warnings for clarity.
+        void startPos;
+        requestAnimationFrame(tick);
+    }
+
+    protected makeCylinder(position: Vec3, scale: number | [number, number, number], material: StandardMaterial, name: string): Entity | null {
+        return this.makeEntity("cylinder" as any, position, scale, material, name);
+    }
 }

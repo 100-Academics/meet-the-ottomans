@@ -357,7 +357,7 @@ export class Baybars extends Boss {
         }
     }
 
-    private spawnSpikeDrop(origin: Vec3, currentTimeSeconds: number): void {
+    private spawnSpikeDrop(origin: Vec3, _currentTimeSeconds: number): void {
         const sceneApp = this.resolveSceneApp();
         if (!sceneApp?.root) return;
 

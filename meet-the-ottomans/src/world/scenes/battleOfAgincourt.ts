@@ -46,7 +46,6 @@ import { Secret, pickSecretPosition } from "../secrets";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS, AGINCOURT_BOSS_SPAWN_POINT, AGINCOURT_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { changeScene } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Agincourt.glb';

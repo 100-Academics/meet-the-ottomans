@@ -43,7 +43,6 @@ import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESA
 import { Boss } from "../npc/bosses/boss";
 import { Secret, pickSecretPosition } from "../secrets";
 import { triggerVictory } from "../../App";
-import { changeScene } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, type RenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
