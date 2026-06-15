@@ -84,16 +84,16 @@ export function showDeathScreen(options?: {
     window.location.href = '/';
   });
 
-  const menuButton = document.createElement('button');
-  menuButton.className = 'death-btn ghost';
-  menuButton.textContent = 'Main Menu';
-  menuButton.addEventListener('click', () => {
-    if (onMainMenu) return onMainMenu();
-    window.location.href = '/';
-  });
+  // const menuButton = document.createElement('button');
+  // menuButton.className = 'death-btn ghost';
+  // menuButton.textContent = 'Main Menu';
+  // menuButton.addEventListener('click', () => {
+  //   if (onMainMenu) return onMainMenu();
+  //   window.location.href = '/';
+  // });
 
   actionRow.appendChild(restartButton);
-  actionRow.appendChild(menuButton);
+  // actionRow.appendChild(menuButton);
 
   let correctAnswers = 0;
 

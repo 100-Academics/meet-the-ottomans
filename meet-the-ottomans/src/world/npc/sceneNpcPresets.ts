@@ -267,7 +267,7 @@ const OLD_FRENCH_SOLDIER_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 };
 
 const JOAN_OF_ARC_SPAWN_OVERRIDES: NpcSpawnOverrides = {
-  modelRotation: new Vec3(-90, 0, 0),
+  modelRotation: new Vec3(0, 0, 0),
   facingYawOffsetDegrees: 0
 };
 

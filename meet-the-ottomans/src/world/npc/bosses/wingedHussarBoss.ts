@@ -1,10 +1,11 @@
 import { Boss } from "./boss";
-import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color } from "playcanvas";
+import { Entity, Vec3, StandardMaterial, BLEND_ADDITIVE, CULLFACE_NONE, Color, AppBase } from "playcanvas";
 import type { npc } from "../npc";
 import { PLAYER_MOVE_SPEED } from "../../../player/playerMovementConfig";
 import { PolishHussar } from "../troops/polishHussar";
+import { loadModel } from "../../../util/loadModel";
 
-type WingedHussarAttackType = "hoardCharge" | "rayStorm";
+type WingedHussarAttackType = "hoardCharge" | "rayStorm" | "summonHoard";
 
 interface HoardChargeState {
 	endTimeSeconds: number;
@@ -15,6 +16,13 @@ interface RayStormState {
 	endTimeSeconds: number;
 	nextRayAtSeconds: number;
 	raysFired: number;
+}
+
+interface SummonHoardState {
+	endTimeSeconds: number;
+	nextSpawnAtSeconds: number;
+	spawnsDone: number;
+	targetCount: number;
 }
 
 export class WingedHussarBoss extends Boss {
@@ -30,18 +38,34 @@ export class WingedHussarBoss extends Boss {
 	private readonly rayStormRange = 30;
 	private nextRayStormAtSeconds = 0;
 
+	// ── Summon Hoard ──
+	private readonly summonHoardTargetCount = 4;
+	private readonly summonHoardMaxAliveCap = 6;
+	private readonly summonHoardSpawnIntervalSeconds = 0.35;
+	private readonly summonHoardCooldownSeconds = 14.0;
+	private readonly summonHoardRingRadius = 4.5;
+	private readonly summonHoardTelegraphRadius = 5;
+	private readonly summonHoardTelegraphDurationMs = 700;
+	private nextSummonHoardAtSeconds = 5.0;
+	private nextHussarId = 1;
+
 	private attackLockUntilSeconds = 0;
 	private lastAttackType: WingedHussarAttackType | null = null;
 	private lastAttackAtSeconds = -Infinity;
 	private hoardChargeState: HoardChargeState | null = null;
 	private rayStormState: RayStormState | null = null;
+	private summonHoardState: SummonHoardState | null = null;
 	private onPlayerAttack?: (attacker: npc, damage: number) => void;
+	private activeAllNpcs: npc[] | null = null;
 
 	private readonly hoardChargeMaterial = this.createEffectMaterial(
 		new Color(0.9, 0.7, 0.2), new Color(1.0, 0.8, 0.3), 4.0, 0.85
 	);
 	private readonly rayStormMaterial = this.createEffectMaterial(
 		new Color(0.2, 0.6, 1.0), new Color(0.3, 0.7, 1.0), 5.0, 0.9
+	);
+	private readonly summonTelegraphMaterial = this.createEffectMaterial(
+		new Color(0.95, 0.75, 0.3), new Color(1.0, 0.85, 0.4), 5.0, 0.7
 	);
 
 	private readonly activeEffects = new Set<Entity>();
@@ -93,6 +117,7 @@ export class WingedHussarBoss extends Boss {
 		playerEntity?: Entity | null,
 		onPlayerAttack?: (attacker: npc, damage: number) => void
 	): void {
+		this.activeAllNpcs = allNpcs;
 		this.onPlayerAttack = onPlayerAttack;
 		super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
 	}
@@ -108,6 +133,7 @@ export class WingedHussarBoss extends Boss {
 
 		if (this.hoardChargeState) { this.updateHoardCharge(dt, targetEntity, currentTimeSeconds, onAttack); return; }
 		if (this.rayStormState) { this.updateRayStorm(dt, targetEntity, currentTimeSeconds, onAttack); return; }
+		if (this.summonHoardState) { this.updateSummonHoard(dt, targetEntity, currentTimeSeconds); return; }
 
 		if (currentTimeSeconds < this.attackLockUntilSeconds) { this.faceTarget(targetEntity, dt); return; }
 
@@ -115,6 +141,7 @@ export class WingedHussarBoss extends Boss {
 		const chosen = this.pickNextAttack(distance, currentTimeSeconds);
 		if (chosen === "hoardCharge") { this.startHoardCharge(targetEntity, currentTimeSeconds); return; }
 		if (chosen === "rayStorm") { this.startRayStorm(targetEntity, currentTimeSeconds); return; }
+		if (chosen === "summonHoard") { this.startSummonHoard(currentTimeSeconds); return; }
 
 		const myPos = this.getEntity().getPosition();
 		const targetPos = targetEntity.getPosition();
@@ -147,6 +174,15 @@ export class WingedHussarBoss extends Boss {
 
 		if (now >= this.nextRayStormAtSeconds && distance <= this.rayStormRange) {
 			choices.push({ type: "rayStorm", score: 1.4 });
+		}
+
+		if (now >= this.nextSummonHoardAtSeconds && this.activeAllNpcs) {
+			const aliveHoard = this.countAliveHoardMembers();
+			if (aliveHoard < this.summonHoardMaxAliveCap) {
+				// Prefer summoning slightly less if a fresh hoard already exists.
+				const summonScore = aliveHoard >= 2 ? 0.6 : 1.5;
+				choices.push({ type: "summonHoard", score: summonScore });
+			}
 		}
 
 		if (choices.length === 0) return null;
@@ -308,6 +344,151 @@ export class WingedHussarBoss extends Boss {
 		}
 	}
 
+	// ── Summon Hoard ──
+
+	private startSummonHoard(now: number): void {
+		this.lastAttackType = "summonHoard";
+		this.lastAttackAtSeconds = now;
+
+		this.summonHoardState = {
+			endTimeSeconds: now + this.summonHoardTargetCount * this.summonHoardSpawnIntervalSeconds + 1.0,
+			nextSpawnAtSeconds: now,
+			spawnsDone: 0,
+			targetCount: this.summonHoardTargetCount
+		};
+		this.attackLockUntilSeconds = this.summonHoardState.endTimeSeconds;
+
+		// Telegraph all spawn positions up-front so the player has time to react.
+		const myPos = this.getEntity().getPosition();
+		for (let i = 0; i < this.summonHoardTargetCount; i++) {
+			const angle = (i / this.summonHoardTargetCount) * Math.PI * 2;
+			const x = myPos.x + Math.cos(angle) * this.summonHoardRingRadius;
+			const z = myPos.z + Math.sin(angle) * this.summonHoardRingRadius;
+			this.spawnSummonTelegraph(x, myPos.y, z);
+		}
+	}
+
+	private updateSummonHoard(dt: number, target: Entity | null, now: number): void {
+		const state = this.summonHoardState;
+		if (!state) return;
+
+		if (state.spawnsDone < state.targetCount && now >= state.nextSpawnAtSeconds) {
+			state.spawnsDone++;
+			state.nextSpawnAtSeconds = now + this.summonHoardSpawnIntervalSeconds;
+			const angle = ((state.spawnsDone - 1) / state.targetCount) * Math.PI * 2;
+			this.spawnSingleHussar(angle, target);
+		}
+
+		if (now >= state.endTimeSeconds) {
+			this.summonHoardState = null;
+			this.nextSummonHoardAtSeconds = now + this.summonHoardCooldownSeconds;
+			return;
+		}
+
+		// Keep facing the player while summoning.
+		if (target) {
+			this.faceTarget(target, dt);
+		}
+	}
+
+	private spawnSummonTelegraph(x: number, y: number, z: number): void {
+		const sceneApp = this.resolveSceneApp();
+		if (!sceneApp?.root) return;
+
+		const ring = new Entity("hoard-summon-telegraph");
+		ring.addComponent("render", { type: "cylinder" });
+		ring.setLocalScale(0.5, 0.1, 0.5);
+		if (ring.render?.meshInstances?.length) {
+			ring.render.meshInstances[0].material = this.summonTelegraphMaterial;
+		}
+		ring.setPosition(x, y + 0.05, z);
+		sceneApp.root.addChild(ring);
+		this.activeEffects.add(ring);
+
+		const startMs = performance.now();
+		const durationMs = this.summonHoardTelegraphDurationMs;
+		const animate = () => {
+			if (!ring.parent) {
+				this.destroyEffect(ring);
+				return;
+			}
+			const elapsed = performance.now() - startMs;
+			const t = Math.min(1, elapsed / durationMs);
+			const radius = 0.5 + (this.summonHoardTelegraphRadius - 0.5) * t;
+			ring.setLocalScale(radius, 0.1, radius);
+			if (ring.render?.meshInstances?.length) {
+				const mat = ring.render.meshInstances[0].material as StandardMaterial | undefined;
+				if (mat) {
+					mat.opacity = 0.7 * (1 - t);
+					mat.update();
+				}
+			}
+			if (t >= 1) {
+				this.destroyEffect(ring);
+				return;
+			}
+			requestAnimationFrame(animate);
+		};
+		requestAnimationFrame(animate);
+	}
+
+	private spawnSingleHussar(angle: number, _target: Entity | null): void {
+		const sceneApp = this.resolveSceneApp();
+		if (!sceneApp?.root) return;
+
+		const myPos = this.getEntity().getPosition();
+		const spawnX = myPos.x + Math.cos(angle) * this.summonHoardRingRadius;
+		const spawnZ = myPos.z + Math.sin(angle) * this.summonHoardRingRadius;
+
+		void this.loadAndRegisterHussar(sceneApp, spawnX, myPos.y, spawnZ);
+	}
+
+	private async loadAndRegisterHussar(app: AppBase, spawnX: number, spawnY: number, spawnZ: number): Promise<void> {
+		try {
+			const model = await loadModel("polish_hussar", app, {
+				rigidbodyType: "kinematic",
+				includeDescendants: true,
+				position: new Vec3(spawnX, spawnY + 2, spawnZ),
+				rotation: new Vec3(-90, 0, 0),
+				scale: new Vec3(2, 2, 2)
+			});
+			const modelEntity = model.modelEntity;
+			if (!modelEntity) return;
+			if (!this.isAlive()) {
+				// Boss died while we were loading — clean up the orphan model.
+				try {
+					if (modelEntity.parent) modelEntity.parent.removeChild(modelEntity);
+					modelEntity.destroy();
+				} catch { /* ignore */ }
+				return;
+			}
+			modelEntity.tags?.add("npc");
+
+			const hussar = new PolishHussar(-1 * this.nextHussarId, modelEntity);
+			this.nextHussarId++;
+			hussar.setFacingYawOffsetDegrees(0);
+			hussar.setHitboxRadius(1.2);
+			hussar.getEntity().tags?.add("npc");
+
+			this.hoardMembers.push(hussar);
+			this.addHoardMember(hussar);
+
+			if (this.activeAllNpcs) {
+				this.activeAllNpcs.push(hussar);
+			}
+		} catch (err) {
+			console.warn("[WingedHussarBoss] Failed to spawn summoned hussar", err);
+		}
+	}
+
+	private countAliveHoardMembers(): number {
+		let count = 0;
+		for (const member of this.hoardMembers) {
+			if (member.isAlive()) count++;
+		}
+		return count;
+	}
+
 	private faceTarget(target: Entity, dt: number): void {
 		const myPos = this.getEntity().getPosition();
 		const targetPos = target.getPosition();
@@ -354,6 +535,7 @@ export class WingedHussarBoss extends Boss {
 		this.activeEffects.clear();
 		this.hoardChargeState = null;
 		this.rayStormState = null;
+		this.summonHoardState = null;
 	}
 
 	private resolveSceneApp(targetEntity?: Entity): import("playcanvas").AppBase | undefined {
