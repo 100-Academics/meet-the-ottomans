@@ -156,6 +156,7 @@ export class TowerBoss extends Boss {
 
 
     private onPlayerAttack?: (attacker: npc, damage: number) => void;
+    private currentPlayerEntity: Entity | null = null;
 
     // Materials
     private readonly shockwaveMaterial = this.createEffectMaterial(
@@ -235,6 +236,7 @@ export class TowerBoss extends Boss {
         playerEntity?: Entity | null,
         onPlayerAttack?: (attacker: npc, damage: number) => void
     ): void {
+        this.currentPlayerEntity = playerEntity ?? null;
         this.onPlayerAttack = onPlayerAttack;
         super.updateCombatAI(deltaTime, currentTimeSeconds, allNpcs, onNpcAttack, playerEntity, onPlayerAttack);
     }
@@ -253,6 +255,7 @@ export class TowerBoss extends Boss {
     ): void {
         if (!this.isAlive()) return;
         const dt = Math.max(0, Math.min(deltaTime, 0.05));
+        const faceEntity = targetEntity ?? this.currentPlayerEntity;
 
         // Update active attack states
         if (this.shockwaveState) { this.updateShockwave(targetEntity, currentTimeSeconds); }
@@ -265,24 +268,24 @@ export class TowerBoss extends Boss {
 
         // If any state is still active, don't start a new one yet
         if (this.shockwaveState || this.pillarState || this.gazeState || this.resonanceState || this.meteorState || this.beamState || this.riftState) {
-            this.faceTarget(targetEntity, dt);
+            this.faceTarget(faceEntity, dt);
             return;
         }
 
         if (!targetEntity) {
             super.updateAI(dt, targetEntity, currentTimeSeconds, onAttack, profileOverride);
-            this.faceTarget(targetEntity, dt);
+            this.faceTarget(faceEntity, dt);
             return;
         }
 
         if (currentTimeSeconds < this.attackLockUntilSeconds) {
-            this.faceTarget(targetEntity, dt);
+            this.faceTarget(faceEntity, dt);
             return;
         }
 
         const chosen = this.pickNextAttack(targetEntity, currentTimeSeconds);
         if (!chosen) {
-            this.faceTarget(targetEntity, dt);
+            this.faceTarget(faceEntity, dt);
             return;
         }
 
@@ -441,11 +444,11 @@ export class TowerBoss extends Boss {
             const dx = playerPos.x - myPosVec.x;
             const dz = playerPos.z - myPosVec.z;
             const distance = Math.sqrt(dx * dx + dz * dz);
-            if (distance <= hitRadius) {
+            if (distance <= this.getScaledRadius(hitRadius)) {
                 // Apply damage during the ring's expansion
                 window.setTimeout(() => {
                     if (this.isAlive()) {
-                        this.applyDamage(this.shockwaveDamage);
+                        this.applyDamage(this.getScaledDamage(this.shockwaveDamage));
                     }
                 }, 400);
             }
@@ -461,7 +464,7 @@ export class TowerBoss extends Boss {
                 this.destroyEffect(e);
             }
             this.shockwaveState = null;
-            this.nextShockwaveAtSeconds = now + this.shockwaveCooldownSeconds;
+            this.nextShockwaveAtSeconds = now + this.getScaledCooldown(this.shockwaveCooldownSeconds);
         }
     }
 
@@ -588,8 +591,8 @@ export class TowerBoss extends Boss {
                     const targetPos = targetEntity.getPosition();
                     const dx = targetPos.x - pos.x;
                     const dz = targetPos.z - pos.z;
-                    if (Math.sqrt(dx * dx + dz * dz) <= this.pillarHitRadius) {
-                        this.applyDamage(this.pillarDamage, onAttack);
+                    if (Math.sqrt(dx * dx + dz * dz) <= this.getScaledRadius(this.pillarHitRadius)) {
+                        this.applyDamage(this.getScaledDamage(this.pillarDamage), onAttack);
                     }
                 }
             }, this.pillarTelegraphMs);
@@ -597,7 +600,7 @@ export class TowerBoss extends Boss {
 
         if (now >= state.endTimeSeconds) {
             this.pillarState = null;
-            this.nextPillarAtSeconds = now + this.pillarCooldownSeconds;
+            this.nextPillarAtSeconds = now + this.getScaledCooldown(this.pillarCooldownSeconds);
         }
     }
 
@@ -686,7 +689,7 @@ export class TowerBoss extends Boss {
                         const wrapped = Math.min(angleDiff, Math.abs(angleDiff - 2 * Math.PI));
                         if (wrapped < 0.2 && !hitPlayer.hasHit) {
                             hitPlayer.hasHit = true;
-                            this.applyDamage(this.gazeDamage, onAttack);
+                            this.applyDamage(this.getScaledDamage(this.gazeDamage), onAttack);
                         }
                     }
                 }
@@ -702,7 +705,7 @@ export class TowerBoss extends Boss {
 
         if (now >= state.endTimeSeconds) {
             this.gazeState = null;
-            this.nextGazeAtSeconds = now + this.gazeCooldownSeconds;
+            this.nextGazeAtSeconds = now + this.getScaledCooldown(this.gazeCooldownSeconds);
         }
     }
 
@@ -725,20 +728,20 @@ export class TowerBoss extends Boss {
 
         const myPos = this.getEntity().getPosition();
 
-        // Emit a pulsing ring
         if (now >= state.nextPulseAtSeconds) {
             state.nextPulseAtSeconds = now + state.pulseInterval;
 
             const sceneApp = this.resolveSceneApp();
             if (sceneApp?.root) {
-                // Inner glow ring
                 const ringRoot = new Entity("tower-resonance-ring");
                 const ring = new Entity(`${Date.now()}-mesh`);
                 ring.addComponent("render", { type: "cylinder" } as any);
                 ring.setLocalScale(0.1, 0.3, 0.1);
+
                 if (ring.render?.meshInstances?.length) {
                     ring.render.meshInstances[0].material = this.resonanceRingMaterial;
                 }
+
                 ringRoot.addChild(ring);
                 ringRoot.setPosition(myPos.x, myPos.y + 0.05, myPos.z);
                 sceneApp.root.addChild(ringRoot);
@@ -750,6 +753,7 @@ export class TowerBoss extends Boss {
                         this.destroyEffect(ringRoot);
                         return;
                     }
+
                     const elapsed = performance.now() - startMs;
                     const t = Math.min(1, elapsed / state.pulseDurationMs);
                     const radius = 0.5 + (state.pulseRadius - 0.5) * t;
@@ -767,26 +771,26 @@ export class TowerBoss extends Boss {
                         this.destroyEffect(ringRoot);
                         return;
                     }
+
                     requestAnimationFrame(animateRing);
                 };
                 requestAnimationFrame(animateRing);
             }
 
-            // Check if player is in resonance range
             if (targetEntity) {
                 const targetPos = targetEntity.getPosition();
                 const dx = targetPos.x - myPos.x;
                 const dz = targetPos.z - myPos.z;
                 const distance = Math.sqrt(dx * dx + dz * dz);
                 if (distance <= state.pulseRadius) {
-                    this.applyDamage(this.resonanceDamage, onAttack);
+                    this.applyDamage(this.getScaledDamage(this.resonanceDamage), onAttack);
                 }
             }
         }
 
         if (now >= state.endTimeSeconds) {
             this.resonanceState = null;
-            this.nextResonanceAtSeconds = now + this.resonanceCooldownSeconds;
+            this.nextResonanceAtSeconds = now + this.getScaledCooldown(this.resonanceCooldownSeconds);
         }
     }
 
@@ -955,13 +959,12 @@ export class TowerBoss extends Boss {
             const dx = playerPos.x - impact.impactPosition.x;
             const dz = playerPos.z - impact.impactPosition.z;
             if (Math.sqrt(dx * dx + dz * dz) <= this.meteorImpactRadius) {
-                this.applyDamage(this.meteorDamage, onAttack);
+                this.applyDamage(this.getScaledDamage(this.meteorDamage), onAttack);
             }
         }
     }
 
     // ── Beam Sweep ──
-
     private startBeamSweep(targetEntity: Entity, now: number): void {
         const myPos = this.getEntity().getPosition();
         const beamRoot = new Entity("tower-beam-sweep");
@@ -1033,7 +1036,7 @@ export class TowerBoss extends Boss {
                     const wrapped = Math.min(Math.abs(angleToPlayer - angle), Math.abs(angleToPlayer - angle + Math.PI * 2));
                     if (wrapped < 0.18) {
                         state.hasHit = true;
-                        this.applyDamage(this.beamDamage, onAttack);
+                        this.applyDamage(this.getScaledDamage(this.beamDamage), onAttack);
                     }
                 }
             }
@@ -1044,7 +1047,7 @@ export class TowerBoss extends Boss {
                 this.destroyEffect(beamRoot);
             }
             this.beamState = null;
-            this.nextBeamAtSeconds = now + this.beamCooldownSeconds;
+            this.nextBeamAtSeconds = now + this.getScaledCooldown(this.beamCooldownSeconds);
         }
     }
 
@@ -1129,14 +1132,14 @@ export class TowerBoss extends Boss {
                 const dx = playerPos.x - burstPos.x;
                 const dz = playerPos.z - burstPos.z;
                 if (Math.sqrt(dx * dx + dz * dz) <= this.riftPulseRadius) {
-                    this.applyDamage(this.riftDamage, onAttack);
+                    this.applyDamage(this.getScaledDamage(this.riftDamage), onAttack);
                 }
             }
         }
 
         if (now >= state.endTimeSeconds) {
             this.riftState = null;
-            this.nextRiftAtSeconds = now + this.riftCooldownSeconds;
+            this.nextRiftAtSeconds = now + this.getScaledCooldown(this.riftCooldownSeconds);
         }
     }
 
@@ -1153,7 +1156,31 @@ export class TowerBoss extends Boss {
     }
 
     private findPlayerEntity(_target?: Entity | null): Entity | null {
-        return null;
+        return this.currentPlayerEntity;
+    }
+
+    private getHealthRatio(): number {
+        const maxHealth = this.getMaxHealth();
+        if (maxHealth <= 0) {
+            return 1;
+        }
+        return Math.max(0, Math.min(1, this.getHealth() / maxHealth));
+    }
+
+    private getThreatScale(): number {
+        return 1 + ((1 - this.getHealthRatio()) * 0.9);
+    }
+
+    private getScaledDamage(baseDamage: number): number {
+        return Math.max(1, Math.round(baseDamage * this.getThreatScale()));
+    }
+
+    private getScaledRadius(baseRadius: number): number {
+        return baseRadius * (1 + ((this.getThreatScale() - 1) * 0.45));
+    }
+
+    private getScaledCooldown(baseCooldown: number): number {
+        return Math.max(0.55, baseCooldown / this.getThreatScale());
     }
 
     protected computeFlatDistance(targetEntity: Entity | null): number {
