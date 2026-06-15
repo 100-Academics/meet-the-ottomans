@@ -47,7 +47,7 @@ export class WingedHussarBoss extends Boss {
 	private readonly summonHoardTelegraphRadius = 5;
 	private readonly summonHoardTelegraphDurationMs = 700;
 	private nextSummonHoardAtSeconds = 5.0;
-	private nextHussarId = 1;
+	private nextHussarId = 10000;
 
 	private attackLockUntilSeconds = 0;
 	private lastAttackType: WingedHussarAttackType | null = null;
@@ -464,13 +464,12 @@ export class WingedHussarBoss extends Boss {
 			}
 			modelEntity.tags?.add("npc");
 
-			const hussar = new PolishHussar(-1 * this.nextHussarId, modelEntity);
+			const hussar = new PolishHussar(this.nextHussarId, modelEntity);
 			this.nextHussarId++;
 			hussar.setFacingYawOffsetDegrees(0);
 			hussar.setHitboxRadius(1.2);
 			hussar.getEntity().tags?.add("npc");
 
-			this.hoardMembers.push(hussar);
 			this.addHoardMember(hussar);
 
 			if (this.activeAllNpcs) {
