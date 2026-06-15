@@ -43,7 +43,8 @@ import type { Battle } from "../Battle";
 import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_BOSS_SPAWN_POINT, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
+import { markBattleComplete } from '../../util/battleProgress';
 import { Smoke } from "../doSmoke";
 import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
 
@@ -897,7 +898,7 @@ export async function siegeOfConstantinopleScene(
 
 			victoryHandled = true;
 			removeBattleHUD();
-			changeScene(canvas, app, 777);
+			markBattleComplete('Siege of Constantinople'); markBattleComplete('Fall of Constantinople'); triggerVictory('Siege of Constantinople', canvas, app);
 		}
 	};
 

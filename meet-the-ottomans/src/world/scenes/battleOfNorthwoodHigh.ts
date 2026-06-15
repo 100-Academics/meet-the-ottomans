@@ -48,7 +48,7 @@ import {
  NORTHWOOD_HIGH_AIR_LADIN_SPAWN_POINT,
  NORTHWOOD_HIGH_TOWER_SPAWN_POINT,
 } from "../npc/sceneNpcPresets";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 
 /**
  * Battle of Northwood High School — a white, featureless room.
@@ -444,7 +444,7 @@ export async function battleOfNorthwoodHighScene(
  if (remainingFoes.length === 0 && towerSpawned && !towerSpawnInProgress) {
  victoryHandled = true;
  removeBattleHUD();
- changeScene(canvas, app, 777);
+ triggerVictory('Northwood High School', canvas, app);
  }
  });
 

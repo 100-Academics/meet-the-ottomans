@@ -60,7 +60,7 @@ import {
   GETTYSBURG_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 
 const groundModelPath = "/world/battlefields/Gettysburg.glb";
 
@@ -447,7 +447,7 @@ export async function battleOfGettysburgScene(
     if (remainingFoes.length === 0 && isBossSpawned) {
       victoryHandled = true;
       removeBattleHUD();
-      changeScene(canvas, app, 777);
+      triggerVictory('Battle of Gettysburg', canvas, app);
     } else if (remainingFoes.length === 0 && !isBossSpawned) {
       spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
         console.error(err),

@@ -45,7 +45,7 @@ import { Boss } from "../npc/bosses/boss";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, LEGNICA_BOSS_SPAWN_POINT, LEGNICA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
-import { changeScene } from "../../App";
+import { triggerVictory } from "../../App";
 import { DevConsole } from "../../util/devConsole";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
 import { Secret, pickSecretPosition } from "../secrets";
@@ -517,7 +517,7 @@ export async function battleOfLegnicaScene(
     if (remainingFoes.length === 0 && isBossSpawned && !DevConsole._roundLock) {
       victoryHandled = true;
       removeBattleHUD();
-      changeScene(canvas, app, 777);
+      triggerVictory('Battle of Legnica', canvas, app);
     }
     else if (remainingFoes.length === 0 && !isBossSpawned) {
       // spawn the boss asynchronously
