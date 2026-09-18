@@ -113,7 +113,7 @@ export class AirLadin extends Boss {
 		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.1;
 		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.6;
 
-		this.setIntroTaunt("لن تجدني أبداً!", "You will never find me!");
+		this.setIntroTaunt("هل هو طائر؟ هل هي طائرة؟ لا، إنه إير لادن!", "It's a bird?, It's a plane?, No it's Air Laden!");
 		this.setIntroNameTranslation("إير لادن", "Air Ladin");
 		
         this.setTauntSet({
