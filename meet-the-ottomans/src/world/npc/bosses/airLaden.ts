@@ -137,7 +137,7 @@ export class AirLadin extends Boss {
 				"The end is written."
 			],
 			death: [
-				"Allah akbar!",
+				"Allah akbar!", //this was shown to the class o7
 			],
 			bossDeath: [
 				"The cave is silent once more.",
