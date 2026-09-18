@@ -14,7 +14,6 @@ export class Bow extends Gun {
     public getArrows(): number {
         return this.getAmmo();
     }
-
     public draw(app?: AppBase, origin?: Vec3, direction?: Vec3, target?: npc | null): boolean {
         return this.shoot(app, origin, direction, target);
     }
@@ -102,10 +101,4 @@ export class Bow extends Gun {
 
         return true;
     }
-
-    public reload(): number {
-        // Bow reloading means recovering arrows; just pull from reserve.
-        return super.reload();
-    }
-
 }

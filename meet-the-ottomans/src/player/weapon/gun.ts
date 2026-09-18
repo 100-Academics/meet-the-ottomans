@@ -1,43 +1,18 @@
 import { AppBase, Entity, Vec3 } from 'playcanvas';
 import { Weapon } from "./weapon";
 
-const DEFAULT_MAGAZINE_SIZE = 6;
-const RESERVE_AMMO_PER_MAGAZINE = 5;
-
 export class Gun extends Weapon {
-    private ammoInMagazine: number;
-    private reserveAmmo: number;
+    // Ammo mechanic removed: guns fire without consuming or tracking rounds.
 
-    constructor(damage: number, range: number, ammo: number, name: string = "Gun") {
+    constructor(damage: number, range: number, _ammo: number, name: string = "Gun") {
         super(name, damage, range);
-        this.ammoInMagazine = ammo;
-        this.reserveAmmo = ammo * RESERVE_AMMO_PER_MAGAZINE;
     }
 
     public getAmmo(): number {
-        return this.ammoInMagazine;
-    }
-
-    public getReserveAmmo(): number {
-        return this.reserveAmmo;
-    }
-
-    public reload(): number {
-        const needed = DEFAULT_MAGAZINE_SIZE - this.ammoInMagazine;
-        const pulled = Math.min(needed, this.reserveAmmo);
-        this.ammoInMagazine += pulled;
-        this.reserveAmmo -= pulled;
-        return pulled;
+        return Infinity;
     }
 
     public shoot(app?: AppBase, origin?: Vec3, direction?: Vec3): boolean {
-        if (this.ammoInMagazine <= 0) {
-            console.log(`${this.getName()} is out of ammo.`);
-            return false;
-        }
-        this.ammoInMagazine -= 1;
-        console.log(`${this.getName()} fired! (${this.ammoInMagazine} rounds left in magazine)`);
-
         const sceneApp = app ?? (globalThis as { app?: AppBase }).app;
         if (!sceneApp?.root) {
             return false;

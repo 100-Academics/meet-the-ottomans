@@ -136,10 +136,10 @@ export class Player{
     }
 
     private die(isAlive: boolean): void {
-        // Guard: takeDamage already early-returns when health <= 0, but timers and
-        // overlapping combat loops can still call die() more than once for the same
-        // death — without this, the death screen (and its quiz) gets stacked twice.
-        if (isAlive || !this.hasDied) {
+        // Guard: timers and overlapping combat loops can call die() more than
+        // once for the same death — without this latch the death screen (and
+        // its quiz) gets stacked twice. Trigger as soon as we're not alive.
+        if (isAlive || this.hasDied) {
             return;
         }
         this.hasDied = true;
@@ -217,13 +217,6 @@ export class Player{
             this.equippedWeapon = this.oldGunWeapon;
         }
         console.log(`Equipped ${this.equippedWeapon.getName()}`);
-    }
-
-    public reloadEquippedWeapon(amount: number = 12): void {
-        void amount; // handled by the weapon itself (Gun/Bow have magazines)
-        if (this.equippedWeapon instanceof Gun) {
-            this.equippedWeapon.reload();
-        }
     }
 
     public attack(target?: npc | null): void {

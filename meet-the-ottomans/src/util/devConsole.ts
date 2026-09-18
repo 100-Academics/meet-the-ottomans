@@ -333,8 +333,17 @@ export class DevConsole {
     window.addEventListener('keydown', (e: KeyboardEvent) => {
       // Toggle on Tab (Shift+Tab also works)
       if (e.key === 'Tab') {
-        // Don't toggle if user is typing in a different text input
+        // When the console is open and its input is focused, Tab belongs to
+        // autocomplete, not close — let the input handler do its thing.
         const active = document.activeElement;
+        const isOwnInput = active instanceof HTMLInputElement && active.id === 'dev-console-input';
+        if (DevConsole._visible && isOwnInput) {
+          e.preventDefault(); // keep focus in the input
+          DevConsole._autoComplete();
+          return;
+        }
+
+        // Don't toggle if user is typing in a different text input
         const isOtherInput =
           active instanceof HTMLInputElement &&
           active.id !== 'dev-console-input';

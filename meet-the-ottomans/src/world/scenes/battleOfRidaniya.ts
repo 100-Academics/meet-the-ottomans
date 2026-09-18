@@ -393,7 +393,7 @@ await waitForAmmoReady(app, "ground");
 	});
 
 	bindNpcCombatLoop(app, npcs, () => player.getCameraEntity(), {
-		updateKey: '__ainJalutNpcUpdate',
+		updateKey: '__ridaniyaNpcUpdate',
 		battleStatus: {
 			getCameraEntity: () => player.getCameraEntity(),
 			initialTotal: RIDANIYA_NPC_SPAWN_POINTS.length,
