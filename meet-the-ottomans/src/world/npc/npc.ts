@@ -1,5 +1,24 @@
 import { Entity, Vec3 } from "playcanvas";
 
+/**
+ * npc — base class for all non-player characters (troops and bosses).
+ *
+ * Core model:
+ *   - team: "friend" fights alongside the player, "foe" attacks the player.
+ *   - state machine: idle (wander around spawn center) → chase → attack → dead.
+ *   - combat: driven by the per-frame `updateCombatAI` call from the scene's NPC
+ *     loop (world/npc/sceneNpcSystem.ts). `getCombatProfile()` supplies damage,
+ *     ranges and cooldowns — subclasses override it to re-theme.
+ *
+ * Gotchas:
+ *   - `spawnCenter` is captured from the entity's position at CONSTRUCTION time and
+ *     re-synced on the first update (see syncSpawnCenter). Move the entity before
+ *     the first update or NPCs will wander toward the origin.
+ *   - Class name is lowercase `npc` — an unhappy accident, kept for import
+ *     compatibility across every troop/boss file.
+ *   - Hit detection uses a radius (`hitboxRadius`), not PlayCanvas collision bodies.
+ */
+
 type NpcTeam = "friend" | "foe";
 type NpcState = "idle" | "chase" | "attack" | "dead";
 
@@ -59,6 +78,15 @@ export class npc {
         this.basePitchDegrees = initialRotation.x;
         this.baseRollDegrees = initialRotation.z;
 
+        this.spawnCenter.copy(this.entity.getPosition());
+    }
+
+    /**
+     * Wander center lags behind by at most one frame: an NPC built before
+     * its scene positions it would otherwise snap-wander toward world origin
+     * (0,0,0) forever.
+     */
+    private syncSpawnCenter(): void {
         this.spawnCenter.copy(this.entity.getPosition());
     }
 
@@ -176,7 +204,19 @@ export class npc {
     public kill(): boolean {
         if (this.health <= 0 && this.aiState !== "dead") {
             this.aiState = "dead";
-            this.entity.destroy();
+            // Deferred destruction: any code still holding a reference to this
+            // NPC (the update loop iterating `npcs`, hit-scan fallbacks, HUD
+            // handles) gets at least one more frame where the entity is still
+            // valid, instead of immediately reading a destroyed transform.
+            // queueMicrotask keeps the timing tight for tests that check
+            // "the model is gone" synchronously after calling kill().
+            queueMicrotask(() => {
+                try {
+                    this.entity.destroy();
+                } catch {
+                    // Best-effort; already destroyed by scene teardown
+                }
+            });
             return true;
         }
         return false;
@@ -242,6 +282,10 @@ export class npc {
     private updateWander(deltaTime: number): void {
         this.wanderTimeRemaining -= deltaTime;
 
+        // Capture spawn center lazily so NPCs constructed before their scene
+        // positioned them still wander around their actual spawn point.
+        this.syncSpawnCenter();
+
         // Pick a new random horizontal direction every few seconds.
         if (this.wanderTimeRemaining <= 0) {
             const angle = Math.random() * Math.PI * 2;
@@ -302,7 +346,26 @@ export class npc {
         };
     }
 
+    private cachedHostileTarget: npc | null = null;
+    private lastHostileScanTime = -Infinity;
+
     protected findNearestHostileNpc(allNpcs: npc[], maxRange: number): npc | null {
+        // Throttle the O(n) rescan to ~4 Hz per NPC. Previously this ran on
+        // every frame for every NPC, which is O(n^2) and hammers the frame
+        // budget in battles with hundreds of troops.
+        const nowMs = performance.now();
+        if (this.cachedHostileTarget && nowMs - this.lastHostileScanTime < 250) {
+            if (this.cachedHostileTarget.isAlive()) {
+                const d = this.getDistanceToEntity(this.cachedHostileTarget.getEntity());
+                if (d <= maxRange) {
+                    return this.cachedHostileTarget;
+                }
+            }
+            this.cachedHostileTarget = null;
+        }
+
+        this.lastHostileScanTime = nowMs;
+
         const myPos = this.entity.getPosition();
         let bestTarget: npc | null = null;
         let bestDistance = Number.POSITIVE_INFINITY;
@@ -331,6 +394,7 @@ export class npc {
             }
         }
 
+        this.cachedHostileTarget = bestTarget;
         return bestTarget;
     }
 

@@ -70,49 +70,28 @@ export class Weapon {
 
         const hit = rigidbodySystem.raycastFirst(rayStart, rayEnd);
 
-        if (hit?.entity) {
-            const clickedNpc = npcs.find((currentNpc) => Weapon.isEntityOrDescendantOf(hit.entity ?? null, currentNpc.getEntity()));
-            if (clickedNpc) {
-                const distance = hit.point
-                    ? cameraEntity.getPosition().distance(hit.point)
-                    : cameraEntity.getPosition().distance(hit.entity.getPosition());
-
-                if (distance <= maxRange) {
-                    return clickedNpc;
-                }
-            }
+        // Occlusion-aware selection only: the raycast is authoritative.
+        // If the first thing it hits is terrain / a wall / props, the shot is
+        // blocked. We never fall back to "nearest NPC along the ray", which
+        // used to let shots pass through walls.
+        if (!hit?.entity) {
+            return null;
         }
 
-        // Fallback selection for NPC models that are visible but not picked by rigidbody raycasts.
-        let bestNpc: npc | null = null;
-        let bestRayDistance = Number.POSITIVE_INFINITY;
-
-        for (const currentNpc of npcs) {
-            if (!currentNpc.isAlive()) {
-                continue;
-            }
-
-            const npcPosition = currentNpc.getEntity().getPosition();
-            const toNpc = npcPosition.clone().sub(rayStart);
-            const projectedDistance = toNpc.dot(rayDirection);
-            if (!Number.isFinite(projectedDistance) || projectedDistance < 0 || projectedDistance > maxRange) {
-                continue;
-            }
-
-            const closestPoint = rayStart.clone().add(rayDirection.clone().mulScalar(projectedDistance));
-            const distanceFromRay = npcPosition.distance(closestPoint);
-            const hitTolerance = Math.max(1.0, currentNpc.getHitboxRadius() * 1.6);
-            if (distanceFromRay > hitTolerance) {
-                continue;
-            }
-
-            if (projectedDistance < bestRayDistance) {
-                bestRayDistance = projectedDistance;
-                bestNpc = currentNpc;
-            }
+        const clickedNpc = npcs.find((currentNpc) => Weapon.isEntityOrDescendantOf(hit.entity ?? null, currentNpc.getEntity()));
+        if (!clickedNpc || !clickedNpc.isAlive()) {
+            return null;
         }
 
-        return bestNpc;
+        const distance = hit.point
+            ? cameraEntity.getPosition().distance(hit.point)
+            : cameraEntity.getPosition().distance(hit.entity.getPosition());
+
+        if (distance > maxRange) {
+            return null;
+        }
+
+        return clickedNpc;
     }
 
 }

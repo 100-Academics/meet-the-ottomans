@@ -1,4 +1,6 @@
 import { Player } from '../player/player';
+import { Gun } from '../player/weapon/gun';
+import { Bow } from '../player/weapon/bow';
 
 type DebugState = ReturnType<Player['getDebugState']> & {
   remainingNpcs?: number;
@@ -77,6 +79,14 @@ function ensureDebugToggleListener(): void {
     if (event.code === 'Backquote' || key === '`' || key === '~') {
       toggleDebugOverlay();
     }
+    // R reloads the currently equipped firearm / bow at any point in battle.
+    if (event.code === 'KeyR') {
+      const player = (globalThis as { __devConsolePlayer?: import('../player/player').Player }).__devConsolePlayer;
+      if (player) {
+        player.reloadEquippedWeapon();
+        updateBattleHUD(player);
+      }
+    }
   });
 }
 
@@ -94,6 +104,7 @@ export function createBattleHUD() {
       <div class="hud-row">
         <span class="hud-label">Weapon:</span>
         <span class="hud-value" id="hud-weapon">Sword</span>
+        <span class="hud-ammo" id="hud-ammo" style="margin-left:12px; opacity:0.85"></span>
       </div>
       <div class="hud-row">
         <span class="hud-label">Health:</span>
@@ -132,11 +143,23 @@ export function removeBattleHUD() {
 
 export function updateBattleHUD(player: Player, remainingNpcs?: number) {
   const weaponEl = document.getElementById('hud-weapon');
+  const ammoEl = document.getElementById('hud-ammo');
   const healthEl = document.getElementById('hud-health');
   const npcCountEl = document.getElementById('hud-npcs');
 
   if (weaponEl) {
     weaponEl.textContent = player.getEquippedWeaponName();
+  }
+
+  if (ammoEl) {
+    // Show magazine count for firearms; hide for the sword.
+    const weapon = player.getEquippedWeapon();
+    if (weapon instanceof Gun || weapon instanceof Bow) {
+      const mag = weapon.getAmmo();
+      ammoEl.textContent = Number.isFinite(mag) ? `ammo: ${mag}` : '';
+    } else {
+      ammoEl.textContent = '';
+    }
   }
 
   if (healthEl) {

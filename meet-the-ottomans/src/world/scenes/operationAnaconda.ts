@@ -53,7 +53,8 @@ ANACONDA_NPC_SPAWN_POINTS,
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 
 const groundModelPath = "/world/battlefields/Shahikot.glb";
@@ -176,7 +177,7 @@ skyDome.setPosition(cameraPos.x, cameraPos.y, cameraPos.z);
 };
 
 keyedApp[skyFollowKey] = followSky;
-app.on('update', followSky);
+bindSceneListener(app, 'update', followSky);
 }
 
 function addBattleSmokePlumes(
@@ -379,7 +380,7 @@ puff.entity.setPosition(nextX, nextY, nextZ);
 };
 
 keyedApp[smokeUpdateKey] = smokeUpdate;
-app.on('update', smokeUpdate);
+bindSceneListener(app, 'update', smokeUpdate);
 }
 
 export async function operationAnacondaScene(
@@ -690,11 +691,7 @@ app.mouse?.on(
 (event: { x: number; y: number; button: number }) => {
 if (isDeathScreenVisible()) return;
 if (event.button !== 0) return;
-const isGunEquipped =
-player.getEquippedWeaponName() === "Gun" ||
-player.getEquippedWeaponName() === "Bow";
-const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+const { x: targetX, y: targetY } = getScreenCenter(app);
 const hitNpc = cameraController?.getClickedNpcInRange(
 targetX,
 targetY,

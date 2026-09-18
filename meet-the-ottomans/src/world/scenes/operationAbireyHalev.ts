@@ -49,7 +49,7 @@ import {
 } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, createStarfieldTexture } from "../../util/battleSceneHelpers";
 
 const groundModelPath = "/world/battlefields/Suez.glb";
 
@@ -298,8 +298,8 @@ const npcSpawnOptions = {
       if (isDeathScreenVisible()) return;
       if (event.button !== 0) return;
       const hitNpc = cameraController?.getClickedNpcInRange(
-        event.x,
-        event.y,
+        getScreenCenter(app).x,
+        getScreenCenter(app).y,
         npcs,
         player.getAttackRange(),
       );

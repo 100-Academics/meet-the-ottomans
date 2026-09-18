@@ -6,6 +6,25 @@ import {
 } from "playcanvas";
 
 /**
+ * The screen-space center point of the canvas, in CSS pixel coordinates.
+ * All first-person shots are aimed at the crosshair (center of screen), and
+ * PlayCanvas's camera.screenToWorld expects CSS (not backing-store) pixels.
+ * `graphicsDevice.width/height` are the raw backing-store size (CSS ×
+ * devicePixelRatio), which is wrong on any HiDPI / scaled display.
+ */
+export function getScreenCenter(app: AppBase): { x: number; y: number } {
+  const device = app.graphicsDevice as { clientRect?: { width: number; height: number } } | undefined;
+  const rect = device?.clientRect;
+  if (rect && rect.width > 0 && rect.height > 0) {
+    return { x: rect.width * 0.5, y: rect.height * 0.5 };
+  }
+  const canvas = app.graphicsDevice?.canvas as HTMLCanvasElement | undefined;
+  const width = canvas?.clientWidth ?? 0;
+  const height = canvas?.clientHeight ?? 0;
+  return { x: width * 0.5, y: height * 0.5 };
+}
+
+/**
  * Checks if an entity or any of its ancestors in the hierarchy has a specific tag.
  * @param entity - The entity to check (can be null)
  * @param tag - The tag to search for

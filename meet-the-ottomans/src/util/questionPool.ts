@@ -231,7 +231,13 @@ export class questionPool{
     }
 
     public getTimePeriods(): number[] {
-        return Object.keys(this.questions).map(Number);
+        // Exclude the debug test pool (period 0, which has joke questions like
+        // "How are you here?") from being served as real questions. Also
+        // exclude periods with fewer than 4 questions (they can't fill all 4
+        // answer buttons with valid choices).
+        return Object.keys(this.questions)
+            .map(Number)
+            .filter((key) => key !== 0 && (this.questions[key] && Object.keys(this.questions[key] as object).length >= 4));
     }
 
     public getQuestion(timePeriod: number, questionId: number): string {

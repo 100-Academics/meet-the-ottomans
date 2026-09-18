@@ -43,7 +43,8 @@ import { PAVIA_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CAESA
 import { Boss } from "../npc/bosses/boss";
 import { Secret, pickSecretPosition } from "../secrets";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
 
@@ -444,9 +445,7 @@ await waitForAmmoReady(app, "ground");;
 			return;
 		}
 
-		const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
-		const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-		const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+		const { x: targetX, y: targetY } = getScreenCenter(app);
 		const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
   player.attack(hitNpc ?? null);
   updateBattleHUD(player);
@@ -528,6 +527,6 @@ const victoryCheck = async () => {
     triggerVictory('Battle of Pavia (Italian Wars)', canvas, app);
   }
 };
-app.on('update', victoryCheck);
+bindSceneListener(app, 'update', victoryCheck);
 }
 

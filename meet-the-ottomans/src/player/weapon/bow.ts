@@ -3,20 +3,16 @@ import { npc } from '../../world/npc/npc';
 import { Gun } from './gun';
 
 export class Bow extends Gun {
-    
-    private arrows: number;
     private drawTimeMs: number;
     private isDrawing: boolean = false;
 
     constructor(damage: number, range: number, arrows: number, drawTimeMs: number = 800) {
-        super(damage, range, 90, "Bow");
-        this.arrows = Number.POSITIVE_INFINITY;
-        this.drawTimeMs = drawTimeMs; 
-        void arrows;
+        super(damage, range, arrows, "Bow");
+        this.drawTimeMs = drawTimeMs;
     }
 
     public getArrows(): number {
-        return this.arrows;
+        return this.getAmmo();
     }
 
     public draw(app?: AppBase, origin?: Vec3, direction?: Vec3, target?: npc | null): boolean {
@@ -107,8 +103,9 @@ export class Bow extends Gun {
         return true;
     }
 
-    public reload(amount: number): void {
-        void amount;
+    public reload(): number {
+        // Bow reloading means recovering arrows; just pull from reserve.
+        return super.reload();
     }
 
 }

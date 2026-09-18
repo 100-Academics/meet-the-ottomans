@@ -45,7 +45,8 @@ import { Boss } from "../npc/bosses/boss";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS, VIENNA_BOSS_SPAWN_POINT, VIENNA_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 const groundModelPath = '/world/battlefields/Vienna.glb';
 
@@ -242,7 +243,7 @@ export async function siegeOfViennaScene(
 	});
 	starDome.setPosition(cameraEntity.getPosition());
 	app.root.addChild(starDome);
-	app.on('update', () => {
+	bindSceneListener(app, 'update', () => {
 		starDome.setPosition(cameraEntity.getPosition());
 	});
 
@@ -438,9 +439,7 @@ const npcSpawnOptions = {
 			return;
 		}
 
-		const isGunEquipped = (player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow');
-		const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-		const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+		const { x: targetX, y: targetY } = getScreenCenter(app);
 		const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
 		player.attack(hitNpc ?? null);
 		updateBattleHUD(player);
@@ -507,6 +506,6 @@ const npcSpawnOptions = {
 		}
 	};
 
-	app.on('update', victoryCheck);
+	bindSceneListener(app, 'update', victoryCheck);
 }
 

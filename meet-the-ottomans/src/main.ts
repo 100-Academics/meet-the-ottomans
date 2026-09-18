@@ -9,12 +9,9 @@ document.querySelector<HTMLDivElement>('#root')!.innerHTML = `
   </div>
 `
 
-const onClickStuff = () => {
-  // Click handler - managed in scenes
-}
+// Battle clicks are handled entirely inside the map scene (default.ts), so the
+// bootstrap passes no-op callbacks to setupApp.
+const onClickStuff = () => {};
+const getSelectedTimePeriod = () => -1;
 
-
-
-
-
-void await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, onClickStuff, () => -1);
+void await setupApp(document.getElementById('application-canvas') as HTMLCanvasElement, onClickStuff, getSelectedTimePeriod);

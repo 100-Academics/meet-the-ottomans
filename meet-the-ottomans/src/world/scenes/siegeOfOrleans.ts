@@ -31,7 +31,8 @@ import {
 	import { unloadAll } from '../../util/unloadall';
 	import { loadModel } from '../../util/loadModel'
 import { waitForAmmoReady } from "../../util/spawnHelpers";
-import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 	import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
 	import { isDeathScreenVisible } from './deathScreen';
 
@@ -411,9 +412,7 @@ await waitForAmmoReady(app, "ground");
 				return;
 			}
 
-			const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
-			const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-			const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+			const { x: targetX, y: targetY } = getScreenCenter(app);
 			const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
 			player.attack(hitNpc ?? null);
 			if (hitNpc instanceof Boss) {
@@ -472,5 +471,5 @@ await waitForAmmoReady(app, "ground");
 			}
 		};
 
-		app.on('update', victoryCheck);
+		bindSceneListener(app, 'update', victoryCheck);
 	}

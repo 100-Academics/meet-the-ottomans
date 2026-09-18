@@ -8,15 +8,34 @@ import {
 // ── Global counter ──
 //
 // Module-level so it survives scene changes. Bumped every time the player
-// collects any Secret anywhere in the world.
+// collects any Secret anywhere in the world. Also persisted to localStorage
+// so a page refresh doesn't reset progress.
 //
 // Read it from anywhere with `getSecretsFound()`. Reset with `resetSecretsFound()`.
-let secretsFound = 0;
 
 // Total number of secrets hidden across the whole game. Tracked here (not at
 // each call site) so the popup denominator stays consistent no matter which
-// battle the player is in.
-export const TOTAL_SECRETS_AVAILABLE = 21;
+// battle the player is in. Only 12 scenes actually construct a Secret, so the
+// reachable maximum is 12 — use the actual number so Period 8 (∞) is
+// unlockable instead of dead content.
+export const TOTAL_SECRETS_AVAILABLE = 12;
+
+const SECRETS_STORAGE_KEY = 'meetTheOttomans.secretsFound';
+
+function loadPersistedSecrets(): number {
+    if (typeof window === 'undefined' || !window.localStorage) return 0;
+    const raw = window.localStorage.getItem(SECRETS_STORAGE_KEY);
+    if (raw === null) return 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? Math.max(0, Math.floor(parsed)) : 0;
+}
+
+function persistSecretsFound(count: number): void {
+    if (typeof window === 'undefined' || !window.localStorage) return;
+    window.localStorage.setItem(SECRETS_STORAGE_KEY, String(count));
+}
+
+let secretsFound = loadPersistedSecrets();
 
 // ── Secrets counter popup ──
 //
@@ -76,6 +95,7 @@ export function getSecretsFound(): number {
 
 export function setSecretsFound(count: number): void {
     secretsFound = count;
+    persistSecretsFound(count);
 }
 
 export function resetSecretsFound(): void {
@@ -85,8 +105,9 @@ export function resetSecretsFound(): void {
         popupHideTimer = null;
     }
     // Counter back to zero → nothing to brag about, so hide the popup rather
-    // than flashing "0/21" at the player.
+    // than flashing "0/${TOTAL_SECRETS_AVAILABLE}" at the player.
     hideSecretsPopup();
+    persistSecretsFound(0);
 }
 
 // ── SecretOptions ──

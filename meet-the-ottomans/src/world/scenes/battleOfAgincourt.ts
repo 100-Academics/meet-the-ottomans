@@ -46,7 +46,8 @@ import { Secret, pickSecretPosition } from "../secrets";
 import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS, AGINCOURT_BOSS_SPAWN_POINT, AGINCOURT_NPC_SPAWN_POINTS } from "../npc/sceneNpcPresets";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 const groundModelPath = '/world/battlefields/Agincourt.glb';
 
@@ -255,7 +256,7 @@ export async function battleOfAgincourtScene(
   });
   starDome.setPosition(cameraEntity.getPosition());
   app.root.addChild(starDome);
-  app.on('update', () => {
+  bindSceneListener(app, 'update', () => {
     starDome.setPosition(cameraEntity.getPosition());
   });
 
@@ -464,9 +465,7 @@ export async function battleOfAgincourtScene(
       return;
     }
 
-    const isGunEquipped = (player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow');
-    const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-    const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+    const { x: targetX, y: targetY } = getScreenCenter(app);
     const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
     player.attack(hitNpc ?? null);
     updateBattleHUD(player);
@@ -531,5 +530,5 @@ export async function battleOfAgincourtScene(
     }
   };
 
-  app.on('update', victoryCheck);
+  bindSceneListener(app, 'update', victoryCheck);
 }

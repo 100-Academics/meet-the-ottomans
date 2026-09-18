@@ -10,6 +10,7 @@ import {
   StandardMaterial,
   Vec3,
 } from "playcanvas";
+import { bindSceneListener } from "../util/sceneCleanup";
 
 type SmokeBlob = {
   shell: Entity;
@@ -246,7 +247,9 @@ export class Smoke {
       }
     };
 
-    this.app.on('update', updateSmoke);
+    // Bind through the scene-generation guard so the smoke loop dies with its
+    // scene instead of animating destroyed entities after a scene switch.
+    bindSceneListener(this.app, 'update', updateSmoke);
 
     return smokeRoot;
   }

@@ -1,7 +1,10 @@
 import {
-  createGraphicsDevice,
   AppBase,
   AppOptions,
+  createGraphicsDevice,
+  Keyboard,
+  Mouse,
+  TouchDevice,
   RenderComponentSystem,
   CameraComponentSystem,
   ScriptComponentSystem,
@@ -18,8 +21,6 @@ import {
   Picker,
   EVENT_MOUSEMOVE,
   EVENT_MOUSEUP,
-  TouchDevice,
-  Mouse,
   MeshInstance,
   Texture,
   StandardMaterial,
@@ -258,6 +259,7 @@ async function defaultScene(
       RigidBodyComponentSystem
     ];
     createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
+    createOptions.keyboard = new Keyboard(window);
 
     app.init(createOptions);
   }
@@ -423,9 +425,8 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
     });
   }
 
-  // Period 8 (∞) is gated behind collecting every secret in the game. Hide the
-  // button until the player has them all — re-showing it on their next visit
-  // to this scene once `getSecretsFound()` catches up to `TOTAL_SECRETS_AVAILABLE`.
+  // Period 8 (∞) is gated behind collecting every secret in the game. Show the
+  // button once the player has collected all of them; hide it otherwise.
   const period8Btn = timePeriodButtons[7];
   if (period8Btn && getSecretsFound() < TOTAL_SECRETS_AVAILABLE) {
     period8Btn.style.display = 'none';
@@ -1036,6 +1037,13 @@ app.once('destroy', cleanupBriefingOverlay);
   app.once('destroy', () => {
     clearInterval(timePeriodCheckInterval);
   });
+
+  // Cleanup when the scene changes away from the map (not just app destroy)
+  const cleanupSceneInterval = () => { clearInterval(timePeriodCheckInterval); };
+  const sceneKeyedApp = app as AppBase & Record<string, unknown>;
+  const handlers = (sceneKeyedApp['__sceneCleanupHandlers'] as Array<() => void> | undefined) ?? [];
+  handlers.push(cleanupSceneInterval);
+  sceneKeyedApp['__sceneCleanupHandlers'] = handlers;
 
   return renderBattlesForPeriod;
 }

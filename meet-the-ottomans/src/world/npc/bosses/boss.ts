@@ -99,10 +99,13 @@ export class Boss extends npc {
   }
 
     public static getActiveDeathTaunt(): string | null {
-        return Boss.activeBoss?.getDeathTaunt() ?? null;
+        // Boss's dying words
+        return Boss.activeBoss?.getBossDeathTaunt() ?? null;
     }
 
     public static getActivePlayerDeathTaunt(): string | null {
+        // Taunt shown when the *player* dies — deliberately different from
+        // the boss's own death taunt.
         return Boss.activeBoss?.getDeathTaunt() ?? null;
     }
 

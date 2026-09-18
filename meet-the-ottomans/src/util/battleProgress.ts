@@ -22,14 +22,46 @@ export const NON_SECRET_BATTLES = [
   'Operation Arnon',
 ] as const;
 
-let completedBattleNames = new Set<string>();
+// Both names used by the dispatcher above — Siege marks both itself and the
+// Fall variant complete (they're the same historical event with the same
+// scene, listed separately in the UI).
+const ALIASES: Record<string, string[]> = {
+  'Siege of Constantinople': ['Siege of Constantinople', 'Fall of Constantinople'],
+  'Fall of Constantinople': ['Siege of Constantinople', 'Fall of Constantinople'],
+};
+
+const STORAGE_KEY = 'meetTheOttomans.battleProgress';
+
+function loadPersistedProgress(): Set<string> {
+  if (typeof window === 'undefined' || !window.localStorage) return new Set();
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistProgress(names: Set<string>): void {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify([...names]));
+}
+
+let completedBattleNames = loadPersistedProgress();
 
 export function markBattleComplete(name: string): void {
-  completedBattleNames.add(name);
+  const validated = ALIASES[name] ?? [name];
+  for (const alias of validated) {
+    completedBattleNames.add(alias);
+  }
+  persistProgress(completedBattleNames);
 }
 
 export function isBattleComplete(name: string): boolean {
-  return completedBattleNames.has(name);
+  const aliases = ALIASES[name] ?? [name];
+  return aliases.some(alias => completedBattleNames.has(alias));
 }
 
 export function isAllNonSecretComplete(): boolean {
@@ -46,6 +78,7 @@ export function getTotalNonSecretCount(): number {
 
 export function resetBattleProgress(): void {
   completedBattleNames.clear();
+  persistProgress(completedBattleNames);
 }
 
 export function markAllNonSecretComplete(): void {

@@ -15,21 +15,10 @@ type IntroSlide = {
   3) The progress dots and navigation update automatically.
 */
 let now = new Date();
-let year = now.getFullYear();
-let month = now.getMonth() + 1;
-let day = now.getDate() + 1;
-
-if (month === 2 && day > 28) {
-  day = 1;
-  month = 3;
-} else if ([4, 6, 9, 11].includes(month) && day > 30) {
-  day = 1;
-  month += 1;
-} else if (day > 31) {
-  day = 1;
-  month = 1;
-  year += 1;
-}
+now.setDate(now.getDate() + 1); // "the future" — correctly handles Feb 29, month lengths, leap years, etc.
+const year = now.getFullYear();
+const month = now.getMonth() + 1;
+const day = now.getDate();
 
 const introSlides: IntroSlide[] = [
   {

@@ -9,6 +9,25 @@ import { Sword } from './weapon/sword';
 import { Bow } from './weapon/bow';
 import { Boss } from '../world/npc/bosses/boss';
 
+/**
+ * Player — the first-person player character.
+ *
+ * The "player" entity is really just a camera with a FirstPersonCamera script
+ * (WASD + mouse look + gravity raycasts against "ground"-tagged colliders).
+ * There is no physics body on the player.
+ *
+ * Weapons are pre-constructed and swapped by number-key slot:
+ *   1 = Sword, 2 = Gun, 3 = Bow, 4 = old Musket (weak early-era gun).
+ *
+ * Death flow: takeDamage → die → showDeathScreen (with a boss taunt if a boss is
+ * active) → quiz to revive or back to map. A hasDied latch prevents the screen
+ * stacking twice; revive() clears it and grants a 3s damage grace period.
+ *
+ * Dev-console god mode and the devConsole player handle pass through globalThis
+ * (__devConsoleGodMode / __devConsolePlayer) DELIBERATELY to break the circular
+ * import between player.ts and util/devConsole.ts. Do not convert to an import.
+ */
+
 
 export class Player{
  private cameraEntity: Entity;
@@ -18,13 +37,14 @@ export class Player{
  private health = this.maxHealth;
  private team = 'friend'; // Player is always on the 'friend' team
  private readonly swordWeapon = new Sword(4, 25);
- private readonly gunWeapon = new Gun(50, 1000, 12);
+ private readonly gunWeapon = new Gun(50, 1000, 6);
  private readonly bowWeapon = new Bow(50, 1000, 20, 250);
- private readonly oldGunWeapon = new Gun(15, 60, 12, "Gun"); // Weaker gun for early time periods
+ private readonly oldGunWeapon = new Gun(15, 60, 6, "Musket"); // Weaker gun for early time periods
  private equippedWeapon: Weapon = this.swordWeapon;
  private deathQuizTimePeriod = -1;
  private restartBattle: (() => void) | undefined;
  private gracePeriodEnd = 0; // Timestamp (ms) until which player is invulnerable after reviving
+ private hasDied = false; // Latches on death; cleared by revive() so the death screen can't stack
 
     constructor(app: AppBase, initialPosition: Vec3 = new Vec3(0, 8, 8)) {
     this.app = app;
@@ -107,6 +127,7 @@ export class Player{
 
     public revive(position?: Vec3): void {
     this.health = this.maxHealth;
+    this.hasDied = false; // clear death latch so a future death can show the screen again
     this.gracePeriodEnd = Date.now() + 3000; // 3-second grace period
     if (position) {
     this.setPosition(position);
@@ -115,18 +136,23 @@ export class Player{
     }
 
     private die(isAlive: boolean): void {
-        if (!isAlive) {
-            console.log("You have failed to bring glory to the Ottoman Empire. Game Over.");
-            const canvas = this.app.graphicsDevice.canvas as HTMLCanvasElement | undefined;
-            const bossTaunt = Boss.getActivePlayerDeathTaunt();
-            showDeathScreen({
-                app: this.app,
-                timePeriod: this.deathQuizTimePeriod,
-                onRestart: this.restartBattle,
-                onMainMenu: canvas ? () => void changeScene(canvas, this.app, 0) : undefined,
-                message: bossTaunt ?? 'You have failed to bring glory to the Ottoman Empire. Game Over.'
-            });
+        // Guard: takeDamage already early-returns when health <= 0, but timers and
+        // overlapping combat loops can still call die() more than once for the same
+        // death — without this, the death screen (and its quiz) gets stacked twice.
+        if (isAlive || !this.hasDied) {
+            return;
         }
+        this.hasDied = true;
+        console.log("You have failed to bring glory to the Ottoman Empire. Game Over.");
+        const canvas = this.app.graphicsDevice.canvas as HTMLCanvasElement | undefined;
+        const bossTaunt = Boss.getActivePlayerDeathTaunt();
+        showDeathScreen({
+            app: this.app,
+            timePeriod: this.deathQuizTimePeriod,
+            onRestart: this.restartBattle,
+            onMainMenu: canvas ? () => void changeScene(canvas, this.app, 0) : undefined,
+            message: bossTaunt ?? 'You have failed to bring glory to the Ottoman Empire. Game Over.'
+        });
     }
 
     public isAlive(): boolean {
@@ -143,6 +169,10 @@ export class Player{
 
     public getEquippedWeaponName(): string {
         return this.equippedWeapon.getName();
+    }
+
+    public getEquippedWeapon(): Weapon {
+        return this.equippedWeapon;
     }
 
     public getDebugState(): {
@@ -190,7 +220,10 @@ export class Player{
     }
 
     public reloadEquippedWeapon(amount: number = 12): void {
-        void amount;
+        void amount; // handled by the weapon itself (Gun/Bow have magazines)
+        if (this.equippedWeapon instanceof Gun) {
+            this.equippedWeapon.reload();
+        }
     }
 
     public attack(target?: npc | null): void {

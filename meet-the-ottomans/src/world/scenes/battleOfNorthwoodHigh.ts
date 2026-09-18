@@ -31,6 +31,7 @@ import {
 
 import { unloadAll } from "../../util/unloadall";
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from "../../util/battleHUD";
+import { getScreenCenter } from "../../util/battleSceneHelpers";
 import { isDeathScreenVisible } from "./deathScreen";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
@@ -371,9 +372,7 @@ export async function battleOfNorthwoodHighScene(
       return;
     }
 
-    const gunEquipped = player.getEquippedWeaponName() === "Gun";
-    const targetX = gunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-    const targetY = gunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+    const { x: targetX, y: targetY } = getScreenCenter(app);
     const hitNpc = cameraController?.getClickedNpcInRange(
       targetX,
       targetY,

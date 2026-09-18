@@ -56,7 +56,7 @@ import {
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
 
 const groundModelPath = "/world/battlefields/ChosinResevoir.glb";
 
@@ -403,11 +403,7 @@ if (!groundRb && !groundCol && childColliders.length === 0) {
     (event: { x: number; y: number; button: number }) => {
       if (isDeathScreenVisible()) return;
       if (event.button !== 0) return;
-      const isGunEquipped =
-        player.getEquippedWeaponName() === "Gun" ||
-        player.getEquippedWeaponName() === "Bow";
-      const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-      const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+      const { x: targetX, y: targetY } = getScreenCenter(app);
       const hitNpc = cameraController?.getClickedNpcInRange(
         targetX,
         targetY,

@@ -1,12 +1,14 @@
 
+import { Entity } from "playcanvas";
+
 export class Battle{
     private timePeriod: number; // what time period the battle takes place in
-    private location: [number, number]; // location on the map. x, y = lat, long. Input as degrees. Will be converted to radians in the return function.
+    private location: [number, number]; // [lat, lon] in DEGREES. Consumers convert to radians/spherical themselves (see latLonToSpherical in scenes/default.ts).
     private name: string; // name of the battle
     private spawnPoint?: [number, number, number];
-    private obj: pc.Entity;
+    private obj: Entity;
 
-    constructor(timePeriod: number, location: [number, number], name: string, obj: pc.Entity, spawnPoint?: [number, number, number]) {
+    constructor(timePeriod: number, location: [number, number], name: string, obj: Entity, spawnPoint?: [number, number, number]) {
         this.timePeriod = timePeriod;
         this.location = location;
         this.name = name;

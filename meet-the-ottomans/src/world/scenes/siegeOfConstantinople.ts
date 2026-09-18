@@ -44,9 +44,9 @@ import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_BOSS_SPAWN_POINT, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { triggerVictory } from "../../App";
-import { markBattleComplete } from '../../util/battleProgress';
 import { Smoke } from "../doSmoke";
-import { getHighestGroundHitY, getRenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
 
@@ -159,7 +159,7 @@ function addNightSkyDome(app: AppBase, cameraEntity: Entity): void {
 	};
 
 	keyedApp[skyFollowKey] = followSky;
-	app.on('update', followSky);
+	bindSceneListener(app, 'update', followSky);
 }
 
 function addBattleSmokePlumes(
@@ -363,7 +363,7 @@ function addBattleSmokePlumes(
 	};
 
 	keyedApp[smokeUpdateKey] = smokeUpdate;
-	app.on('update', smokeUpdate);
+	bindSceneListener(app, 'update', smokeUpdate);
 }
 
 /**
@@ -803,9 +803,7 @@ export async function siegeOfConstantinopleScene(
 			return;
 		}
 
-		const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
-		const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-		const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+		const { x: targetX, y: targetY } = getScreenCenter(app);
 		const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
 		player.attack(hitNpc ?? null);
 		if (hitNpc instanceof Boss) {
@@ -896,11 +894,16 @@ export async function siegeOfConstantinopleScene(
 				return;
 			}
 
-			victoryHandled = true;
-			removeBattleHUD();
-			markBattleComplete('Siege of Constantinople'); markBattleComplete('Fall of Constantinople'); triggerVictory('Siege of Constantinople', canvas, app);
+		victoryHandled = true;
+		removeBattleHUD();
+		// Siege of Constantinople is the canonical entry for both "Siege of
+		// Constantinople" and "Fall of Constantinople" in the campaign map, so
+		// marking the one battle completes them both. triggerVictory() is
+		// called with the canonical name so the battleProgress aliasing handles
+		// the dual-mark.
+		triggerVictory('Siege of Constantinople', canvas, app);
 		}
 	};
 
-	app.on('update', victoryCheck);
+	bindSceneListener(app, 'update', victoryCheck);
 }

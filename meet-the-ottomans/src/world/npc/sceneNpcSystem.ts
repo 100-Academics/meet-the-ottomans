@@ -36,6 +36,7 @@ import { WingedHussarBoss } from "./bosses/wingedHussarBoss";
 import { NineTailedFox } from "./bosses/nineTailedFox";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 import { DevConsole } from "../../util/devConsole";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 export type NpcSceneTeam = "friend" | "foe";
 
@@ -112,15 +113,6 @@ export interface NpcCombatLoopOptions {
         outlineTargets?: "foe" | "all";
         onRemainingCountChange?: (remaining: number, total: number) => void;
     };
-}
-
-const SCENE_CLEANUP_HANDLERS_KEY = "__sceneCleanupHandlers";
-
-function registerSceneCleanup(app: AppBase, cleanup: () => void): void {
-    const keyedApp = app as AppBase & Record<string, unknown>;
-    const handlers = (keyedApp[SCENE_CLEANUP_HANDLERS_KEY] as Array<() => void> | undefined) ?? [];
-    handlers.push(cleanup);
-    keyedApp[SCENE_CLEANUP_HANDLERS_KEY] = handlers;
 }
 
 function hasTagInHierarchy(entity: Entity | null, tag: string): boolean {
@@ -1012,11 +1004,14 @@ export function bindNpcCombatLoop(
         }
     };
 
-    keyedApp[updateKey] = updateHandler;
-    app.on("update", updateHandler);
+    // Bind through the scene-generation guard so even if the cleanup list
+    // isn't drained (e.g. a caller forgot to register us), the loop kills
+    // itself the moment the scene changes instead of running forever over
+    // destroyed entities.
+    const detachLoop = bindSceneListener(app, "update", updateHandler);
 
     const cleanup = () => {
-        app.off("update", updateHandler);
+        detachLoop();
         if (keyedApp[updateKey] === updateHandler) {
             delete keyedApp[updateKey];
         }
@@ -1025,8 +1020,6 @@ export function bindNpcCombatLoop(
             outlineRenderer.destroy();
         }
     };
-
-    registerSceneCleanup(app, cleanup);
 
     return () => {
         cleanup();

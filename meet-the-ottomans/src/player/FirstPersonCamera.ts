@@ -33,6 +33,7 @@ import {
 } from './playerMovementConfig';
 import { npc } from '../world/npc/npc';
 import { Weapon } from './weapon/weapon';
+import { registerSceneCleanup } from '../util/sceneCleanup';
 
 export class FirstPersonCamera extends ScriptType {
     public eulers = new Vec3();
@@ -259,6 +260,13 @@ export class FirstPersonCamera extends ScriptType {
  }
  }
 
+    private onMouseDownBound: (() => void) | null = null;
+    private onMouseMoveBound: ((e: { dx: number; dy: number }) => void) | null = null;
+    private onKeyDownBound: ((e: KeyboardEvent) => void) | null = null;
+    private onKeyUpBound: ((e: KeyboardEvent) => void) | null = null;
+    private onBlurBound: (() => void) | null = null;
+    private cleanupRegistered = false;
+
     initialize() {
         this.eulers.x = this.entity.getLocalEulerAngles().x;
         this.eulers.y = this.entity.getLocalEulerAngles().y;
@@ -282,26 +290,66 @@ export class FirstPersonCamera extends ScriptType {
         this.basePosition.copy(startPos);
         this.basePositionReady = true;
 
+        // If the script was torn down and re-created mid-scene, re-running
+        // initialize on the same entity should not double-register listeners.
+        this.unregisterInputHandlers();
+
         const app = this.app;
-        
+
         // Mouse lock
         if (app.mouse) {
-            // Remove old listeners first to prevent duplicates
-            app.mouse.off('mousedown');
-            app.mouse.off('mousemove');
-            
-            app.mouse.on('mousedown', () => {
+            // Scene / weapon handlers subscribe with a named callback; we use
+            // our own named handlers so we don't wipe anyone else's by the
+            // event-name-only `mouse.off('mousedown')` pattern.
+            this.onMouseDownBound = () => {
                 app.mouse?.enablePointerLock();
                 this.ignoreNextMouseMove = true;
                 window.focus(); // Ensure window gets keyboard focus when clicking
-            });
-            
-            app.mouse.on('mousemove', this.onMouseMove);
+            };
+            this.onMouseMoveBound = this.onMouseMove;
+            app.mouse.on('mousedown', this.onMouseDownBound);
+            app.mouse.on('mousemove', this.onMouseMoveBound);
         }
 
         // Foolproof Keyboard Tracking for iframe / dev environments
-        window.addEventListener('keydown', (e) => { this.keys[e.code] = true; });
-        window.addEventListener('keyup', (e) => { this.keys[e.code] = false; });
+        this.onKeyDownBound = (e: KeyboardEvent) => { this.keys[e.code] = true; };
+        this.onKeyUpBound = (e: KeyboardEvent) => { this.keys[e.code] = false; };
+        this.onBlurBound = () => { this.keys = {}; };
+        window.addEventListener('keydown', this.onKeyDownBound);
+        window.addEventListener('keyup', this.onKeyUpBound);
+        window.addEventListener('blur', this.onBlurBound);
+
+        if (!this.cleanupRegistered) {
+            this.cleanupRegistered = true;
+            registerSceneCleanup(app, () => this.unregisterInputHandlers());
+        }
+    }
+
+    private unregisterInputHandlers(): void {
+        const app = this.app;
+        if (app?.mouse) {
+            if (this.onMouseDownBound) {
+                app.mouse.off('mousedown', this.onMouseDownBound);
+                this.onMouseDownBound = null;
+            }
+            if (this.onMouseMoveBound) {
+                app.mouse.off('mousemove', this.onMouseMoveBound);
+                this.onMouseMoveBound = null;
+            }
+        }
+        if (this.onKeyDownBound) {
+            window.removeEventListener('keydown', this.onKeyDownBound);
+            this.onKeyDownBound = null;
+        }
+        if (this.onKeyUpBound) {
+            window.removeEventListener('keyup', this.onKeyUpBound);
+            this.onKeyUpBound = null;
+        }
+        if (this.onBlurBound) {
+            window.removeEventListener('blur', this.onBlurBound);
+            this.onBlurBound = null;
+        }
+        this.keys = {};
     }
 
     private onMouseMove = (e: { dx: number; dy: number }) => {

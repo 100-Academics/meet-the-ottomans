@@ -43,7 +43,8 @@ import { Secret, pickSecretPosition } from "../secrets";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { AIN_JALUT_BOSS_SPAWN_POINT, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { bindSceneListener } from "../../util/sceneCleanup";
 
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
@@ -511,9 +512,7 @@ await waitForAmmoReady(app, "ground");
       return;
     }
 
-    const isRangedEquipped = player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow';
-    const targetX = isRangedEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-    const targetY = isRangedEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+    const { x: targetX, y: targetY } = getScreenCenter(app);
     const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
     player.attack(hitNpc ?? null);
     if (hitNpc instanceof Boss) {
@@ -570,5 +569,5 @@ await waitForAmmoReady(app, "ground");
     }
   };
 
-  app.on('update', victoryCheck);
+  bindSceneListener(app, 'update', victoryCheck);
 }

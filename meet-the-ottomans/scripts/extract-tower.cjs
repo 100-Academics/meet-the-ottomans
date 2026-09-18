@@ -5,8 +5,10 @@ const { spawn } = require("child_process");
 const projectRoot = path.resolve(__dirname, "..");
 const archivePath = path.join(projectRoot, "src/assets/models/Tower_00001_.7z");
 const targetDirs = [
+  // The "public/models" copy used to be written to make the file reachable at
+  // runtime, but the game loads everything through src/assets already. Keep
+  // only the single canonical copy.
   path.join(projectRoot, "src/assets/models/npc/boss"),
-  path.join(projectRoot, "public/models/npc/boss"),
 ];
 
 function resolveSevenZipPath() {
@@ -32,12 +34,12 @@ function ensureExecutable(binaryPath) {
   }
 }
 
-function getArchiveSignature(filePath) {
-  const stat = fs.statSync(filePath);
-  return {
-    size: stat.size,
-    mtimeMs: stat.mtimeMs,
-  };
+function getArchiveFingerprint(filePath) {
+  // Use only the file contents — not mtimeMs, which changes on every git clone.
+  const crypto = require("crypto");
+  const hash = crypto.createHash("sha256");
+  hash.update(fs.readFileSync(filePath));
+  return hash.digest("hex");
 }
 
 function readMarker(markerPath) {
@@ -49,17 +51,12 @@ function readMarker(markerPath) {
   }
 }
 
-function signaturesMatch(left, right) {
-  return Boolean(
-    left &&
-      right &&
-      left.size === right.size &&
-      left.mtimeMs === right.mtimeMs
-  );
+function fingerprintsMatch(left, right) {
+  return typeof left === "string" && left === right;
 }
 
-function writeMarker(markerPath, signature) {
-  fs.writeFileSync(markerPath, JSON.stringify(signature, null, 2));
+function writeMarker(markerPath, fingerprint) {
+  fs.writeFileSync(markerPath, JSON.stringify({ sha256: fingerprint }, null, 2));
 }
 
 function runSevenZip(archive, outDir, sevenZipPath) {
@@ -83,18 +80,21 @@ function runSevenZip(archive, outDir, sevenZipPath) {
 
 async function main() {
   if (!fs.existsSync(archivePath)) {
-    console.error(`Missing archive: ${archivePath}`);
-    process.exit(1);
+    // Optional: the game plays without the boss model; log and move on.
+    console.warn(
+      `Tower archive not found at ${archivePath}. Skipping extraction — the game will use placeholder assets in that scene.`
+    );
+    return;
   }
 
-  const signature = getArchiveSignature(archivePath);
+  const fingerprint = getArchiveFingerprint(archivePath);
   const sevenZipPath = resolveSevenZipPath();
   ensureExecutable(sevenZipPath);
 
   for (const targetDir of targetDirs) {
     const markerPath = path.join(targetDir, ".tower_00001_extracted.json");
     const existingMarker = readMarker(markerPath);
-    if (signaturesMatch(existingMarker, signature)) {
+    if (existingMarker && fingerprintsMatch(existingMarker.sha256, fingerprint)) {
       continue;
     }
 
@@ -103,7 +103,7 @@ async function main() {
     console.log(`Extracting Tower_00001_.7z to ${displayPath}...`);
 
     await runSevenZip(archivePath, targetDir, sevenZipPath);
-    writeMarker(markerPath, signature);
+    writeMarker(markerPath, fingerprint);
   }
 }
 

@@ -43,6 +43,7 @@ import {
   getHighestGroundHitY,
   getRenderableBounds,
   createStarfieldTexture,
+  getScreenCenter,
   type RenderableBounds,
 } from "../../util/battleSceneHelpers";
 
@@ -381,11 +382,7 @@ export async function battleOfGettysburgScene(
     (event: { x: number; y: number; button: number }) => {
       if (isDeathScreenVisible()) return;
       if (event.button !== 0) return;
-      const isGunEquipped =
-        player.getEquippedWeaponName() === "Gun" ||
-        player.getEquippedWeaponName() === "Bow";
-      const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-      const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+      const { x: targetX, y: targetY } = getScreenCenter(app);
       const hitNpc = cameraController?.getClickedNpcInRange(
         targetX,
         targetY,

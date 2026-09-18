@@ -34,6 +34,7 @@ import {
 import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
+import { bindSceneListener } from "../../util/sceneCleanup";
 import { isDeathScreenVisible } from './deathScreen';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
@@ -47,7 +48,7 @@ import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
 import { DevConsole } from "../../util/devConsole";
-import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, type RenderableBounds } from "../../util/battleSceneHelpers";
+import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
 import { Secret, pickSecretPosition } from "../secrets";
 
 const groundModelPath = '/world/battlefields/legnica.glb';
@@ -247,7 +248,7 @@ export async function battleOfLegnicaScene(
   });
   starDome.setPosition(cameraEntity.getPosition());
   app.root.addChild(starDome);
-  app.on('update', () => {
+  bindSceneListener(app, 'update', () => {
     starDome.setPosition(cameraEntity.getPosition());
   });
 
@@ -456,9 +457,7 @@ export async function battleOfLegnicaScene(
       return;
     }
 
-    const isGunEquipped = (player.getEquippedWeaponName() === 'Gun' || player.getEquippedWeaponName() === 'Bow');
-    const targetX = isGunEquipped ? app.graphicsDevice.width * 0.5 : event.x;
-    const targetY = isGunEquipped ? app.graphicsDevice.height * 0.5 : event.y;
+    const { x: targetX, y: targetY } = getScreenCenter(app);
     const hitNpc = cameraController?.getClickedNpcInRange(targetX, targetY, npcs, player.getAttackRange());
     player.attack(hitNpc ?? null);
     updateBattleHUD(player);
@@ -525,5 +524,5 @@ export async function battleOfLegnicaScene(
     }
   };
 
-  app.on('update', victoryCheck);
+  bindSceneListener(app, 'update', victoryCheck);
 }
