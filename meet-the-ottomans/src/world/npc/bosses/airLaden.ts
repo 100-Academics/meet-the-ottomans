@@ -116,32 +116,33 @@ export class AirLadin extends Boss {
 		this.setIntroTaunt("هل هو طائر؟ هل هي طائرة؟ لا، إنه إير لادن!", "It's a bird?, It's a plane?, No it's Air Laden!");
 		this.setIntroNameTranslation("إير لادن", "Air Ladin");
 		
-        this.setTauntSet({
+       this.setTauntSet({
 			highHealth: [
-				"The mountains are my fortress.",
-				"You cannot destroy what you cannot find.",
-				"I have outlasted empires before you."
+				"The skies are my fortress.",
+				"You cannot shoot down what you cannot lock.",
+				"I have outlasted entire squadrons before you."
 			],
 			bossLowPlayerHigh: [
-				"Even in death, the cause endures.",
-				"You have won nothing — only a body.",
-				"Martyrdom is my final weapon."
+				"Even in a crash, the mission endures.",
+				"You have won nothing — only wreckage.",
+				"My final dive is the last weapon."
 			],
 			playerLowBossHigh: [
-				"Your crusade ends here.",
-				"The mountain does not move for you.",
-				"You came to my cave — now face the darkness."
+				"Your flight ends here.",
+				"The jet stream does not yield for you.",
+				"You entered my airspace — now face the turbulence."
 			],
 			bothLow: [
-				"One of us will not leave this mountain.",
-				"The end is written."
+				"One of us will not leave this sky.",
+				"The end is written in the black box."
 			],
 			death: [
 				"Allah akbar!", //this was shown to the class o7
+				"I am the cause of the GREAT ROTATION!" //streets wont forget
 			],
 			bossDeath: [
-				"The cave is silent once more.",
-				"The mountain reclaims its own."
+				"The runway is silent once more.",
+				"The clouds reclaim their own."
 			]
 		});
 	}
