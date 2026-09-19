@@ -3,23 +3,8 @@ import {
   Entity,
   Color,
   Vec3,
-  Mouse,
-  Keyboard,
-  TouchDevice,
-  createGraphicsDevice,
-  AppOptions,
-  RenderComponentSystem,
-  CameraComponentSystem,
-  ScriptComponentSystem,
-  LightComponentSystem,
-  CollisionComponentSystem,
-  RigidBodyComponentSystem,
-  TextureHandler,
-  ContainerHandler,
   StandardMaterial,
   MeshInstance,
-  FILLMODE_FILL_WINDOW,
-  RESOLUTION_AUTO,
   Mesh,
   BoxGeometry,
   SphereGeometry,
@@ -29,10 +14,11 @@ import {
   Texture,
 } from "playcanvas";
 
-import { unloadAll } from "../../util/unloadall";
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from "../../util/battleHUD";
 import { getScreenCenter } from "../../util/battleSceneHelpers";
 import { isDeathScreenVisible } from "./deathScreen";
+import { ensureBattleApp, enterBattleScene } from "../../util/battleSceneSetup";
+import { bindSceneListener } from "../../util/sceneCleanup";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 import { bindNpcCombatLoop, spawnSceneNpcs } from "../npc/sceneNpcSystem";
@@ -145,68 +131,13 @@ export async function battleOfNorthwoodHighScene(
   _sceneNum: number,
   spawnPoint?: [number, number, number],
 ) {
-  unloadAll(app);
-  app.mouse?.off();
-  app.keyboard?.off();
+  const hiddenMap = enterBattleScene(app);
 
   if (!canvas) {
     throw new Error("Canvas not found");
   }
 
-  const overlay = document.querySelector(".overlay") as HTMLElement | null;
-  const hiddenMap = new Map<HTMLElement, string | null>();
-  if (overlay) {
-    for (const child of Array.from(overlay.children) as HTMLElement[]) {
-      hiddenMap.set(child, child.style.display || null);
-      child.style.display = "none";
-    }
-  }
-
-  const hoverLabel = document.getElementById("battle-hover-label");
-  if (hoverLabel) {
-    hoverLabel.style.display = "none";
-  }
-
-  if (!app.graphicsDevice) {
-    const device = await createGraphicsDevice(canvas);
-    const createOptions = new AppOptions();
-    createOptions.graphicsDevice = device;
-    createOptions.mouse = new Mouse(document.body);
-    createOptions.keyboard = new Keyboard(window);
-    createOptions.touch = new TouchDevice(document.body);
-    createOptions.componentSystems = [
-      RenderComponentSystem,
-      CameraComponentSystem,
-      ScriptComponentSystem,
-      LightComponentSystem,
-      CollisionComponentSystem,
-      RigidBodyComponentSystem,
-    ];
-    createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
-    app.init(createOptions);
-
-    if (!app.keyboard) {
-      app.keyboard = new Keyboard(window);
-    }
-
-    app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
-    app.setCanvasResolution(RESOLUTION_AUTO);
-
-    const resize = () => app.resizeCanvas();
-    window.addEventListener("resize", resize);
-    app.once("destroy", () => {
-      window.removeEventListener("resize", resize);
-      for (const [element, previousDisplay] of hiddenMap.entries()) {
-        if (previousDisplay === null) {
-          element.style.removeProperty("display");
-        } else {
-          element.style.display = previousDisplay;
-        }
-      }
-    });
-
-    app.start();
-  }
+  await ensureBattleApp(canvas, app, hiddenMap);
 
   const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
   const player = new Player(app, playerSpawn);
@@ -249,7 +180,7 @@ export async function battleOfNorthwoodHighScene(
   });
   starDome.setPosition(cameraEntity.getPosition());
   app.root.addChild(starDome);
-  app.on("update", () => {
+  bindSceneListener(app, "update", () => {
     starDome.setPosition(cameraEntity.getPosition());
   });
 
@@ -412,7 +343,7 @@ export async function battleOfNorthwoodHighScene(
   });
 
   let victoryHandled = false;
-  app.on("update", () => {
+  bindSceneListener(app, "update", () => {
     if (isDeathScreenVisible() || victoryHandled) {
       return;
     }

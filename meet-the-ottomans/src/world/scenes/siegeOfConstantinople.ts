@@ -1,53 +1,40 @@
 import {
-	AppBase,
-	Entity,
-	Color,
-	Vec3,
-	Mouse,
-	Keyboard,
-	TouchDevice,
-	createGraphicsDevice,
-	AppOptions,
-	RenderComponentSystem,
-	CameraComponentSystem,
-	ScriptComponentSystem,
-	LightComponentSystem,
-	CollisionComponentSystem,
-	RigidBodyComponentSystem,
-	TextureHandler,
-	ContainerHandler,
-	Asset,
-	AssetListLoader,
-	TEXTURETYPE_RGBP,
-	Texture,
-	StandardMaterial,
-	MeshInstance,
-	FILLMODE_FILL_WINDOW,
-	RESOLUTION_AUTO,
-	KEY_1,
-	KEY_2,
-	Mesh,
-	SphereGeometry,
-	CULLFACE_FRONT,
+  AppBase,
+  Entity,
+  Color,
+  Vec3,
+  Keyboard,
+  Texture,
+  StandardMaterial,
+  MeshInstance,
+  Mesh,
+  SphereGeometry,
+  CULLFACE_FRONT,
+  KEY_1,
+  KEY_2,
 } from "playcanvas";
 
-import { unloadAll } from '../../util/unloadall';
-import { loadModel } from '../../util/loadModel';
-import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
-import { isDeathScreenVisible } from './deathScreen';
+import { createBattleHUD, removeBattleHUD, updateBattleHUD } from "../../util/battleHUD";
+import { isDeathScreenVisible } from "./deathScreen";
 
-// @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
-import { Grid } from 'playcanvas/scripts/esm/grid.mjs';
-import { Player } from '../../player/player';
+import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
 import { Boss } from "../npc/bosses/boss";
 import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
 import { CONSTANTINOPLE_BOSS_SPAWN_POINT, CONSTANTINOPLE_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_CHRIST_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { triggerVictory } from "../../App";
 import { Smoke } from "../doSmoke";
-import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
+import { getScreenCenter } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
 import { bossActuallySpawned } from "../../util/victoryCheck";
+import {
+  ensureBattleApp,
+  enterBattleScene,
+  loadBattleEnvAtlas,
+  loadBattleGround,
+  attachCollisionContactLogger,
+  getRigidbodySystem,
+} from "../../util/battleSceneSetup";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
 
@@ -367,15 +354,6 @@ function addBattleSmokePlumes(
 	bindSceneListener(app, 'update', smokeUpdate);
 }
 
-/**
- * Recursively scans an entity and all its children to find the bounding box of all
- * renderable mesh instances. Returns the min/max X,Z coordinates and maximum Y.
- * Returns undefined if no renderable meshes were found.
-*
-* USAGE: Called during scene initialization to determine where the ground model is located,
-* so we can calculate a good spawn point at the center of the visible terrain.
- */
-
 function resetConstantinopleBattleState(): void {
 	isBossSpawned = false;
 	isBossSpawning = false;
@@ -390,123 +368,25 @@ export async function siegeOfConstantinopleScene(
 ) {
 	resetConstantinopleBattleState();
 
-	// Clean up any previous scene assets and input listeners
-	unloadAll(app);
-	app.mouse?.off();
-	app.keyboard?.off();
+	const hiddenMap = enterBattleScene(app);
 
 	if (!canvas) {
 		throw new Error('Canvas not found');
 	}
 
-	// Hide the page overlay (UI text/info pills) while we're in the 3D scene
-	const overlay = document.querySelector('.overlay') as HTMLElement | null;
-	const hiddenMap = new Map<HTMLElement, string | null>();
-	if (overlay) {
-		// Save the original display style of each overlay element so we can restore it later
-		const children = Array.from(overlay.children) as HTMLElement[];
-		for (const child of children) {
-			hiddenMap.set(child, child.style.display || null);
-			child.style.display = 'none';
-		}
-	}
+	await ensureBattleApp(canvas, app, hiddenMap);
 
-	// Hide the hover label that appears when you mouse over battlefields on the default globe
-	const hoverLabel = document.getElementById('battle-hover-label');
-	if (hoverLabel) {
-		hoverLabel.style.display = 'none';
-	}
-
-	// Initialize the graphics device and app if this is the first time
-	if (!app.graphicsDevice) {
-		const device = await createGraphicsDevice(canvas);
-		const createOptions = new AppOptions();
-		createOptions.graphicsDevice = device;
-		// Set up input handling (mouse, keyboard, touch)
-		createOptions.mouse = new Mouse(document.body);
-		createOptions.keyboard = new Keyboard(window);
-		createOptions.touch = new TouchDevice(document.body);
-		// Enable the component systems needed for rendering, physics, scripts, etc.
-		createOptions.componentSystems = [
-			RenderComponentSystem,
-			CameraComponentSystem,
-			ScriptComponentSystem,
-			LightComponentSystem,
-			CollisionComponentSystem,
-			RigidBodyComponentSystem
-		];
-		// Set up asset handlers for textures and container models
-		createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
-
-		// Initialize the app with all these settings
-		app.init(createOptions);
-
-		// Make sure we have keyboard input available
-		if (!app.keyboard) {
-				app.keyboard = new Keyboard(window);
-		}
-
-		// Configure the canvas to fill the window and auto-scale
-		app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
-		app.setCanvasResolution(RESOLUTION_AUTO);
-
-		// Handle window resizing by updating the canvas
-		const resize = () => app.resizeCanvas();
-		window.addEventListener('resize', resize);
-    
-		// When the app is destroyed, clean up the resize listener and restore overlay
-		app.once('destroy', () => {
-			window.removeEventListener('resize', resize);
-			// Restore overlay display values to what they were before
-			for (const [el, prev] of hiddenMap.entries()) {
-				if (prev === null) el.style.removeProperty('display');
-				else el.style.display = prev;
-			}
-		});
-
-		// Start the main game loop
-		app.start();
-	}
-
-	// Ensure keyboard input is available
 	if (!app.keyboard) {
 		app.keyboard = new Keyboard(window);
 	}
 
-	// Load or find the environment map texture used for reflections and lighting
-	const envAtlasAsset = app.assets.find('battle-env-atlas') ?? new Asset(
-		'battle-env-atlas',
-		'texture',
-		{ url: '/environment-map.png' },
-		{
-			type: TEXTURETYPE_RGBP,  // RGBP = RGB + Parallax (for cubemap)
-			mipmaps: false
-		}
-	);
-
-	// Add the environment atlas to the asset registry if it's not already there
-	if (!app.assets.find('battle-env-atlas')) {
-		app.assets.add(envAtlasAsset);
-	}
-
-	// Wait for the environment map to load before proceeding
-	await new Promise<void>((resolve) => {
-		if (envAtlasAsset.loaded) {
-			resolve();
-			return;
-		}
-		new AssetListLoader([envAtlasAsset], app.assets).load(() => resolve());
-	});
-
-	// Apply the loaded environment map to the scene for reflections
-	app.scene.envAtlas = envAtlasAsset.resource as Texture;
+	await loadBattleEnvAtlas(app);
 
 	// Create the player with camera and first-person controls
 	const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
 	const player = new Player(app, playerSpawn);
 	let respawnPosition = playerSpawn.clone();
 	let respawnGroundY = 0;
-	let battlefieldBounds: { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number } | undefined;
 	player.setDeathQuizContext(2, () => {
 		player.revive(respawnPosition);
 		if (cameraController) {
@@ -532,163 +412,30 @@ export async function siegeOfConstantinopleScene(
 	}
 
 	// Load and set up the battlefield ground model
-	try {
+	const groundResult = await loadBattleGround(app, groundModelPath, player, { movementBounds: true });
+	respawnPosition = player.getPosition().clone();
+	respawnGroundY = groundResult.respawnGroundY;
+	const battlefieldBounds = groundResult.bounds;
+	addBattleSmokePlumes(app, groundResult.entity, battlefieldBounds, respawnGroundY);
 
-		const ground = await loadModel(groundModelPath, app, {
-			rigidbodyType: 'static',  // Ground doesn't move, it's static
-			includeDescendants: true, // Load child entities too
-			position: new Vec3(0, 0, 0),
-			rotation: new Vec3(0, 0, 0),
-			scale: new Vec3(1, 1, 1)
-		});
-    
-		// Name the ground and tag it so we can find it later with raycasts
-		ground.modelEntity.name = 'ground';
-		ground.modelEntity.tags.add('ground');
-
-		// Debug logging to verify the collision system is working
-		const groundRb = ground.modelEntity.rigidbody;
-		const groundCol = ground.modelEntity.collision;
-		const childColliders = (ground.modelEntity.children as Entity[]).filter(
-			(c) => c.collision
-		);
-		console.log('[Ground] loaded', {
-			path: groundModelPath,
-			name: ground.modelName,
-			hasRigidbody: !!groundRb,
-			rigidbodyType: groundRb?.type,
-			hasCollision: !!groundCol,
-			collisionType: groundCol?.type,
-			childColliderCount: childColliders.length,
-			childColliderTypes: childColliders.map((c) => c.collision?.type),
-			ammoRuntime: (globalThis as any).__ammoRuntime
-		});
-
-		// Warn if collision wasn't set up properly (raycasting won't work then)
-		if (!groundRb && !groundCol && childColliders.length === 0) {
-			console.error('[Ground] NO collision/rigidbody detected — raycasting will fail!');
-		}
-
-		// Try to spawn the player on top of the ground
-		let spawnResolved = false;
-		const spawnSurfaceOffset = (cameraController?.playerHeight ?? 2) + 0.05;  // Slightly above ground
-		const bounds = getRenderableBounds(ground.modelEntity);
-		battlefieldBounds = bounds;
-    
-		// If we got the bounds, spawn at the center of the ground surface
-		if (bounds) {
-			cameraController?.setMovementBounds(bounds, 2.5);
-			const spawnX = (bounds.minX + bounds.maxX) * 0.5;
-			const spawnZ = (bounds.minZ + bounds.maxZ) * 0.5;
-			const seededGroundY = getHighestGroundHitY(app, spawnX, spawnZ, 'ground');
-        const surfaceY = seededGroundY ?? bounds.maxY;
-			const spawnY = surfaceY + spawnSurfaceOffset;
-			player.setPosition(new Vec3(spawnX, spawnY, spawnZ));
-			respawnPosition = player.getPosition().clone();
-			respawnGroundY = surfaceY;
-
-			// Tell the camera controller where the ground is for gravity calculations
-			if (cameraController) {
-				cameraController.groundHeight = surfaceY;
-			}
-			spawnResolved = true;
-			console.log(
-				`[Spawn] camera placed on terrain surface at (${spawnX.toFixed(2)}, ${spawnY.toFixed(2)}, ${spawnZ.toFixed(2)}), surfaceY ${surfaceY.toFixed(2)}, seededRayY ${seededGroundY?.toFixed(2) ?? "n/a"}`
-			);
-		}
-
-		// If center spawn didn't work, search nearby positions for a valid ground hit
-		if (!spawnResolved) {
-			const spawnCandidates: Vec3[] = [];
-			const spawnSearchRadius = 24;
-			const spawnSearchStep = 8;
-			// Create a grid of candidate positions around the center
-			for (let x = -spawnSearchRadius; x <= spawnSearchRadius; x += spawnSearchStep) {
-				for (let z = -spawnSearchRadius; z <= spawnSearchRadius; z += spawnSearchStep) {
-					spawnCandidates.push(new Vec3(x, 0, z));
-				}
-			}
-
-			let bestSpawnCandidate: Vec3 | undefined;
-			let bestSpawnGroundY: number | undefined;
-
-			// Find the candidate position with the highest ground surface
-			for (const candidate of spawnCandidates) {
-				const hitY = getHighestGroundHitY(app, candidate.x, candidate.z, 'ground');
-				if (hitY === undefined) {
-					continue;
-				}
-
-				// Keep track of the highest valid ground position we found
-				if (bestSpawnGroundY === undefined || hitY > bestSpawnGroundY) {
-					bestSpawnGroundY = hitY;
-					bestSpawnCandidate = candidate;
-				}
-			}
-
-			// If we found a valid spawn position, use it
-			if (bestSpawnCandidate && bestSpawnGroundY !== undefined) {
-				const spawnY = bestSpawnGroundY + spawnSurfaceOffset;
-				player.setPosition(new Vec3(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z));
-				respawnPosition = player.getPosition().clone();
-				respawnGroundY = bestSpawnGroundY;
-				if (cameraController) {
-					cameraController.groundHeight = bestSpawnGroundY;
-				}
-				spawnResolved = true;
-				console.log(
-					`[Spawn] camera placed at (${bestSpawnCandidate.x.toFixed(2)}, ${spawnY.toFixed(2)}, ${bestSpawnCandidate.z.toFixed(2)}) from ground Y ${bestSpawnGroundY.toFixed(2)}`
-				);
-			}
-		}
-
-		// If nothing worked, just log a warning and keep the default position
-		if (!spawnResolved) {
-			console.warn('[Spawn] No valid ground-tagged spawn hit found; keeping default camera position');
-		}
-
-		addBattleSmokePlumes(app, ground.modelEntity, battlefieldBounds, respawnGroundY);
-
-	} catch (error) {
-		console.error('[Ground] model load failed', error);
-		addBattleSmokePlumes(app, undefined, battlefieldBounds, respawnGroundY);
-	}
-
-
-	// Set up physics collision logging to debug collisions
-	const rigidbodySystem = (app.systems as any).rigidbody;
-	if (rigidbodySystem && typeof rigidbodySystem.on === 'function') {
-		// Listen for collision contacts and log them
-		rigidbodySystem.on('contact', (contactResult: any) => {
-			const posA = contactResult?.entityA?.getPosition?.();
-			const posB = contactResult?.entityB?.getPosition?.();
-			const nameA = contactResult?.entityA?.name ?? '?';
-			const nameB = contactResult?.entityB?.name ?? '?';
-			const contactPos = posA ?? posB;
-			console.log(`[Collision Contact] "${nameA}" <-> "${nameB}" at (${contactPos?.x?.toFixed(2) ?? '?'}, ${contactPos?.y?.toFixed(2) ?? '?'}, ${contactPos?.z?.toFixed(2) ?? '?'})`);
-		});
-	} else {
-		console.warn('[Collision] rigidbody system not available — contact logging disabled');
-	}
-
+	attachCollisionContactLogger(app);
+	const rigidbodySystem = getRigidbodySystem(app);
 
 	// Build a smoky, low-contrast battlefield atmosphere.
 	app.scene.fog.type = 'none';
 
-	// Set up basic scene lighting
-	// Ambient light provides a baseline light level everywhere
+	// Set up basic scene lighting — moonlit night.
 	app.scene.ambientLight = new Color(0.055, 0.06, 0.085);
 
-	// Create a directional light (like the sun) to cast shadows
 	if (app.systems.light) {
 		const light = new Entity('directional-light');
 		light.addComponent('light', {
 			type: 'directional',
 			color: new Color(0.57, 0.63, 0.8),
 			intensity: 0.36,
-			castShadows: true  // This light casts shadows for realism
+			castShadows: true
 		});
-		light.setLocalEulerAngles(26, -46, 0);  // Cooler moonlight direction.
+		light.setLocalEulerAngles(26, -46, 0); // Cooler moonlight direction.
 		app.root.addChild(light);
 	}
 
@@ -786,12 +533,9 @@ export async function siegeOfConstantinopleScene(
 		if (event.key === KEY_1) {
 			player.equipWeapon(1);
 			updateBattleHUD(player);
-		} else if (event.key === KEY_2) { 
+		} else if (event.key === KEY_2) {
 			player.equipWeapon(4);
 			updateBattleHUD(player);
-		// } else if (event.key === KEY_3) { // unecessary weapon slot for this scene.
-		// 	player.equipWeapon(3);
-		// 	updateBattleHUD(player);
 		}
 	});
 

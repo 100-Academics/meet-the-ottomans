@@ -3,37 +3,18 @@ AppBase,
 Entity,
 Color,
 Vec3,
-Mouse,
 Keyboard,
-TouchDevice,
-createGraphicsDevice,
-AppOptions,
-RenderComponentSystem,
-CameraComponentSystem,
-ScriptComponentSystem,
-LightComponentSystem,
-CollisionComponentSystem,
-RigidBodyComponentSystem,
-TextureHandler,
-ContainerHandler,
-Asset,
-AssetListLoader,
-TEXTURETYPE_RGBP,
 Texture,
 StandardMaterial,
 MeshInstance,
-FILLMODE_FILL_WINDOW,
-RESOLUTION_AUTO,
-KEY_1,
-KEY_2,
 Mesh,
 SphereGeometry,
 CULLFACE_FRONT,
+KEY_1,
+KEY_2,
 } from "playcanvas";
 
-import { unloadAll } from "../../util/unloadall";
 import { loadModel } from "../../util/loadModel";
-import { waitForAmmoReady } from "../../util/spawnHelpers";
 import {
 createBattleHUD,
 removeBattleHUD,
@@ -51,25 +32,28 @@ ANACONDA_BOSS_SPAWN_POINT,
 ANACONDA_NPC_SPAWN_POINTS,
 } from "../npc/sceneNpcPresets";
 import { Mongol } from "../npc/troops/mongol";
-import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
+import { getScreenCenter } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
-import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
-
+import { bindVictoryCheck } from "../../util/victoryCheck";
+import {
+ensureBattleApp,
+enterBattleScene,
+loadBattleEnvAtlas,
+attachCollisionContactLogger,
+getRigidbodySystem,
+createBossSpawnState,
+spawnSceneBoss,
+} from "../../util/battleSceneSetup";
 
 const groundModelPath = "/world/battlefields/Shahikot.glb";
 
-var isBossSpawned = false;
-var isBossSpawning = false;
+const bossState = createBossSpawnState();
 
 function resetAnacondaBattleState(): void {
-  isBossSpawned = false;
-  isBossSpawning = false;
+  bossState.reset();
   Mongol.resetBattleState();
 }
-
-
 
 
 function createNightSkyTexture(device: AppBase['graphicsDevice'], width = 1024, height = 512): Texture {
@@ -392,75 +376,15 @@ _sceneNum: number,
 spawnPoint?: [number, number, number],
 ) {
 resetAnacondaBattleState();
-unloadAll(app);
-app.mouse?.off();
-app.keyboard?.off();
+const hiddenMap = enterBattleScene(app);
 if (!canvas) throw new Error("Canvas not found");
-const overlay = document.querySelector(".overlay") as HTMLElement | null;
-const hiddenMap = new Map<HTMLElement, string | null>();
-if (overlay) {
-const children = Array.from(overlay.children) as HTMLElement[];
-for (const child of children) {
-hiddenMap.set(child, child.style.display || null);
-child.style.display = "none";
-}
-}
-const hoverLabel = document.getElementById("battle-hover-label");
-if (hoverLabel) hoverLabel.style.display = "none";
-if (!app.graphicsDevice) {
-const device = await createGraphicsDevice(canvas);
-const createOptions = new AppOptions();
-createOptions.graphicsDevice = device;
-createOptions.mouse = new Mouse(document.body);
-createOptions.keyboard = new Keyboard(window);
-createOptions.touch = new TouchDevice(document.body);
-createOptions.componentSystems = [
-RenderComponentSystem,
-CameraComponentSystem,
-ScriptComponentSystem,
-LightComponentSystem,
-CollisionComponentSystem,
-RigidBodyComponentSystem,
-];
-createOptions.resourceHandlers = [TextureHandler, ContainerHandler];
-app.init(createOptions);
+await ensureBattleApp(canvas, app, hiddenMap);
 if (!app.keyboard) app.keyboard = new Keyboard(window);
-app.setCanvasFillMode(FILLMODE_FILL_WINDOW);
-app.setCanvasResolution(RESOLUTION_AUTO);
-const resize = () => app.resizeCanvas();
-window.addEventListener("resize", resize);
-app.once("destroy", () => {
-window.removeEventListener("resize", resize);
-for (const [el, prev] of hiddenMap.entries()) {
-if (prev === null) el.style.removeProperty("display");
-else el.style.display = prev;
-}
-});
-app.start();
-}
-if (!app.keyboard) app.keyboard = new Keyboard(window);
-const envAtlasAsset =
-app.assets.find("battle-env-atlas") ??
-new Asset(
-"battle-env-atlas",
-"texture",
-{ url: "/environment-map.png" },
-{ type: TEXTURETYPE_RGBP, mipmaps: false },
-);
-if (!app.assets.find("battle-env-atlas")) app.assets.add(envAtlasAsset);
-await new Promise<void>((resolve) => {
-if (envAtlasAsset.loaded) {
-resolve();
-return;
-}
-new AssetListLoader([envAtlasAsset], app.assets).load(() => resolve());
-});
-app.scene.envAtlas = envAtlasAsset.resource as Texture;
+await loadBattleEnvAtlas(app);
 const playerSpawn = new Vec3(...(spawnPoint ?? [0, 8, 8]));
 const player = new Player(app, playerSpawn);
 let respawnPosition = playerSpawn.clone();
 let respawnGroundY = 0;
-let battlefieldBounds: { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number } | undefined;
 player.setDeathQuizContext(7, () => {
 player.revive(respawnPosition);
 if (cameraController) cameraController.groundHeight = respawnGroundY;
@@ -481,6 +405,8 @@ if (cameraEntity.camera) {
 cameraEntity.camera.clearColor = new Color(0.01, 0.015, 0.03);
 cameraEntity.camera.clearColorBuffer = true;
 }
+
+let battlefieldBounds: { minX: number; maxX: number; minZ: number; maxZ: number; maxY: number } | undefined;
 try {
 const ground = await loadModel(groundModelPath, app, {
 rigidbodyType: "static",
@@ -513,9 +439,11 @@ console.error(
 );
 }
 
-// Give Ammo.js time to register collision bodies. PlayCanvas adds rigidbody/collision
-// components synchronously, but the underlying Ammo.js physics engine needs a render cycle
-// to process them into its internal world. We poll for up to ~2 seconds.
+// Give Ammo.js time to register collision bodies. PlayCanvas adds
+// rigidbody/collision components synchronously, but the underlying Ammo.js
+// physics engine needs a render cycle to process them into its world.
+const { waitForAmmoReady } = await import("../../util/spawnHelpers");
+const { getHighestGroundHitY, getRenderableBounds } = await import("../../util/battleSceneHelpers");
 await waitForAmmoReady(app, "ground");
 
 let spawnResolved = false;
@@ -579,52 +507,6 @@ console.log(
 );
 }
 if (!spawnResolved) {
-const spawnCandidates: Vec3[] = [];
-const spawnSearchRadius = 24;
-const spawnSearchStep = 8;
-for (
-let x = -spawnSearchRadius;
-x <= spawnSearchRadius;
-x += spawnSearchStep
-) {
-for (
-let z = -spawnSearchRadius;
-z <= spawnSearchRadius;
-z += spawnSearchStep
-) {
-spawnCandidates.push(new Vec3(x, 0, z));
-}
-}
-let bestSpawnCandidate: Vec3 | undefined;
-let bestSpawnGroundY: number | undefined;
-for (const candidate of spawnCandidates) {
-const hitY = getHighestGroundHitY(
-app,
-candidate.x,
-candidate.z,
-"ground",
-);
-if (hitY === undefined) continue;
-if (bestSpawnGroundY === undefined || hitY > bestSpawnGroundY) {
-bestSpawnGroundY = hitY;
-bestSpawnCandidate = candidate;
-}
-}
-if (bestSpawnCandidate && bestSpawnGroundY !== undefined) {
-const spawnY = bestSpawnGroundY + spawnSurfaceOffset;
-player.setPosition(
-new Vec3(bestSpawnCandidate.x, spawnY, bestSpawnCandidate.z),
-);
-respawnPosition = player.getPosition().clone();
-respawnGroundY = bestSpawnGroundY;
-if (cameraController) cameraController.groundHeight = bestSpawnGroundY;
-spawnResolved = true;
-console.log(
-`[Spawn] camera placed at (${bestSpawnCandidate.x.toFixed(2)}, ${spawnY.toFixed(2)}, ${bestSpawnCandidate.z.toFixed(2)}) from ground Y ${bestSpawnGroundY.toFixed(2)}`,
-);
-}
-}
-if (!spawnResolved) {
 console.warn(
 "[Spawn] No valid ground-tagged spawn hit found; keeping default camera position",
 );
@@ -635,23 +517,9 @@ addBattleSmokePlumes(app, ground.modelEntity, battlefieldBounds, respawnGroundY)
 console.error("[Ground] model load failed", error);
 addBattleSmokePlumes(app, undefined, battlefieldBounds, respawnGroundY);
 }
-const rigidbodySystem = (app.systems as any).rigidbody;
-if (rigidbodySystem && typeof rigidbodySystem.on === "function") {
-rigidbodySystem.on("contact", (contactResult: any) => {
-const posA = contactResult?.entityA?.getPosition?.();
-const posB = contactResult?.entityB?.getPosition?.();
-const nameA = contactResult?.entityA?.name ?? "?";
-const nameB = contactResult?.entityB?.name ?? "?";
-const contactPos = posA ?? posB;
-console.log(
-`[Collision Contact] "${nameA}" <-> "${nameB}" at (${contactPos?.x?.toFixed(2) ?? "?"}, ${contactPos?.y?.toFixed(2) ?? "?"}, ${contactPos?.z?.toFixed(2) ?? "?"})`,
-);
-});
-} else {
-console.warn(
-"[Collision] rigidbody system not available — contact logging disabled",
-);
-}
+
+attachCollisionContactLogger(app);
+const rigidbodySystem = getRigidbodySystem(app);
 
 app.scene.fog.type = 'none';
 
@@ -752,50 +620,23 @@ getRemainingFoes: () =>
 npcs.filter(
 (currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
 ).length,
-isBossSpawned: () => isBossSpawned,
+isBossSpawned: () => bossState.isSpawned(),
 onVictory: () => {
 removeBattleHUD();
 triggerVictory('Operation Anaconda', canvas, app);
 },
 spawnBoss: () => {
-spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+bossState.runBossSpawn(() =>
+  spawnSceneBoss({
+    app,
+    rigidbodySystem,
+    npcs,
+    spawnPoint: ANACONDA_BOSS_SPAWN_POINT,
+    bossOptions: DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS,
+    groundYFallback: respawnGroundY,
+    extraOptions: { groundProbeHeight: 5000, groundProbeDepth: 5000 },
+  }),
+).catch((err) => console.error(err));
 },
 });
-}
-
-async function spawnBoss(
-  app: AppBase,
-  rigidbodySystem: any,
-  npcs: npc[],
-  groundYFallback: number,
-): Promise<void> {
-  if (isBossSpawned || isBossSpawning) return;
-  isBossSpawning = true;
-  try {
-    const bossSpawnOptions = {
-      ...DEFAULT_BIN_LADIN_BOSS_SPAWN_OPTIONS,
-      groundYFallback,
-      playerSafeRadius: 0,
-      groundProbeHeight: 5000,
-      groundProbeDepth: 5000
-    };
-    const spawned = await spawnSceneNpcs(
-      app,
-      rigidbodySystem,
-      ANACONDA_BOSS_SPAWN_POINT,
-      bossSpawnOptions,
-    );
-    for (const s of spawned) {
-      npcs.push(s);
-      if (s instanceof Boss) {
-        s.drawHealthBar();
-        Boss.setActiveBoss(s);
-      }
-    }
-    isBossSpawned = bossActuallySpawned(spawned);
-  } catch (err) {
-    console.error("Failed to spawn boss:", err);
-  } finally {
-    isBossSpawning = false;
-  }
 }
