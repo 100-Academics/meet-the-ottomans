@@ -66,10 +66,10 @@ export function showCreditsScreen(options?: { onClose?: () => void }) {
     card.appendChild(section);
   };
 
-  addSection('Special Thanks', ['TBD']);
+  addSection('Special Thanks', ['Ms. Bond Lamberty']);
   addSection('Maps & Geography Data', ['Google Maps']);
-  addSection('Developers', ['TBD', 'TBD', 'TBD', 'TBD']);
-  addSection('Bonus Thanks', ['TBD', 'TBD']);
+  addSection('Developers', ['Jacen Cheskin', 'Kidus Getachew', 'Kelvin Zimmerman', 'Daniel Miranda']);
+  addSection('Bonus Thanks for continuing to work on the game', ['Jacen Cheskin', 'Daniel Miranda']);
 
   const btnRow = document.createElement('div');
   btnRow.className = 'btn-row';
