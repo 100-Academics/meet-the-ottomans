@@ -364,9 +364,9 @@ export async function spawnSceneNpcs(
             rotation: modelRotation,
             scale: modelScale
             };
-            if (spawn.type === "AirLadin") {
-                loadOptions.autoCollision = false;
-            }
+            // Air Ladin and every other NPC keeps the default collision
+            // body (autoCollision = true) so the physics-raycast hit-test
+            // in player/weapon/weapon.ts actually lands on them.
             const npcModel = await loadNpcModelWithFallback(app, modelPath, loadOptions);
         npcModel.modelEntity.tags.add("npc");
         if (spawn.yaw !== undefined && Number.isFinite(spawn.yaw)) {

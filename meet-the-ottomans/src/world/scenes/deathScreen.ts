@@ -179,4 +179,11 @@ export function isDeathScreenVisible(): boolean {
   return document.getElementById('death-screen') !== null;
 }
 
+// Expose the visibility check on globalThis so non-DOM code paths (like
+// FirstPersonCamera in player/ — which can't import this module without
+// creating a circular import through player.ts) can halt movement while
+// the quiz is up. Mirrors the deliberate globalThis bridge pattern used
+// between player.ts and util/devConsole.ts.
+(globalThis as any).__isDeathScreenVisible = isDeathScreenVisible;
+
 export default { showDeathScreen, hideDeathScreen };

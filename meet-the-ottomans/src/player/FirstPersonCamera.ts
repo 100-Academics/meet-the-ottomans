@@ -806,6 +806,23 @@ export class FirstPersonCamera extends ScriptType {
 
     update(dt: number) {
         const app = this.app;
+
+        // Pause the game while the death screen is up: no WASD / jump / dash /
+        // gravity / mouse-look. Prevents respawning somewhere the player
+        // "unknowingly" moved to while clicking through the quiz.
+        // NOTE: checked via globalThis to avoid a circular import between
+        // player/FirstPersonCamera.ts and world/scenes/deathScreen.ts.
+        const isDead = typeof (globalThis as any).__isDeathScreenVisible === 'function'
+            && (globalThis as any).__isDeathScreenVisible();
+        if (isDead) {
+            // Zero out velocity so nothing drifts, and lift the latch so held
+            // WASD doesn't retrigger jump/dash-edge events on revive.
+            this.velocity.set(0, 0, 0);
+            this.wasJumpHeld = true;
+            this.wasDashHeld = true;
+            return;
+        }
+
         const forward = this.entity.forward;
         const right = this.entity.right;
         
