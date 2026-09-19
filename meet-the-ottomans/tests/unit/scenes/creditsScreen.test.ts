@@ -40,8 +40,12 @@ describe('credits screen', () => {
     expect(text).toContain('Maps & Geography Data');
     expect(text).toContain('Google Maps');
     expect(text).toContain('Developers');
-    expect(text).toContain('Bonus Thanks');
-    expect(text).toContain('TBD');
+    expect(text).toContain('Bonus Thanks for continuing to work on the game');
+    expect(text).toContain('Jacen Cheskin');
+    expect(text).toContain('Daniel Miranda');
+    expect(text).toContain('Ms. Bond Lamberty');
+    expect(text).toContain('Kelvin Zimmerman');
+    expect(text).toContain('Kidus Getachew');
     // 1 special-thanks entry + 4 developer entries + 2 bonus-thanks entries = 7 TBDs
     expect(el.querySelectorAll('.credits-entry').length).toBe(8);
     expect(el.querySelectorAll('h2').length).toBe(4);
