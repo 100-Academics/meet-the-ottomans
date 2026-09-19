@@ -317,6 +317,17 @@ export class Christ extends Boss {
                 return;
             }
 
+            // Re-aim at the player's CURRENT position every frame so the beam
+            // visual and the damage ray always share the exact same endpoints.
+            // (Previously origin/target/beamEnd were frozen at fire time, so the
+            // beam rendered toward wherever the player used to be — the damage
+            // could land without the beam ever appearing to touch the player.)
+            if (nowMs >= state.windupEndMs) {
+                state.origin = this.getSpellOrigin(4.4);
+                state.targetPoint = this.getAimedTargetPosition(targetEntity);
+                state.beamEnd = this.calculateHolyRayEnd(state.origin, state.targetPoint);
+            }
+
             if (nowMs >= state.windupEndMs && !state.hasHit && this.isHitByRay(targetEntity, state.origin, state.beamEnd, this.holyRayHitRadius)) {
                 state.hasHit = true;
                 this.applyDamage(this.holyRayDamage);

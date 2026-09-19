@@ -48,6 +48,8 @@ import { applySphereHeightmap } from '../../../scripts/world/sphereHeightmap.js'
 import { applySphereTexture } from '../../../scripts/world/sphereTexture.js';
 import { unloadAll } from '../../util/unloadall';
 import { getSecretsFound, TOTAL_SECRETS_AVAILABLE } from '../secrets';
+import { isBattleComplete } from '../../util/battleProgress';
+import { bindSceneListener, registerSceneCleanup } from '../../util/sceneCleanup';
 
 //battles
 import { battleOfLegnicaScene } from "./battleOfLegnica";
@@ -449,6 +451,25 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
 
   const onClickWithCounter = (battle: Battle) => onClick(battle);
 
+  // First-visit tutorial: shown only until the player completes
+  // 'Battle of Legnica' (util/battleProgress localStorage). Mounts the hint
+  // card + pulsing 'START HERE' beacon pointing at the Legnica pin. The
+  // getters below are lazy because the sphere/camera/pin entities are only
+  // created later in this function — the tutorial's per-frame update reads
+  // them at runtime (bindSceneListener, so it dies on scene change).
+  let tutorialCamera: Entity | null = null;
+  let tutorialSphere: Entity | null = null;
+  let tutorialRenderForPeriod: ((timePeriod: number) => void) | null = null;
+  if (!isBattleComplete('Battle of Legnica')) {
+    showGlobeTutorial(
+      app,
+      battles,
+      () => tutorialCamera,
+      () => tutorialSphere,
+      () => tutorialRenderForPeriod,
+    );
+  }
+
 // Set up environment lighting (no skybox, just IBL)
 app.scene.envAtlas = assets.envAtlas.resource as Texture;
 app.scene.skyboxIntensity = 1;
@@ -484,6 +505,7 @@ const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
     meshInstances: [new MeshInstance(sphereMesh, material)]
   });
   app.root.addChild(sphere);
+  tutorialSphere = sphere;
 
   const starDome = new Entity('star-dome');
   const starMesh = Mesh.fromGeometry(app.graphicsDevice, new SphereGeometry({
@@ -507,6 +529,7 @@ const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   camera.setPosition(new Vec3(4, 1, 4));
   app.root.addChild(camera);
   camera.lookAt(sphere.getPosition());
+  tutorialCamera = camera;
 
 
   // Create a picker for mouse interaction
@@ -564,6 +587,9 @@ app.once('destroy', cleanupBriefingOverlay);
   });
 
   // Track battle entities for cleanup
+  // (function-scoped via let so the tutorial's lazy lookups can see them
+  // once the scene-body assignments run — assignments stay after overlay
+  // wiring, the tutorial mounts before them and reads lazily)
   let battleEntities: Entity[] = [];
   let battleMaterials: Map<Entity, StandardMaterial> = new Map();
   let entityToBattle: Map<Entity, Battle> = new Map();
@@ -858,7 +884,8 @@ app.once('destroy', cleanupBriefingOverlay);
         document.body.style.cursor = 'pointer';
         const battle = entityToBattle.get(intersectedEntity);
         if (battle) {
-          hoverLabel.textContent = battle.getName();
+          const startHere = battle.getName() === 'Battle of Legnica' && !isBattleComplete('Battle of Legnica');
+          hoverLabel.textContent = startHere ? `${battle.getName()} — Start here` : battle.getName();
           hoverLabel.style.left = (event.x + 12) + 'px';
           hoverLabel.style.top = (event.y + 12) + 'px';
           hoverLabel.style.display = 'block';
@@ -1019,6 +1046,7 @@ app.once('destroy', cleanupBriefingOverlay);
 
     console.log(`Rendered ${battleEntities.length} battles for period ${timePeriod}`);
   };
+  tutorialRenderForPeriod = renderBattlesForPeriod;
 
   // Initial render with selected time period
   let lastTimePeriod = selectedTimePeriod;
@@ -1046,6 +1074,170 @@ app.once('destroy', cleanupBriefingOverlay);
   sceneKeyedApp['__sceneCleanupHandlers'] = handlers;
 
   return renderBattlesForPeriod;
+}
+
+/**
+ * Tutorial overlay for first-time players on the globe map.
+ *
+ * Renders a fixed bottom card with the intro story, marker instructions and
+ * control basics; and a pulsing 'START HERE →' badge + beacon ring that is
+ * projected each frame from the Legnica battle marker's world position.
+ * The Legnica pin only exists after period 1 renders (pins are recreated
+ * whenever a time period is selected), so we force-render period 1 once.
+ * Dismissed by any click; never shown again once Legnica is complete.
+ */
+function showGlobeTutorial(
+  app: AppBase,
+  battles: Battle[],
+  getCamera: () => Entity | null,
+  getSphere: () => Entity | null,
+  getRenderForPeriod: () => ((timePeriod: number) => void) | null,
+): void {
+  if (typeof document === 'undefined') return;
+
+  const overlayEl = document.querySelector('.absolute.overlay') as HTMLElement | null;
+
+  // Hint card (bottom-center, dashed border, non-blocking layout-wise)
+  const hint = document.createElement('div');
+  hint.id = 'globe-tutorial';
+  hint.style.position = 'fixed';
+  hint.style.left = '50%';
+  hint.style.bottom = '110px';
+  hint.style.transform = 'translateX(-50%)';
+  hint.style.zIndex = '1200';
+  hint.style.background = 'rgba(0, 0, 0, 0.8)';
+  hint.style.border = '2px dashed rgba(255, 215, 0, 0.75)';
+  hint.style.borderRadius = '12px';
+  hint.style.padding = '14px 20px';
+  hint.style.color = '#f0e6c8';
+  hint.style.fontSize = '0.9rem';
+  hint.style.lineHeight = '1.5';
+  hint.style.maxWidth = 'min(560px, 90vw)';
+  hint.style.textAlign = 'center';
+  hint.style.cursor = 'pointer';
+  hint.style.pointerEvents = 'auto';
+  hint.innerHTML = [
+    '<div style="font-size:1.05rem;color:#ffd700;font-weight:bold;margin-bottom:6px">Welcome, time traveler</div>',
+    '<div>You are Bob Jefferson, the last descendant of Suleiman the Magnificent — travel back in time and fight through history.</div>',
+    '<div>Click a battle marker to fight. Start with the highlighted one below.</div>',
+    '<div style="margin-top:6px;color:#b8c4d8"><b>Controls:</b> WASD move · mouse look · left-click attack · 1 / 2 switch weapons · space jump</div>',
+    '<div style="margin-top:8px;color:#ffd700;font-size:0.8rem">Click anywhere to dismiss</div>',
+  ].join('');
+
+  // 'START HERE →' badge anchored over the Legnica pin
+  const badge = document.createElement('div');
+  badge.id = 'legnica-start-badge';
+  badge.textContent = 'START HERE →';
+  badge.style.position = 'fixed';
+  badge.style.zIndex = '1201';
+  badge.style.pointerEvents = 'none';
+  badge.style.color = '#ffd700';
+  badge.style.fontWeight = 'bold';
+  badge.style.fontSize = '0.85rem';
+  badge.style.textShadow = '0 0 8px rgba(0,0,0,0.9), 0 0 12px rgba(255,215,0,0.6)';
+  badge.style.whiteSpace = 'nowrap';
+  badge.style.display = 'none';
+
+  // Pulsing ring at the marker position
+  const ring = document.createElement('div');
+  ring.id = 'legnica-beacon';
+  ring.style.position = 'fixed';
+  ring.style.zIndex = '1200';
+  ring.style.pointerEvents = 'none';
+  ring.style.width = '36px';
+  ring.style.height = '36px';
+  ring.style.borderRadius = '50%';
+  ring.style.border = '3px solid rgba(255, 215, 0, 0.9)';
+  ring.style.boxShadow = '0 0 18px rgba(255, 215, 0, 0.7)';
+  ring.style.display = 'none';
+
+  (overlayEl ?? document.body).appendChild(hint);
+  document.body.appendChild(badge);
+  document.body.appendChild(ring);
+
+  const legnica = battles.find((b) => b.getName() === 'Battle of Legnica');
+  let legnicaEntity: Entity | null = null;
+  const projected = new Vec3();
+  let elapsed = 0;
+  let initialized = false;
+
+  const findLegnicaEntity = (): Entity | null => {
+    const sphere = getSphere();
+    if (!sphere) return null;
+    if (legnicaEntity && sphere.children.includes(legnicaEntity)) return legnicaEntity;
+    legnicaEntity = null;
+    if (!legnica) return null;
+    for (const child of sphere.children) {
+      if (child instanceof Entity && child.name === legnica.getName()) {
+        legnicaEntity = child;
+        break;
+      }
+    }
+    return legnicaEntity;
+  };
+
+  const detachUpdate = bindSceneListener(app, 'update', (dt: number) => {
+    elapsed += dt;
+    if (!initialized) {
+      initialized = true;
+      // The Legnica pin only exists once period 1 has been rendered; the map
+      // boots with no period selected, so render it explicitly on first tick.
+      const render = getRenderForPeriod();
+      if (render) render(1);
+    }
+    const cam = getCamera()?.camera;
+    const target = findLegnicaEntity();
+    if (!cam || !target) {
+      badge.style.display = 'none';
+      ring.style.display = 'none';
+      return;
+    }
+    const worldPos = target.getPosition();
+    cam.worldToScreen(worldPos, projected);
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (projected.z <= 0 || projected.x < -40 || projected.x > w + 40 || projected.y < -40 || projected.y > h + 40) {
+      badge.style.display = 'none';
+      ring.style.display = 'none';
+      return;
+    }
+    // Pulse: ring throb + gentle badge offset drift
+    const pulse = 0.5 + 0.5 * Math.sin(elapsed * 4.5);
+    const scale = 1 + pulse * 0.35;
+    ring.style.display = 'block';
+    ring.style.left = `${projected.x - 18}px`;
+    ring.style.top = `${projected.y - 18}px`;
+    ring.style.transform = `scale(${scale})`;
+    ring.style.opacity = `${0.55 + pulse * 0.45}`;
+    badge.style.display = 'block';
+    badge.style.left = `${projected.x + 22}px`;
+    badge.style.top = `${projected.y - 14 - pulse * 6}px`;
+  });
+
+  let dismissed = false;
+  const dismiss = () => {
+    if (dismissed) return;
+    dismissed = true;
+    detachUpdate();
+    detachers.forEach((fn) => fn());
+    hint.remove();
+    badge.remove();
+    ring.remove();
+  };
+
+  const detachers: Array<() => void> = [];
+  const addDismissListener = (target: unknown, type: string, listener: (e: Event) => void) => {
+    if (!target || typeof (target as { addEventListener?: unknown }).addEventListener !== 'function') return;
+    const t = target as { addEventListener: Function; removeEventListener: Function };
+    t.addEventListener(type, listener);
+    detachers.push(() => t.removeEventListener(type, listener));
+  };
+  addDismissListener(window, 'mousedown', dismiss);
+  addDismissListener(window, 'keydown', dismiss);
+  addDismissListener(hint, 'click', dismiss);
+
+  // Guaranteed teardown on scene change even if a listener path is missed.
+  registerSceneCleanup(app, dismiss);
 }
 
 export { defaultScene };

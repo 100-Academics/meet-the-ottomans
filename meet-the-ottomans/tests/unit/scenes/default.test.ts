@@ -15,6 +15,7 @@ vi.spyOn(AssetListLoader.prototype, 'load').mockImplementation(function (this: a
 
 const { defaultScene } = await import('../../../src/world/scenes/default');
 const { setSecretsFound, resetSecretsFound, TOTAL_SECRETS_AVAILABLE } = await import('../../../src/world/secrets');
+const { markBattleComplete, resetBattleProgress } = await import('../../../src/util/battleProgress');
 
 const STORAGE_KEYS = ['meetTheOttomans.battleProgress', 'meetTheOttomans.secretsFound'];
 
@@ -84,6 +85,7 @@ describe('defaultScene time-period wiring', () => {
     for (const k of STORAGE_KEYS) savedStorage[k] = window.localStorage.getItem(k);
     window.localStorage.clear();
     resetSecretsFound();
+    resetBattleProgress();
   });
 
   afterEach(() => {
@@ -94,6 +96,7 @@ describe('defaultScene time-period wiring', () => {
     }
     window.localStorage.clear();
     resetSecretsFound();
+    resetBattleProgress();
   });
 
   it('renders period buttons 1-7 plus the period-8 gate button', async () => {
@@ -146,6 +149,26 @@ describe('defaultScene time-period wiring', () => {
     // handlers array should have been populated (resize cleanup etc.)
     // — we can't reach the app stub here, so assert indirectly: no throw.
     expect(true).toBe(true);
+  });
+
+  it('shows the globe tutorial overlay when Legnica is NOT complete', async () => {
+    resetBattleProgress();
+    await boot();
+    expect(document.getElementById('globe-tutorial')).not.toBeNull();
+    expect(document.getElementById('legnica-start-badge')?.textContent).toContain('START HERE');
+    expect(document.getElementById('legnica-beacon')).not.toBeNull();
+    const hint = document.getElementById('globe-tutorial') as HTMLElement;
+    expect(hint.textContent).toContain('Bob Jefferson');
+    expect(hint.textContent).toContain('Click a battle marker');
+    expect(hint.textContent).toContain('WASD');
+  });
+
+  it('does NOT show the tutorial once Legnica is complete', async () => {
+    markBattleComplete('Battle of Legnica');
+    await boot();
+    expect(document.getElementById('globe-tutorial')).toBeNull();
+    expect(document.getElementById('legnica-start-badge')).toBeNull();
+    expect(document.getElementById('legnica-beacon')).toBeNull();
   });
 });
 

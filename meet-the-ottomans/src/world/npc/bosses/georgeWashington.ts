@@ -28,6 +28,9 @@ interface ValleyForgeState {
     endTimeSeconds: number;
     nextBlastAtSeconds: number;
     blastsSpawned: number;
+    centerX: number;
+    centerY: number;
+    centerZ: number;
 }
 
 interface CannonBarrageState {
@@ -385,6 +388,7 @@ export class GeorgeWashington extends Boss {
             const holdMs = 150;
             const totalMs = riseMs + holdMs;
 
+            let hitPlayer = false;
             const tick = () => {
                 const elapsed = Date.now() - startMs;
                 if (elapsed >= totalMs || !monument.parent) { this.destroyEffect(monument); return; }
@@ -398,16 +402,21 @@ export class GeorgeWashington extends Boss {
                     mat.opacity = 0.9 * (1 - (elapsed - riseMs) / holdMs);
                     mat.update();
                 }
+                // Damage is evaluated when the column erupts, not when the
+                // attack starts — the old code checked once at spawn time, so
+                // any player movement (or firing latency) silently zeroed it.
+                if (!hitPlayer && elapsed >= riseMs) {
+                    const p = target.getPosition();
+                    const pdx = p.x - pos.x;
+                    const pdz = p.z - pos.z;
+                    if (Math.sqrt(pdx * pdx + pdz * pdz) <= this.monumentHitRadius) {
+                        hitPlayer = true;
+                        this.applyDamage(this.monumentDamage, onAttack);
+                    }
+                }
                 requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
-
-            const targetPos = target.getPosition();
-            const dx = targetPos.x - pos.x;
-            const dz = targetPos.z - pos.z;
-            if (Math.sqrt(dx * dx + dz * dz) <= this.monumentHitRadius) {
-                this.applyDamage(this.monumentDamage, onAttack);
-            }
         }
 
         if (now >= state.endTimeSeconds) {
@@ -475,14 +484,22 @@ export class GeorgeWashington extends Boss {
     }
 
     // ── Valley Forge Winter ──
-    private startValleyForge(_target: Entity, now: number): void {
+    private startValleyForge(target: Entity, now: number): void {
         this.lastAttackType = "valleyForge";
         this.lastAttackAtSeconds = now;
 
+        // Blast ring centres on the PLAYER's current position, not the boss's —
+        // centring on the boss meant the blasts (radius 12–20 around the boss)
+        // could only ever hit a player standing on top of Washington, so the
+        // attack effectively dealt ~0 damage at its intended range.
+        const targetPos = target.getPosition();
         this.valleyForgeState = {
             endTimeSeconds: now + this.valleyForgeBlastCount * this.valleyForgeIntervalSeconds + 0.8,
             nextBlastAtSeconds: now,
-            blastsSpawned: 0
+            blastsSpawned: 0,
+            centerX: targetPos.x,
+            centerY: targetPos.y,
+            centerZ: targetPos.z
         };
         this.attackLockUntilSeconds = this.valleyForgeState.endTimeSeconds;
     }
@@ -500,11 +517,11 @@ export class GeorgeWashington extends Boss {
             state.nextBlastAtSeconds = now + this.valleyForgeIntervalSeconds;
 
             const angle = (state.blastsSpawned / this.valleyForgeBlastCount) * Math.PI * 2;
-            const radius = 12 + Math.random() * 8;
+            const radius = 4 + Math.random() * 10;
             const blastPos = new Vec3(
-                myPos.x + Math.cos(angle) * radius,
-                myPos.y,
-                myPos.z + Math.sin(angle) * radius
+                state.centerX + Math.cos(angle) * radius,
+                state.centerY,
+                state.centerZ + Math.sin(angle) * radius
             );
 
             const blast = new Entity("washington-valley-forge-blast");
@@ -620,11 +637,24 @@ export class GeorgeWashington extends Boss {
             );
             const startMs = Date.now();
             const durationMs = 1200;
+            let hitPlayer = false;
             const tick = () => {
                 const elapsed = Date.now() - startMs;
                 if (elapsed >= durationMs || !cannonball.parent) {
                     this.spawnCannonExplosion(cannonball.getPosition(), onAttack);
                     this.destroyEffect(cannonball);
+                    // Detonation check: player position vs the impact point at the
+                    // moment the shell lands (the old code checked once at launch,
+                    // when the shell was still 80 units away — always a miss).
+                    if (!hitPlayer) {
+                        const p = target.getPosition();
+                        const pdx = p.x - targetGroundPos.x;
+                        const pdz = p.z - targetGroundPos.z;
+                        if (Math.sqrt(pdx * pdx + pdz * pdz) <= this.cannonHitRadius) {
+                            hitPlayer = true;
+                            this.applyDamage(this.cannonDamage, onAttack);
+                        }
+                    }
                     return;
                 }
                 const t = elapsed / durationMs;
@@ -637,12 +667,6 @@ export class GeorgeWashington extends Boss {
                 requestAnimationFrame(tick);
             };
             requestAnimationFrame(tick);
-
-            const dx = targetPos.x - targetGroundPos.x;
-            const dz = targetPos.z - targetGroundPos.z;
-            if (Math.sqrt(dx * dx + dz * dz) <= this.cannonHitRadius) {
-                this.applyDamage(this.cannonDamage, onAttack);
-            }
         }
 
         if (now >= state.endTimeSeconds) {
@@ -710,8 +734,10 @@ export class GeorgeWashington extends Boss {
     private destroyEffect(entity: Entity | null | undefined): void {
         if (!entity) return;
         this.activeEffects.delete(entity);
-        if (entity.parent) entity.parent.removeChild(entity);
-        entity.destroy();
+        try {
+            if (entity.parent) entity.parent.removeChild(entity);
+            entity.destroy();
+        } catch { /* */ }
     }
 
     private cleanupEffects(): void {

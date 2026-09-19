@@ -44,7 +44,7 @@ import { bindNpcCombatLoop, spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sc
 import { AIN_JALUT_BOSS_SPAWN_POINT, AIN_JALUT_NPC_SPAWN_POINTS, DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS } from "../npc/sceneNpcPresets";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
-import { bindSceneListener } from "../../util/sceneCleanup";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 
 
 const groundModelPath = '/world/battlefields/AinJalut.glb';
@@ -109,7 +109,8 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: Array<Awaited
   try {
     const bossSpawnOptions = {
       ...DEFAULT_KING_GESER_BOSS_SPAWN_OPTIONS,
-      groundYFallback
+      groundYFallback,
+      playerSafeRadius: 0,
     };
     const spawned = await spawnSceneNpcs(app, rigidbodySystem, AIN_JALUT_BOSS_SPAWN_POINT, bossSpawnOptions);
     for (const spawnedNpc of spawned) {
@@ -119,7 +120,7 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: Array<Awaited
         Boss.setActiveBoss(spawnedNpc);
       }
     }
-    isBossSpawned = true;
+    isBossSpawned = bossActuallySpawned(spawned);
   } catch (error) {
     console.error('Failed to spawn Ain Jalut boss:', error);
   } finally {
@@ -546,28 +547,19 @@ await waitForAmmoReady(app, "ground");
     }
   });
 
-  let victoryHandled = false;
-  const victoryCheck = () => {
-    if (isDeathScreenVisible()) {
-      return;
-    }
-
-    if (victoryHandled) {
-      return;
-    }
-
-    const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-    if (remainingFoes.length === 0) {
-      if (!isBossSpawned) {
-        spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
-        return;
-      }
-
+  bindVictoryCheck(app, {
+    isDeathScreenVisible,
+    getRemainingFoes: () =>
+      npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive()).length,
+    isBossSpawned: () => isBossSpawned,
+    onVictory: () => {
       removeBattleHUD();
-      victoryHandled = true;
       triggerVictory('Battle of Ain Jalut', canvas, app);
-    }
-  };
+    },
+    spawnBoss: () => {
+      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+    },
+  });
 
-  bindSceneListener(app, 'update', victoryCheck);
+
 }

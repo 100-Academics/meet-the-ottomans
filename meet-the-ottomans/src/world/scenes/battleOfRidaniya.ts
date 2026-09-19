@@ -45,6 +45,7 @@ import { Secret, pickSecretPosition } from "../secrets";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
+import { bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = '/world/battlefields/Ridaniya.glb';
 
@@ -428,7 +429,7 @@ await waitForAmmoReady(app, "ground");
 		// All Mamluks down — Baybars arrives as reinforcement.
 		if (!baybarsSpawned && !remainingFoes.some((f) => !(f instanceof Boss))) {
 			baybarsSpawned = true;
-			const bossSpawnOptions = { ...DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
+			const bossSpawnOptions = { ...DEFAULT_BAYBARS_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY, playerSafeRadius: 0 };
 			const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, RIDANIYA_BOSS_SPAWN_POINT, bossSpawnOptions);
 			for (const boss of bossNpcs) {
 				npcs.push(boss);
@@ -436,6 +437,12 @@ await waitForAmmoReady(app, "ground");
 					boss.drawHealthBar();
 					Boss.setActiveBoss(boss);
 				}
+			}
+			// Spawns can return empty (playerSafeRadius skip, load failure) —
+			// unlocking the victory gate then would auto-win with no Baybars.
+			if (!bossActuallySpawned(bossNpcs)) {
+				baybarsSpawned = false;
+				return;
 			}
 			baybarsSpawnFrame = 0; // require grace period before victory can trigger
 			console.log('[NPC] Baybars has entered the battle!');

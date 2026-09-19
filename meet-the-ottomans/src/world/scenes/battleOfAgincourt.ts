@@ -48,6 +48,7 @@ import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = '/world/battlefields/Agincourt.glb';
 
@@ -60,7 +61,8 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
   try {
     const bossSpawnOptions = {
       ...DEFAULT_WILLIAM_BOSS_SPAWN_OPTIONS,
-      groundYFallback
+      groundYFallback,
+      playerSafeRadius: 0,
     };
     const spawned = await spawnSceneNpcs(app, rigidbodySystem, AGINCOURT_BOSS_SPAWN_POINT, bossSpawnOptions);
     for (const s of spawned) {
@@ -70,7 +72,7 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
         Boss.setActiveBoss(s);
       }
     }
-    isBossSpawned = true;
+    isBossSpawned = bossActuallySpawned(spawned);
   } catch (err) {
     console.error('Failed to spawn boss:', err);
   } finally {
@@ -508,27 +510,20 @@ export async function battleOfAgincourtScene(
 
 });
 
-  let victoryHandled = false;
-  const victoryCheck = () => {
-    if (isDeathScreenVisible()) {
-      return;
-    }
-
-    if (victoryHandled) {
-      return;
-    }
-
-    const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-    if (remainingFoes.length === 0 && isBossSpawned) {
-      victoryHandled = true;
+  bindVictoryCheck(app, {
+    isDeathScreenVisible,
+    getRemainingFoes: () =>
+      npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive()).length,
+    isBossSpawned: () => isBossSpawned,
+    onVictory: () => {
       removeBattleHUD();
       triggerVictory('Battle of Agincourt', canvas, app);
-    }
-    else if (remainingFoes.length === 0 && !isBossSpawned) {
+    },
+    spawnBoss: () => {
       // spawn the boss asynchronously
       spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
-    }
-  };
+    },
+  });
 
-  bindSceneListener(app, 'update', victoryCheck);
+
 }

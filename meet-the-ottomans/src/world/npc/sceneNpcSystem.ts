@@ -81,7 +81,7 @@ export interface NpcSceneSpawnOptions extends NpcSpawnOverrides {
  typeSpawnOverrides?: Record<string, NpcSpawnOverrides>;
  groundProbeHeight?: number;
  groundProbeDepth?: number;
- /** If provided, foe NPCs that would spawn within this horizontal distance of the player are skipped. */
+ /** If provided, foe NPCs that would spawn within this horizontal distance of the player are skipped. Pass 0 for boss spawns — bosses must always appear (the victory flow depends on them). */
  playerSafeRadius?: number;
  /** Called for each spawn point to check the player's current position. Required when playerSafeRadius is set. */
  getPlayerPosition?: () => Vec3;

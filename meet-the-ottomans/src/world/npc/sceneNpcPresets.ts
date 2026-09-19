@@ -922,23 +922,25 @@ export const VERDUN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 ];
 export const VERDUN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "napoleon" }];
 
-// Yorktown
+// Yorktown — player spawns near the battlefield center (getRenderableBounds center
+// fallback is (0,?,0)); keep troop spawns >= ~12 units away from (0,0) so the
+// player is not ambushed from spawn.
 export const YORKTOWN_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
-  { id: 1, team: "foe", x: 14.14, z: -14.14, type: YORKTOWN_ENEMY_TYPE },
-  { id: 2, team: "foe", x: 18, z: -12, type: YORKTOWN_ENEMY_TYPE },
-  { id: 3, team: "foe", x: 24, z: -12, type: YORKTOWN_ENEMY_TYPE },
-  { id: 4, team: "foe", x: 30, z: -12, type: YORKTOWN_ENEMY_TYPE },
-  { id: 5, team: "foe", x: 36, z: -12, type: YORKTOWN_ENEMY_TYPE },
-  { id: 6, team: "foe", x: 14.14, z: -18.14, type: YORKTOWN_ENEMY_TYPE },
-  { id: 7, team: "foe", x: 18, z: -18, type: YORKTOWN_ENEMY_TYPE },
-  { id: 8, team: "foe", x: 24, z: -18, type: YORKTOWN_ENEMY_TYPE },
-  { id: 9, team: "foe", x: 30, z: -18, type: YORKTOWN_ENEMY_TYPE },
-  { id: 10, team: "foe", x: 36, z: -18, type: YORKTOWN_ENEMY_TYPE },
-  { id: 11, team: "foe", x: 14.14, z: -22.14, type: YORKTOWN_ENEMY_TYPE },
-  { id: 12, team: "foe", x: 18, z: -24, type: YORKTOWN_ENEMY_TYPE },
-  { id: 13, team: "foe", x: 24, z: -24, type: YORKTOWN_ENEMY_TYPE },
-  { id: 14, team: "foe", x: 30, z: -24, type: YORKTOWN_ENEMY_TYPE },
-  { id: 15, team: "foe", x: 36, z: -24, type: YORKTOWN_ENEMY_TYPE },
+  { id: 1, team: "foe", x: 20, z: -14, type: YORKTOWN_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 26, z: -10, type: YORKTOWN_ENEMY_TYPE },
+  { id: 3, team: "foe", x: 32, z: -14, type: YORKTOWN_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 38, z: -10, type: YORKTOWN_ENEMY_TYPE },
+  { id: 5, team: "foe", x: 44, z: -14, type: YORKTOWN_ENEMY_TYPE },
+  { id: 6, team: "foe", x: 20, z: -20, type: YORKTOWN_ENEMY_TYPE },
+  { id: 7, team: "foe", x: 26, z: -20, type: YORKTOWN_ENEMY_TYPE },
+  { id: 8, team: "foe", x: 32, z: -20, type: YORKTOWN_ENEMY_TYPE },
+  { id: 9, team: "foe", x: 38, z: -20, type: YORKTOWN_ENEMY_TYPE },
+  { id: 10, team: "foe", x: 44, z: -20, type: YORKTOWN_ENEMY_TYPE },
+  { id: 11, team: "foe", x: 20, z: -26, type: YORKTOWN_ENEMY_TYPE },
+  { id: 12, team: "foe", x: 26, z: -28, type: YORKTOWN_ENEMY_TYPE },
+  { id: 13, team: "foe", x: 32, z: -28, type: YORKTOWN_ENEMY_TYPE },
+  { id: 14, team: "foe", x: 38, z: -28, type: YORKTOWN_ENEMY_TYPE },
+  { id: 15, team: "foe", x: 44, z: -28, type: YORKTOWN_ENEMY_TYPE },
 ];
 export const YORKTOWN_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 1500, type: "georgeWashington" }];
 

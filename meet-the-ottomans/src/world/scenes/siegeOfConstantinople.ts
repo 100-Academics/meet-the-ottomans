@@ -47,6 +47,7 @@ import { triggerVictory } from "../../App";
 import { Smoke } from "../doSmoke";
 import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
+import { bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = '/world/battlefields/Constantinople.glb';
 
@@ -749,8 +750,8 @@ export async function siegeOfConstantinopleScene(
 					Boss.setActiveBoss(spawnedNpc);
 				}
 			}
-			spawnedWaveFoes += CONSTANTINOPLE_BOSS_SPAWN_POINT.length;
-			isBossSpawned = true;
+			spawnedWaveFoes += spawned.length;
+			isBossSpawned = bossActuallySpawned(spawned);
 		} catch (error) {
 			console.error('[NPC] Failed to spawn Constantinople boss', error);
 		} finally {
@@ -886,6 +887,11 @@ export async function siegeOfConstantinopleScene(
 		if (remainingFoes.length === 0) {
 			if (currentWaveIndex + 1 < waveSpawnPoints.length) {
 				spawnNextWave();
+				return;
+			}
+
+			if (isBossSpawning) {
+				// Boss spawn in flight — wait for it; never auto-win while it resolves.
 				return;
 			}
 

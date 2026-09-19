@@ -55,6 +55,7 @@ import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter } from "../../util/battleSceneHelpers";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = "/world/battlefields/Arnon.glb";
 
@@ -181,9 +182,50 @@ export async function operationArnonScene(
       position: new Vec3(0, 0, 0),
       rotation: new Vec3(0, 0, 0),
       scale: new Vec3(1, 1, 1),
+      tagCollisionMeshes: "ground",
     });
     ground.modelEntity.name = "ground";
     ground.modelEntity.tags.add("ground");
+    // Arnon.glb keeps its render mesh on a child of the loaded root, so the
+    // root itself may get no collider. Ground raycasts look for the
+    // "ground" tag by walking UP from the entity they hit — if the only
+    // tagged node is this meshless root, nothing is ever found and the
+    // player falls forever. Guarantee a tagged, collidable floor: when no
+    // descendant picked up a collision mesh, add a static box plane under
+    // the scene spanning the rendered bounds (or a generous default).
+    const anyCollider =
+      !!ground.modelEntity.collision ||
+      ((ground.modelEntity.children as Entity[]).some((c) => c.collision) ||
+        (() => {
+          let found = false;
+          const stack: Entity[] = [...(ground.modelEntity.children as Entity[])];
+          while (stack.length > 0) {
+            const node = stack.pop() as Entity;
+            if (node.collision) { found = true; break; }
+            stack.push(...(node.children as Entity[]));
+          }
+          return found;
+        })());
+    if (!anyCollider) {
+      console.warn(
+        "[Ground] Arnon.glb produced NO colliders — adding a tagged box floor so ground raycasts still work",
+      );
+      const anyBounds = getRenderableBounds(ground.modelEntity);
+      const halfX = anyBounds ? Math.max(20, (anyBounds.maxX - anyBounds.minX) * 0.5) : 250;
+      const halfZ = anyBounds ? Math.max(20, (anyBounds.maxZ - anyBounds.minZ) * 0.5) : 250;
+      const centerX = anyBounds ? (anyBounds.minX + anyBounds.maxX) * 0.5 : 0;
+      const centerZ = anyBounds ? (anyBounds.minZ + anyBounds.maxZ) * 0.5 : 0;
+      const floorY = anyBounds ? anyBounds.minY - 0.5 : -0.5;
+      const floor = new Entity("arnon-floor-fallback");
+      floor.addComponent("collision", {
+        type: "box",
+        halfExtents: new Vec3(halfX, 0.5, halfZ),
+      });
+      floor.addComponent("rigidbody", { type: "static" });
+      floor.setPosition(centerX, floorY, centerZ);
+      floor.tags.add("ground");
+      app.root.addChild(floor);
+    }
     const groundRb = ground.modelEntity.rigidbody;
     const groundCol = ground.modelEntity.collision;
     const childColliders = (ground.modelEntity.children as Entity[]).filter(
@@ -383,24 +425,19 @@ export async function operationArnonScene(
       );
     },
   });
-  let victoryHandled = false;
-  const victoryCheck = () => {
-    if (isDeathScreenVisible()) return;
-    if (victoryHandled) return;
-    const remainingFoes = npcs.filter(
-      (currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
-    );
-    if (remainingFoes.length === 0 && isBossSpawned) {
-      victoryHandled = true;
+  bindVictoryCheck(app, {
+    isDeathScreenVisible,
+    getRemainingFoes: () =>
+      npcs.filter((n) => n.getTeam() === "foe" && n.isAlive()).length,
+    isBossSpawned: () => isBossSpawned,
+    onVictory: () => {
       removeBattleHUD();
       triggerVictory('Operation Arnon', canvas, app);
-    } else if (remainingFoes.length === 0 && !isBossSpawned) {
-      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
-        console.error(err),
-      );
-    }
-  };
-  app.on("update", victoryCheck);
+    },
+    spawnBoss: () => {
+      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+    },
+  });
 }
 
 async function spawnBoss(
@@ -415,6 +452,7 @@ async function spawnBoss(
     const bossSpawnOptions = {
       ...DEFAULT_MOSES_BOSS_SPAWN_OPTIONS,
       groundYFallback,
+      playerSafeRadius: 0,
     };
     const spawned = await spawnSceneNpcs(
       app,
@@ -429,7 +467,7 @@ async function spawnBoss(
         Boss.setActiveBoss(s);
       }
     }
-    isBossSpawned = true;
+    isBossSpawned = bossActuallySpawned(spawned);
   } catch (err) {
     console.error("Failed to spawn boss:", err);
   } finally {

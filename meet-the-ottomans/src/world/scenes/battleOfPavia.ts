@@ -45,6 +45,7 @@ import { Secret, pickSecretPosition } from "../secrets";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
+import { bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = '/world/battlefields/Pavia.glb';
 
@@ -499,7 +500,7 @@ const victoryCheck = async () => {
   // All Italian soldiers down — Caesar arrives as reinforcement.
   if (!caesarSpawned && !remainingFoes.some((f) => !(f instanceof Boss))) {
     caesarSpawned = true;
-    const bossSpawnOptions = { ...DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY };
+    const bossSpawnOptions = { ...DEFAULT_CAESAR_BOSS_SPAWN_OPTIONS, groundYFallback: respawnGroundY, playerSafeRadius: 0 };
     const bossNpcs = await spawnSceneNpcs(app, rigidbodySystem, PAVIA_BOSS_SPAWN_POINT, bossSpawnOptions);
     for (const boss of bossNpcs) {
       npcs.push(boss);
@@ -507,6 +508,12 @@ const victoryCheck = async () => {
         boss.drawHealthBar();
         Boss.setActiveBoss(boss);
       }
+    }
+    // The spawn can be skipped entirely (playerSafeRadius, load failure) —
+    // unlock the victory gate only when Caesar actually entered the field.
+    if (!bossActuallySpawned(bossNpcs)) {
+      caesarSpawned = false;
+      return;
     }
     caesarSpawnFrame = 0;
     console.log('[NPC] Caesar has entered the battle!');

@@ -36,6 +36,7 @@ export class WingedHussarBoss extends Boss {
 	private readonly rayStormIntervalSeconds = 0.15;
 	private readonly rayStormCooldownSeconds = 8.0;
 	private readonly rayStormRange = 30;
+	private readonly rayStormHitRadius = 8;
 	private nextRayStormAtSeconds = 0;
 
 	// ── Summon Hoard ──
@@ -75,6 +76,9 @@ export class WingedHussarBoss extends Boss {
 		super(id, maxHealth, entity, "Winged Hussar Hoard");
 		this.aiConfig.chaseMoveSpeed = PLAYER_MOVE_SPEED * 1.2;
 		this.aiConfig.idleMoveSpeed = PLAYER_MOVE_SPEED * 0.7;
+		// Mounted boss: generous base melee reach so the player doesn't have to
+		// stand directly under the horse to trade blows.
+		this.aiConfig.attackRange = 5.5;
 
 		this.setIntroTaunt("Skrzydłasi atakują!", "Winged Hussars attack!");
 		this.setIntroNameTranslation("Husarska Horda", "Winged Hussar Hoard");
@@ -337,9 +341,12 @@ export class WingedHussarBoss extends Boss {
 		requestAnimationFrame(tick);
 
 		const dx = targetPos.x - rayPos.x;
+		const dy = targetPos.y - rayPos.y;
 		const dz = targetPos.z - rayPos.z;
 		const distance = Math.sqrt(dx * dx + dz * dz);
-		if (distance <= 3.0) {
+		// Generous vertical tolerance so a mounted boss's rays can hit a player
+		// who is slightly elevated (jumping / standing on terrain bumps).
+		if (distance <= this.rayStormHitRadius && Math.abs(dy) <= 6) {
 			this.applyDamage(this.rayStormDamage, onAttack);
 		}
 	}

@@ -35,6 +35,7 @@ import { unloadAll } from '../../util/unloadall';
 import { loadModel } from '../../util/loadModel';
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
 import { bindSceneListener } from "../../util/sceneCleanup";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 import { isDeathScreenVisible } from './deathScreen';
 
 // @ts-expect-error - PlayCanvas ESM scripts don't have type declarations
@@ -47,7 +48,6 @@ import { DEFAULT_BATTLE_NPC_SPAWN_OPTIONS, DEFAULT_KHAN_BOSS_SPAWN_OPTIONS, LEGN
 import { Mongol } from "../npc/troops/mongol";
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
-import { DevConsole } from "../../util/devConsole";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter, type RenderableBounds } from "../../util/battleSceneHelpers";
 import { Secret, pickSecretPosition } from "../secrets";
 
@@ -62,7 +62,8 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
   try {
     const bossSpawnOptions = {
       ...DEFAULT_KHAN_BOSS_SPAWN_OPTIONS,
-      groundYFallback
+      groundYFallback,
+      playerSafeRadius: 0,
     };
     const spawned = await spawnSceneNpcs(app, rigidbodySystem, LEGNICA_BOSS_SPAWN_POINT, bossSpawnOptions);
     for (const s of spawned) {
@@ -72,7 +73,7 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
         Boss.setActiveBoss(s);
       }
     }
-    isBossSpawned = true;
+    isBossSpawned = bossActuallySpawned(spawned);
   } catch (err) {
     console.error('Failed to spawn boss:', err);
   } finally {
@@ -502,27 +503,20 @@ export async function battleOfLegnicaScene(
     }
   });
 
-  let victoryHandled = false;
-  const victoryCheck = () => {
-    if (isDeathScreenVisible()) {
-      return;
-    }
-
-    if (victoryHandled) {
-      return;
-    }
-
-    const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-    if (remainingFoes.length === 0 && isBossSpawned && !DevConsole._roundLock) {
-      victoryHandled = true;
+  bindVictoryCheck(app, {
+    isDeathScreenVisible,
+    getRemainingFoes: () =>
+      npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive()).length,
+    isBossSpawned: () => isBossSpawned,
+    onVictory: () => {
       removeBattleHUD();
       triggerVictory('Battle of Legnica', canvas, app);
-    }
-    else if (remainingFoes.length === 0 && !isBossSpawned) {
+    },
+    spawnBoss: () => {
       // spawn the boss asynchronously
       spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
-    }
-  };
+    },
+  });
 
-  bindSceneListener(app, 'update', victoryCheck);
+
 }

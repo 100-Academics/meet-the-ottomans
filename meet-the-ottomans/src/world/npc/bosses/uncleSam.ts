@@ -34,16 +34,19 @@ export class UncleSam extends Boss {
 	private readonly dashRange = 35;
 	private readonly dashDamage = 20;
 	private readonly dashHitRadius = 10.0;
+	private readonly dashVerticalTolerance = 6;
 
 	private readonly fireballSpeed = 35;
 	private readonly fireballCooldownSeconds = 3.0;
 	private readonly fireballRange = 100;
 	private readonly fireballDamage = 15;
 	private readonly fireballRadius = 20.0;
+	private readonly fireballVerticalTolerance = 8;
 
 	private readonly groundSlamCooldownSeconds = 2.0;
 	private readonly groundSlamGlowDurationSeconds = 10.0;
-	private readonly groundSlamDamageDelaySeconds = 2.5;
+	private readonly groundSlamDamageDelaySeconds = 1.6;
+	private readonly groundSlamDamageWindowSeconds = 1.2;
 	private readonly groundSlamRadius = 25.0;
 	private readonly groundSlamDamage = 30;
 
@@ -205,7 +208,8 @@ public override updateCombatAI(
 
 		this.moveToward(state.direction.x, state.direction.z, this.dashSpeed, dt);
 
-		if (!state.hasHit && this.getFlatDistanceTo(target) <= this.dashHitRadius) {
+		if (!state.hasHit && this.getFlatDistanceTo(target) <= this.dashHitRadius
+			&& Math.abs(target.getPosition().y - this.getEntity().getPosition().y) <= this.dashVerticalTolerance) {
 			state.hasHit = true;
 			this.applyDamage(this.dashDamage, onAttack);
 		}
@@ -280,9 +284,10 @@ public override updateCombatAI(
 		const fireballPos = state.fireballEntity.getPosition();
 		const targetPos = target.getPosition();
 		const dx = targetPos.x - fireballPos.x;
+		const dy = targetPos.y - fireballPos.y;
 		const dz = targetPos.z - fireballPos.z;
 		const distance = Math.sqrt(dx * dx + dz * dz);
-		return distance <= this.fireballRadius + 1.5;
+		return distance <= this.fireballRadius + 1.5 && Math.abs(dy) <= this.fireballVerticalTolerance;
 	}
 
 	// ── Ground slam attack ──
@@ -311,10 +316,17 @@ public override updateCombatAI(
 		const targetPos = target.getPosition();
 		this.moveToward(targetPos.x - myPos.x, targetPos.z - myPos.z, this.aiConfig.chaseMoveSpeed, dt);
 
+		// Damage is checked every frame across a short window after the delay
+		// instead of at a single instant — the old one-shot check meant a player
+		// who was even briefly outside the 25-unit circle on the triggering frame
+		// (the common case at long range) took 0 damage from the giant circle.
 		if (!state.hasDealtDamage && now >= state.damageTimeSeconds) {
-			state.hasDealtDamage = true;
 			if (this.checkPlayerInGlowArea(target, state.glowPosition, state.glowRadius)) {
+				state.hasDealtDamage = true;
 				this.applyDamage(this.groundSlamDamage, onAttack);
+			} else if (now >= state.damageTimeSeconds + this.groundSlamDamageWindowSeconds) {
+				// Window elapsed without a hit — stop checking.
+				state.hasDealtDamage = true;
 			}
 		}
 

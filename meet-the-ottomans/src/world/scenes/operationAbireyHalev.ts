@@ -50,6 +50,7 @@ import {
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, getScreenCenter, createStarfieldTexture } from "../../util/battleSceneHelpers";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = "/world/battlefields/Suez.glb";
 
@@ -348,25 +349,21 @@ const npcSpawnOptions = {
       );
     },
   });
-  let victoryHandled = false;
-  const victoryCheck = () => {
-    if (isDeathScreenVisible()) return;
-    if (victoryHandled) return;
-    const remainingFoes = npcs.filter(
-      (currentNpc) =>
-        currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
-    );
-    if (remainingFoes.length === 0 && isBossSpawned) {
-      victoryHandled = true;
+  bindVictoryCheck(app, {
+    isDeathScreenVisible,
+    getRemainingFoes: () =>
+      npcs.filter(
+        (currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
+      ).length,
+    isBossSpawned: () => isBossSpawned,
+    onVictory: () => {
       removeBattleHUD();
       triggerVictory('Operation Abirey-Halev', canvas, app);
-    } else if (remainingFoes.length === 0 && !isBossSpawned) {
-      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
-        console.error(err),
-      );
-    }
-  };
-app.on("update", victoryCheck);
+    },
+    spawnBoss: () => {
+      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+    },
+  });
 app.scene.ambientLight = new Color(0.2, 0.2, 0.2);
   if (app.systems.light) {
     const light = new Entity("directional-light");
@@ -393,6 +390,8 @@ async function spawnBoss(
     const bossSpawnOptions = {
       ...DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
       groundYFallback,
+      // Bosses must always spawn even if the player stands on the point.
+      playerSafeRadius: 0,
     };
     // Spawn Cain and Abel as TWO separate bosses
     const cainSpawnPoint = ABIREY_HALEV_BOSS_SPAWN_POINT.map(p => ({
@@ -430,7 +429,7 @@ async function spawnBoss(
         Boss.setActiveBoss(s);
       }
     }
-    isBossSpawned = true;
+    isBossSpawned = bossActuallySpawned(allSpawned);
   } catch (err) {
     console.error("Failed to spawn boss:", err);
   } finally {

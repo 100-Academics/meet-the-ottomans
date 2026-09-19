@@ -32,7 +32,7 @@ import {
 	import { loadModel } from '../../util/loadModel'
 import { waitForAmmoReady } from "../../util/spawnHelpers";
 import { getHighestGroundHitY, getRenderableBounds, getScreenCenter } from "../../util/battleSceneHelpers";
-import { bindSceneListener } from "../../util/sceneCleanup";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 	import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
 	import { isDeathScreenVisible } from './deathScreen';
 
@@ -364,8 +364,11 @@ await waitForAmmoReady(app, "ground");
 
       const spawnedJoan = await spawnSceneNpcs(app, rigidbodySystem, joanSpawnPoints, npcSpawnOptions);
       npcs.push(...spawnedJoan);
-      joanSpawned = true;
-      if (spawnedJoan.length === 0) {
+      // Zero spawned foes means the boss isn't on the field — leave the
+      // flag false so the victory check keeps retrying instead of
+      // auto-winning with no Joan present.
+      joanSpawned = bossActuallySpawned(spawnedJoan);
+      if (!joanSpawned) {
         console.warn('[NPC] Joan of Arc spawn returned no NPCs.');
       }
       for (const spawned of spawnedJoan) {
@@ -449,27 +452,19 @@ await waitForAmmoReady(app, "ground");
 			}
 		});
 
-		let victoryHandled = false;
-		const victoryCheck = () => {
-			if (isDeathScreenVisible()) {
-				return;
-			}
+		bindVictoryCheck(app, {
+		  isDeathScreenVisible,
+		  getRemainingFoes: () =>
+		    npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive()).length,
+		  isBossSpawned: () => joanSpawned,
+		  onVictory: () => {
+		    removeBattleHUD();
+		    triggerVictory('Siege of Orléans', canvas, app);
+		  },
+		  spawnBoss: () => {
+		    spawnJoanOfArc().catch((error) => console.error(error));
+		  },
+		});
 
-			if (victoryHandled) {
-				return;
-			}
 
-			const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-			if (remainingFoes.length === 0) {
-				if (!joanSpawned) {
-					spawnJoanOfArc().catch((error) => console.error(error));
-					return;
-				}
-				removeBattleHUD();
-				victoryHandled = true;
-				triggerVictory('Siege of Orléans', canvas, app);
-			}
-		};
-
-		bindSceneListener(app, 'update', victoryCheck);
 	}

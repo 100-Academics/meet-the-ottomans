@@ -2,6 +2,7 @@ import { AppBase } from "playcanvas";
 import { Battle } from '../Battle';
 import { defaultScene } from './default';
 import { showTitleCard } from "./titleCard";
+import { showCreditsScreen } from "./creditsScreen";
 
 type IntroSlide = {
   title: string;
@@ -84,6 +85,7 @@ async function titleScreen(
         <button id="intro-prev" class="btn ghost">Back</button>
         <button id="intro-next" class="btn">Next</button>
         <button id="intro-skip" class="btn ghost">Skip</button>
+        <button id="intro-credits" class="btn ghost">Credits</button>
         <button id="start-btn" class="btn primary">Start Campaign</button>
       </div>
       <div class="intro-progress" id="intro-progress"></div>
@@ -108,6 +110,7 @@ async function titleScreen(
   const nextBtn = introWrap.querySelector('#intro-next') as HTMLButtonElement | null;
   const skipBtn = introWrap.querySelector('#intro-skip') as HTMLButtonElement | null;
   const startBtn = introWrap.querySelector('#start-btn') as HTMLButtonElement | null;
+  const creditsBtn = introWrap.querySelector('#intro-credits') as HTMLButtonElement | null;
 
   let currentSlide = 0;
   let typingToken: { canceled: boolean } | null = null;
@@ -228,6 +231,9 @@ async function titleScreen(
 
     skipBtn?.addEventListener('click', start, { once: true });
     startBtn?.addEventListener('click', start, { once: true });
+    creditsBtn?.addEventListener('click', () => {
+      showCreditsScreen();
+    });
 
     void renderSlide(0);
   });

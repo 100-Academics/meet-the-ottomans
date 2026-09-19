@@ -47,6 +47,7 @@ import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter } from "../../util/battleSceneHelpers";
 import { bindSceneListener } from "../../util/sceneCleanup";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 
 const groundModelPath = '/world/battlefields/Vienna.glb';
 
@@ -60,6 +61,7 @@ async function spawnBoss(app: AppBase, rigidbodySystem: any, npcs: npc[], ground
 const bossSpawnOptions = {
       ...DEFAULT_WINGED_HUSSAR_BOSS_SPAWN_OPTIONS,
       groundYFallback,
+      playerSafeRadius: 0,
       groundProbeHeight: 500,
       groundProbeDepth: 500
     };
@@ -71,7 +73,7 @@ const bossSpawnOptions = {
 				Boss.setActiveBoss(s);
 			}
 		}
-		isBossSpawned = true;
+		isBossSpawned = bossActuallySpawned(spawned);
 	} catch (err) {
 		console.error('Failed to spawn boss:', err);
 	} finally {
@@ -484,28 +486,21 @@ const npcSpawnOptions = {
 		}
 	});
 
-	let victoryHandled = false;
-	const victoryCheck = () => {
-		if (isDeathScreenVisible()) {
-			return;
-		}
+	bindVictoryCheck(app, {
+	  isDeathScreenVisible,
+	  getRemainingFoes: () =>
+	    npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive()).length,
+	  isBossSpawned: () => isBossSpawned,
+	  onVictory: () => {
+	    removeBattleHUD();
+	    triggerVictory('Siege of Vienna', canvas, app);
+	  },
+	  spawnBoss: () => {
+	    // spawn the boss asynchronously
+	    spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+	  },
+	});
 
-		if (victoryHandled) {
-			return;
-		}
 
-		const remainingFoes = npcs.filter((currentNpc) => currentNpc.getTeam() === 'foe' && currentNpc.isAlive());
-		if (remainingFoes.length === 0 && isBossSpawned) {
-			victoryHandled = true;
-			removeBattleHUD();
-			triggerVictory('Siege of Vienna', canvas, app);
-		}
-		else if (remainingFoes.length === 0 && !isBossSpawned) {
-			// spawn the boss asynchronously
-			spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
-		}
-	};
-
-	bindSceneListener(app, 'update', victoryCheck);
 }
 

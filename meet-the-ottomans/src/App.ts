@@ -29,6 +29,7 @@ import { titleScreen } from "./world/scenes/titleSceen.ts";
 import { loadAmmo } from "./ammo.js";
 import { hideDeathScreen, showDeathScreen } from "./world/scenes/deathScreen.ts";
 import { hideVictoryScreen, showVictoryScreen } from "./world/scenes/victoryScreen.ts";
+import { hideCreditsScreen } from "./world/scenes/creditsScreen.ts";
 import { hideEndGameScreen, showEndGameScreen } from "./world/scenes/endGameScreen.ts";
 import { Boss } from "./world/npc/bosses/boss.ts";
 import { unloadAll } from "./util/unloadall.ts";
@@ -116,6 +117,7 @@ export async function changeScene(
  // Clear transient UI and runtime listeners so a scene switch starts clean.
   hideDeathScreen();
   hideVictoryScreen();
+  hideCreditsScreen();
   hideEndGameScreen();
   removeBattleHUD();
   Boss.setActiveBoss(null);

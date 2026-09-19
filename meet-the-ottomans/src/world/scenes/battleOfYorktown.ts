@@ -53,6 +53,7 @@ import {
 import { npc } from "../npc/npc";
 import { triggerVictory } from "../../App";
 import { getHighestGroundHitY, getRenderableBounds, createStarfieldTexture, getScreenCenter } from "../../util/battleSceneHelpers";
+import { bindVictoryCheck, bossActuallySpawned } from "../../util/victoryCheck";
 
 // @ts-ignore
 function resetYorktownBattleState(): void {
@@ -383,24 +384,19 @@ export async function battleOfYorktownScene(
       );
     },
   });
-  let victoryHandled = false;
-  const victoryCheck = () => {
-    if (isDeathScreenVisible()) return;
-    if (victoryHandled) return;
-    const remainingFoes = npcs.filter(
-      (currentNpc) => currentNpc.getTeam() === "foe" && currentNpc.isAlive(),
-    );
-    if (remainingFoes.length === 0 && isBossSpawned) {
-      victoryHandled = true;
+  bindVictoryCheck(app, {
+    isDeathScreenVisible,
+    getRemainingFoes: () =>
+      npcs.filter((n) => n.getTeam() === "foe" && n.isAlive()).length,
+    isBossSpawned: () => isBossSpawned,
+    onVictory: () => {
       removeBattleHUD();
       triggerVictory('Battle of Yorktown', canvas, app);
-    } else if (remainingFoes.length === 0 && !isBossSpawned) {
-      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) =>
-        console.error(err),
-      );
-    }
-  };
-  app.on("update", victoryCheck);
+    },
+    spawnBoss: () => {
+      spawnBoss(app, rigidbodySystem, npcs, respawnGroundY).catch((err) => console.error(err));
+    },
+  });
 }
 
 async function spawnBoss(
@@ -415,6 +411,7 @@ async function spawnBoss(
     const bossSpawnOptions = {
       ...DEFAULT_GEORGE_BOSS_SPAWN_OPTIONS,
       groundYFallback,
+      playerSafeRadius: 0,
     };
     const spawned = await spawnSceneNpcs(
       app,
@@ -429,7 +426,7 @@ async function spawnBoss(
         Boss.setActiveBoss(s);
       }
     }
-    isBossSpawned = true;
+    isBossSpawned = bossActuallySpawned(spawned);
   } catch (err) {
     console.error("Failed to spawn boss:", err);
   } finally {

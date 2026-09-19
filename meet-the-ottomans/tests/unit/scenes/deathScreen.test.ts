@@ -164,6 +164,21 @@ describe('death screen', () => {
     expect(document.querySelector('.death-message')?.textContent).toBe('Custom doom text');
   });
 
+  it('Return to Map button calls onMainMenu after surviving the quiz', () => {
+    const onMainMenu = vi.fn();
+    showDeathScreen({ onMainMenu });
+    clickCorrectAnswer();
+    clickCorrectAnswer();
+    clickCorrectAnswer();
+    const buttons = Array.from(
+      document.querySelectorAll<HTMLButtonElement>('.death-actions .death-btn'),
+    );
+    const mapBtn = buttons.find((b) => b.textContent === 'Return to Map');
+    expect(mapBtn, '"Return to Map" button should be rendered').toBeTruthy();
+    mapBtn!.click();
+    expect(onMainMenu).toHaveBeenCalledTimes(1);
+  });
+
   it('falls back to the full quiz pool when no period matches', () => {
     questionSpy.mockReturnValueOnce(null as any);
     showDeathScreen({ timePeriod: 999 });

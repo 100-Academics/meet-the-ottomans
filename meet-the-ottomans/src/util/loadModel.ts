@@ -90,6 +90,18 @@ export interface LoadModelOptions {
   position?: Vec3 | [number, number, number];
   rotation?: Vec3 | [number, number, number];
   scale?: Vec3 | [number, number, number];
+  /**
+   * Tag every entity that produced a collision mesh (e.g. "ground").
+   * Loading a terrain .glb only seizes the ROOT with a tag in battle
+   * scenes — ground raycasts (getHighestGroundHitY, sampleGroundHeight)
+   * check the tag through the hierarchy of the entity they hit, which is
+   * the auto-generated mesh CHILD of a compound collider, so parents
+   * don't help. When a battlefield's root ends up with no mesh of its
+   * own (observed with Arnon.glb: the mesh sits on a child node) the
+   * child is what the raycast hits, and it must carry the tag itself or
+   * the player falls through the floor.
+   */
+  tagCollisionMeshes?: string;
 }
 
 function toVec3(value?: Vec3 | [number, number, number]): Vec3 | undefined {
@@ -220,6 +232,24 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
             });
           } catch (error) {
             console.warn(`Collision setup failed for "${modelEntity.name}"`, error);
+          }
+        }
+
+        // Tag mesh-bearing descendants after collision was applied so
+        // exactly the entities the physics raycast can hit also report
+        // the tag (see LoadModelOptions.tagCollisionMeshes).
+        if (options.tagCollisionMeshes) {
+          const tag = options.tagCollisionMeshes;
+          modelEntity.tags.add(tag);
+          const stack: any[] = [...(modelEntity.children ?? [])];
+          while (stack.length > 0) {
+            const node = stack.pop();
+            if (node?.tags && node?.collision) {
+              node.tags.add(tag);
+            }
+            if (node?.children) {
+              stack.push(...node.children);
+            }
           }
         }
 
