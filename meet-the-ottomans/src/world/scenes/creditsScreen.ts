@@ -68,7 +68,7 @@ export function showCreditsScreen(options?: { onClose?: () => void }) {
 
   addSection('Special Thanks', ['Ms. Bond Lamberty']);
   addSection('Maps & Geography Data', ['Google Maps']);
-  addSection('Developers', ['Jacen Cheskin', 'Kidus Getachew', 'Kelvin Zimmerman', 'Daniel Miranda']);
+  addSection('Developers', ['Jacen Cheskin', 'Daniel Miranda', 'Kelvin Zimmerman', 'Kidus Getachew']);
   addSection('Bonus Thanks for continuing to work on the game', ['Jacen Cheskin', 'Daniel Miranda']);
 
   const btnRow = document.createElement('div');
