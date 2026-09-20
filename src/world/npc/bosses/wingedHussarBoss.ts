@@ -35,8 +35,8 @@ export class WingedHussarBoss extends Boss {
 	private readonly rayStormCount = 10;
 	private readonly rayStormIntervalSeconds = 0.15;
 	private readonly rayStormCooldownSeconds = 8.0;
-	private readonly rayStormRange = 30;
-	private readonly rayStormHitRadius = 8;
+	private readonly rayStormRange = 45;
+	private readonly rayStormHitRadius = 14;
 	private nextRayStormAtSeconds = 0;
 
 	// ── Summon Hoard ──
@@ -230,7 +230,7 @@ export class WingedHussarBoss extends Boss {
 		const state = this.hoardChargeState;
 		if (!state) return;
 
-		if (!state.hasHit && this.getFlatDistanceTo(target) <= 8) {
+		if (!state.hasHit && this.getFlatDistanceTo(target) <= 12) {
 			state.hasHit = true;
 			this.applyDamage(this.hoardChargeDamage, onAttack);
 		}
@@ -317,7 +317,7 @@ export class WingedHussarBoss extends Boss {
 
 		const rayBeam = new Entity("hoard-ray-beam");
 		rayBeam.addComponent("render", { type: "cylinder", material: this.rayStormMaterial });
-		rayBeam.setLocalScale(0.5, 8.0, 0.5);
+		rayBeam.setLocalScale(1.2, 8.0, 1.2);
 		rayBeam.setPosition(rayPos.x, rayPos.y + 4, rayPos.z);
 		sceneApp.root.addChild(rayBeam);
 		this.activeEffects.add(rayBeam);

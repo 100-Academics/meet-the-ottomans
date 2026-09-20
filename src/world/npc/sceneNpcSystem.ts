@@ -29,6 +29,7 @@ import { CainAndAbel } from "./bosses/cainAndAbel";
 import { KingGeorgeIII } from "./bosses/kingGeorgeIII";
 import { Lenin } from "./bosses/lenin";
 import { Stalin } from "./bosses/stalin";
+import { Moses } from "./bosses/moses";
 import { TowerBoss } from "./bosses/towerBoss";
 import { BinLadin } from "./bosses/binLaden";
 import { AirLadin } from "./bosses/airLaden";
@@ -614,6 +615,14 @@ export async function spawnSceneNpcs(
     } else if (spawn.type === "stalin") {
       console.log(`Spawning Stalin Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
       const boss = new Stalin(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
+      boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      boss.setHitboxRadius(hitboxRadius);
+      boss.drawHealthBar();
+      Boss.setActiveBoss(boss);
+      npcs.push(boss);
+    } else if (spawn.type === "moses") {
+      console.log(`Spawning Moses Boss NPC with ID ${spawn.id} at (${spawn.x}, ${spawn.z})`);
+      const boss = new Moses(spawn.id, spawn.maxHealth ?? 500, npcModel.modelEntity);
       boss.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
       boss.setHitboxRadius(hitboxRadius);
       boss.drawHealthBar();

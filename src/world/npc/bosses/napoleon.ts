@@ -853,10 +853,8 @@ export class Napoleon extends Boss {
   private directionToQuaternionFromUp(dir: Vec3): { x: number; y: number; z: number; w: number } {
     const up = dir.clone().normalize();
     const forwardSeed = Math.abs(up.y) > 0.99 ? new Vec3(1, 0, 0) : new Vec3(0, 0, 1);
-    const right = new Vec3();
-    forwardSeed.clone().cross(up, right).normalize();
-    const forward = new Vec3();
-    up.clone().cross(right, forward).normalize();
+    const right = new Vec3().cross(forwardSeed, up).normalize();
+        const forward = new Vec3().cross(up, right).normalize();
     return this.matrixToQuat(right, up, forward);
   }
 
