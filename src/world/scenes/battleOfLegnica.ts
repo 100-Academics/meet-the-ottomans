@@ -120,7 +120,10 @@ export async function battleOfLegnicaScene(
     modelPath: "models/jar.glb",
     position: secretPosition,
     scale: new Vec3(0.5, 0.5, 0.5),
-    rotation: new Vec3(0, 0, 0)
+    rotation: new Vec3(0, 0, 0),
+    // Tutorial level: walking over the jar collects it — new players shouldn't
+    // have to guess that secrets are click-to-grab.
+    proximityRadius: 2.0
   });
   await secret.spawn();
 

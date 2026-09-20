@@ -33,6 +33,11 @@ export function startBattleTutorial(app: AppBase, player: TutorialPlayer): void 
   let moved = false, bowEquipped = false, swordReequipped = false, attacked = false;
   const onAttack = () => { attacked = true; };
   app.mouse?.on('mousedown', onAttack);
+  // Keydown-based movement detection — more reliable than position deltas
+  // (which can miss quick taps or be eaten by pointer-lock edge cases).
+  const moveKeys = new Set(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+  const onMoveKey = (e: KeyboardEvent) => { if (moveKeys.has(e.code)) moved = true; };
+  window.addEventListener('keydown', onMoveKey);
   const weaponIs = (frag: string) => player.getEquippedWeaponName().toLowerCase().includes(frag);
 
   const steps: Step[] = [
@@ -50,6 +55,16 @@ export function startBattleTutorial(app: AppBase, player: TutorialPlayer): void 
 
   let stepIndex = 0, finished = false, finishAt = 0;
   const detach = bindSceneListener(app, 'update', () => {
+    // Self-terminate if the battle scene was torn down without running cleanup
+    // (globe→battle doesn't run changeScene, so generation/cleanup don't fire).
+    const hudAlive = !!document.getElementById('battle-hud');
+    const inBattle = !!player.getPosition(); // player throws if entity destroyed below
+    void inBattle;
+    if (!hudAlive) {
+      selfDestruct();
+      detach();
+      return;
+    }
     if (finished) {
       if (Date.now() >= finishAt) { try { card.remove(); } catch { /* noop */ } detach(); }
       return;
@@ -64,8 +79,10 @@ export function startBattleTutorial(app: AppBase, player: TutorialPlayer): void 
     }
   });
 
-  registerSceneCleanup(app, () => {
+  const selfDestruct = () => {
     try { card.remove(); } catch { /* noop */ }
     try { app.mouse?.off('mousedown', onAttack); } catch { /* noop */ }
-  });
+    try { window.removeEventListener('keydown', onMoveKey); } catch { /* noop */ }
+  };
+  registerSceneCleanup(app, selfDestruct);
 }

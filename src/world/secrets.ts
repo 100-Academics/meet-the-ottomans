@@ -125,6 +125,9 @@ export interface SecretOptions {
     hitboxRadius?: number;
     // Player must be within this distance to collect on click.
     maxClickRange?: number;
+    // If set (> 0), walking within this distance of the secret collects it
+    // automatically — no click needed. 0 (default) = click-only.
+    proximityRadius?: number;
 }
 
 // ── Secret ──
@@ -156,6 +159,8 @@ export class Secret {
     private readonly rotation: Vec3 | undefined;
     private readonly hitboxRadius: number;
     private readonly maxClickRange: number;
+    private readonly proximityRadius: number;
+    private proximityBound: (() => void) | null = null;
 
     private model: Model | null = null;
     private collected = false;
@@ -170,6 +175,7 @@ export class Secret {
         this.rotation = options.rotation?.clone();
         this.hitboxRadius = options.hitboxRadius ?? 1.5;
         this.maxClickRange = options.maxClickRange ?? 12;
+        this.proximityRadius = options.proximityRadius ?? 0;
     }
 
     // Load the .glb model into the scene and start listening for clicks.
@@ -188,6 +194,7 @@ export class Secret {
         });
 
         this.attachClickListener();
+        this.attachProximityCollect();
     }
 
     public isCollected(): boolean {
@@ -198,6 +205,7 @@ export class Secret {
     // removed it). Idempotent — safe to call more than once.
     public dispose(): void {
         this.detachClickListener();
+        this.detachProximityCollect();
         if (this.model?.modelEntity) {
             this.model.modelEntity.destroy();
         }
@@ -220,6 +228,30 @@ export class Secret {
         if (this.onMouseDown) {
             this.app.mouse?.off('mousedown', this.onMouseDown);
             this.onMouseDown = null;
+        }
+    }
+
+    // Walk-over pickup: per-frame distance check, self-detaches on collect.
+    // Uses raw app.on('update') — the app's scene-generation wrapper lives in
+    // util/sceneCleanup and layering it here would couple secrets to the scene
+    // system; instead the loop guards on `collected` and model liveness.
+    private attachProximityCollect(): void {
+        if (this.proximityRadius <= 0) return;
+        const onUpdate = () => {
+            if (this.collected) return;
+            const camPos = this.cameraEntity.getPosition();
+            if (camPos.distance(this.position) <= this.proximityRadius) {
+                this.collect();
+            }
+        };
+        this.proximityBound = onUpdate;
+        this.app.on('update', onUpdate);
+    }
+
+    private detachProximityCollect(): void {
+        if (this.proximityBound) {
+            this.app.off('update', this.proximityBound);
+            this.proximityBound = null;
         }
     }
 

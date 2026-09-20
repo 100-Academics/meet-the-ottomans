@@ -482,7 +482,19 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
 // Set up environment lighting (no skybox, just IBL)
 app.scene.envAtlas = assets.envAtlas.resource as Texture;
 app.scene.skyboxIntensity = 1;
-app.scene.ambientLight = new Color(0, 0, 0);
+app.scene.ambientLight = new Color(0.35, 0.38, 0.45);
+
+  // Key light so the globe's diffuse texture actually reads — this scene has no
+  // other light sources, and IBL alone leaves the sphere nearly black.
+  const sunLight = new Entity('globe-sun');
+  sunLight.addComponent('light', {
+    type: 'directional',
+    color: new Color(1, 1, 1),
+    intensity: 1.2,
+    castShadows: false
+  });
+  sunLight.setLocalEulerAngles(35, 120, 0);
+  app.root.addChild(sunLight);
 const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   if (skyboxLayer) {
     skyboxLayer.enabled = true;
@@ -892,11 +904,19 @@ app.once('destroy', cleanupBriefingOverlay);
     }
     
     checkBattleIntersection(event.x, event.y).then((intersectedEntity) => {
-      // Reset previously hovered entity color
+      // Reset previously hovered entity color (locked markers re-dim, they
+      // never return to full beam brightness while the tutorial is active)
       if (hoveredBattle && hoveredBattle !== intersectedEntity) {
         const material = battleMaterials.get(hoveredBattle);
         if (material) {
-          setBeamHighlight(material, false);
+          const prev = entityToBattle.get(hoveredBattle);
+          if (tutorialActive && prev && prev.getName() !== 'Battle of Legnica') {
+            material.emissiveIntensity = 0.4;
+            material.opacity = 0.35;
+            material.update();
+          } else {
+            setBeamHighlight(material, false);
+          }
         }
       }
 
