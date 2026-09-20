@@ -453,21 +453,30 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
 
   // First-visit tutorial: shown only until the player completes
   // 'Battle of Legnica' (util/battleProgress localStorage). Mounts the hint
-  // card + pulsing 'START HERE' beacon pointing at the Legnica pin. The
-  // getters below are lazy because the sphere/camera/pin entities are only
-  // created later in this function — the tutorial's per-frame update reads
-  // them at runtime (bindSceneListener, so it dies on scene change).
+  // card + pulsing 'START HERE' beacon pointing at the Legnica pin. While the
+  // tutorial is active the player is locked into period 1: the other time
+  // period buttons and all non-Legnica battle markers refuse interaction, so
+  // the first level IS the tutorial.
   let tutorialCamera: Entity | null = null;
   let tutorialSphere: Entity | null = null;
   let tutorialRenderForPeriod: ((timePeriod: number) => void) | null = null;
-  if (!isBattleComplete('Battle of Legnica')) {
-    showGlobeTutorial(
-      app,
-      battles,
-      () => tutorialCamera,
-      () => tutorialSphere,
-      () => tutorialRenderForPeriod,
-    );
+  const tutorialActive = !isBattleComplete('Battle of Legnica');
+  if (tutorialActive) {
+    selectedTimePeriod = 1;
+    // Lock period navigation while the tutorial is active — the player must
+    // finish the tutorial battle (Legnica) before exploring other periods.
+    timePeriodButtons.forEach((btn, index) => {
+      if (btn && index !== 0) {
+        btn.disabled = true;
+        btn.title = 'Finish the tutorial battle first (Battle of Legnica)';
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+      }
+    });
+    // Update the period pill text so it doesn't say "select a time period".
+    if (timePeriodText) {
+      timePeriodText.textContent = 'Tutorial: complete the highlighted battle to unlock time travel.';
+    }
   }
 
 // Set up environment lighting (no skybox, just IBL)
@@ -530,6 +539,23 @@ const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   app.root.addChild(camera);
   camera.lookAt(sphere.getPosition());
   tutorialCamera = camera;
+
+  // Mount the tutorial AFTER sphere/camera exist. The texture is awaited below
+  // (before the first period render) so the globe never paints black, and the
+  // beacon's pins are child cylinders of the already-textured sphere.
+  if (tutorialActive) {
+    showGlobeTutorial(
+      app,
+      battles,
+      () => tutorialCamera,
+      () => tutorialSphere,
+      () => tutorialRenderForPeriod,
+    );
+  }
+
+  // Apply the Earth's texture before the tutorial pins render — otherwise the
+  // sphere's first paint is the untextured black material.
+  await applySphereTexture(sphere, textureUrl, device);
 
 
   // Create a picker for mouse interaction
@@ -877,8 +903,10 @@ app.once('destroy', cleanupBriefingOverlay);
       // Update hovered entity
       if (intersectedEntity) {
         hoveredBattle = intersectedEntity;
+        const hoveredBattleData = entityToBattle.get(intersectedEntity);
+        const lockedByTutorial = tutorialActive && hoveredBattleData?.getName() !== 'Battle of Legnica';
         const material = battleMaterials.get(intersectedEntity);
-        if (material) {
+        if (material && !lockedByTutorial) {
           setBeamHighlight(material, true);
         }
         document.body.style.cursor = 'pointer';
@@ -907,6 +935,17 @@ app.once('destroy', cleanupBriefingOverlay);
 
       const battle = entityToBattle.get(intersectedEntity);
       if (!battle) return;
+
+      // Tutorial gate: until Legnica is complete, only Legnica may be started.
+      if (tutorialActive && battle.getName() !== 'Battle of Legnica') {
+        hoverLabel.textContent = 'Locked — finish the Battle of Legnica first';
+        hoverLabel.style.left = (event.x + 12) + 'px';
+        hoverLabel.style.top = (event.y + 12) + 'px';
+        hoverLabel.style.display = 'block';
+        window.setTimeout(() => { hoverLabel.style.display = 'none'; }, 1800);
+        console.log('Tutorial locked battle click:', battle.getName());
+        return;
+      }
 
       // Show briefing screen before loading the scene
       console.log('Clicked on battle:', battle.getName());
@@ -987,7 +1026,7 @@ app.once('destroy', cleanupBriefingOverlay);
       showBriefing(battle, loadScene);
     });
   });
-  await applySphereTexture(sphere, textureUrl, device);
+  // (Earth texture applied right after camera creation, before first render)
 
   // Function to render battles for selected time period
   const renderBattlesForPeriod = (timePeriod: number) => {
@@ -1030,6 +1069,14 @@ app.once('destroy', cleanupBriefingOverlay);
         if (axis.length() > 0.001) {
           const halfSin = Math.sin(angle * 0.5);
           battleEntity.setLocalRotation(axis.x * halfSin, axis.y * halfSin, axis.z * halfSin, Math.cos(angle * 0.5));
+        }
+
+        // While the tutorial is active, dim every marker except Legnica so the
+        // highlighted beacon is unmistakable.
+        if (tutorialActive && battle.getName() !== 'Battle of Legnica') {
+          battleMaterial.emissiveIntensity = 0.4;
+          battleMaterial.opacity = 0.35;
+          battleMaterial.update();
         }
 
         sphere.addChild(battleEntity);
@@ -1119,9 +1166,10 @@ function showGlobeTutorial(
   hint.innerHTML = [
     '<div style="font-size:1.05rem;color:#ffd700;font-weight:bold;margin-bottom:6px">Welcome, time traveler</div>',
     '<div>You are Bob Jefferson, the last descendant of Suleiman the Magnificent — travel back in time and fight through history.</div>',
-    '<div>Click a battle marker to fight. Start with the highlighted one below.</div>',
-    '<div style="margin-top:6px;color:#b8c4d8"><b>Controls:</b> WASD move · mouse look · left-click attack · 1 / 2 switch weapons · space jump</div>',
-    '<div style="margin-top:8px;color:#ffd700;font-size:0.8rem">Click anywhere to dismiss</div>',
+    '<div>Only the highlighted beacon is available — the rest unlock after it.</div>',
+    '<div>Drag to spin the globe, then click the glowing marker to begin the tutorial battle.</div>',
+    '<div style="margin-top:6px;color:#b8c4d8">The battle itself will teach you: <b>WASD</b> move · <b>1/2</b> switch weapons · <b>left-click</b> attack</div>',
+    '<div style="margin-top:8px;color:#ffd700;font-size:0.8rem">Click anywhere to dismiss this card</div>',
   ].join('');
 
   // 'START HERE →' badge anchored over the Legnica pin

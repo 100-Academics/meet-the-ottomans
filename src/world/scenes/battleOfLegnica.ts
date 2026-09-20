@@ -7,6 +7,8 @@ import {
 } from "playcanvas";
 
 import { createBattleHUD, removeBattleHUD, updateBattleHUD } from '../../util/battleHUD';
+import { startBattleTutorial } from '../../util/battleTutorial';
+import { isBattleComplete } from '../../util/battleProgress';
 import { bindVictoryCheck } from "../../util/victoryCheck";
 import { isDeathScreenVisible } from './deathScreen';
 import {
@@ -131,6 +133,12 @@ export async function battleOfLegnicaScene(
   // Create battle HUD to display weapon and health
   createBattleHUD();
   updateBattleHUD(player);
+
+  // First run (Legnica not yet complete): walk the player through movement,
+  // weapon switching, and attacking before turning them loose on the Mongols.
+  if (!isBattleComplete('Battle of Legnica')) {
+    startBattleTutorial(app, player);
+  }
 
   wireBattleInput(app, player, npcs, {
     key2Weapon: 4, // bow — too early a time period for the gun
