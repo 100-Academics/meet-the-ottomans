@@ -147,8 +147,8 @@ function getGroundYAt(
     return undefined;
   }
 
-  const absoluteTop = Math.max(probeHeight, 500);
-  const absoluteBottom = Math.min(-probeDepth, -500);
+  const absoluteTop = Math.max(y + 200, probeHeight + y, 500);
+  const absoluteBottom = Math.min(y - probeDepth, y - 200, -500);
   const rayStart = new Vec3(x, absoluteTop, z);
   const rayEnd = new Vec3(x, absoluteBottom, z);
     console.log(`[GroundProbe] ray Y=${rayStart.y.toFixed(1)}→${rayEnd.y.toFixed(1)}, origin=(${x.toFixed(1)}, ${y.toFixed(1)}, ${z.toFixed(1)})`);
@@ -651,14 +651,18 @@ export async function spawnSceneNpcs(
             boss.drawHealthBar();
             Boss.setActiveBoss(boss);
             npcs.push(boss);
-    }else {
-                const spawnedNpc = new npc(spawn.id, spawn.team, spawn.maxHealth ?? 100, npcModel.modelEntity);
-                spawnedNpc.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
-                spawnedNpc.setHitboxRadius(hitboxRadius);
-                applyDetectionRangeOverride(spawnedNpc, detectionRangeOverride);
-                npcs.push(spawnedNpc);
-            }
-        } catch (error) {
+    } else {
+      // Unknown type — previously fell through to the generic npc constructor
+      // (which cannot damage the player and looks like the T-posing armored
+      // king). Log loudly and give it a strong rifleman so the fight still works.
+      console.warn(`[NPC] Unknown spawn type "${spawn.type}" — falling back to HuntingRifleDude`);
+      const hunter = new HuntingRifleDude(spawn.id, npcModel.modelEntity);
+      hunter.setFacingYawOffsetDegrees(facingYawOffsetDegrees);
+      hunter.setHitboxRadius(hitboxRadius);
+      applyDetectionRangeOverride(hunter, detectionRangeOverride ?? 1000);
+      npcs.push(hunter);
+    }
+  } catch (error) {
             console.error(`[NPC] Failed to spawn NPC ${spawn.id} at (${spawn.x}, ${spawn.z})`, error);
         }
     }
@@ -823,6 +827,35 @@ export function bindNpcCombatLoop(
         }
 
         npc.resolveHitboxCollisions(npcs);
+
+        // Bosses belong to battle scenes that spawn them AFTER this loop binds.
+        // They never got the spawn-time height-offset correction troops get, so
+        // on first tick try to sit them on the ground; without a valid ground
+        // probe they're left floating rather than dragged somewhere silly.
+        for (const currentNpc of npcs) {
+            if (!(currentNpc instanceof Boss)) continue;
+            if (!currentNpc.isAlive()) continue;
+            if (npcGroundOffsets.has(currentNpc)) continue;
+
+            const bossPos = currentNpc.getEntity().getPosition();
+            let groundY: number | undefined;
+            if (rigidbodySystem) {
+                groundY = getGroundYAt(rigidbodySystem, bossPos.x, bossPos.y, bossPos.z, groundTag, groundProbeHeight, groundProbeDepth);
+            }
+
+            if (groundY === undefined) {
+                // No ground under the boss — don't drag it anywhere, just pin
+                // the offset so the pass below stops spam-raycasting every frame.
+                npcGroundOffsets.set(currentNpc, 0);
+                npcLastValidPositions.set(currentNpc, bossPos.clone());
+            } else {
+                const offset = Math.max(defaultGroundClearance, bossPos.y - groundY);
+                npcGroundOffsets.set(currentNpc, offset);
+                const snappedPos = new Vec3(bossPos.x, groundY + offset, bossPos.z);
+                currentNpc.getEntity().setPosition(snappedPos);
+                npcLastValidPositions.set(currentNpc, snappedPos.clone());
+            }
+        }
 
         if (obstacleCollisionEnabled && rigidbodySystem && typeof rigidbodySystem.raycastFirst === "function") {
             for (const currentNpc of npcs) {

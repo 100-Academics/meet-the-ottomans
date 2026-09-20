@@ -23,7 +23,7 @@ import {
 import { bindVictoryCheck } from "../../util/victoryCheck";
 import { Player } from "../../player/player";
 import type { Battle } from "../Battle";
-import { spawnSceneNpcs, type NpcSpawnPoint } from "../npc/sceneNpcSystem";
+import { spawnSceneNpcs } from "../npc/sceneNpcSystem";
 import {
   DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
   DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
@@ -98,37 +98,16 @@ export async function operationAbireyHalevScene(
       triggerVictory('Operation Abirey-Halev', canvas, app);
     },
     spawnBoss: () => {
-      bossState.runBossSpawn(async () => {
-        // Spawn Cain and Abel as TWO separate bosses flanking the spawn point.
-        const cainSpawnPoint: NpcSpawnPoint[] = ABIREY_HALEV_BOSS_SPAWN_POINT.map((p) => ({
-          ...p,
-          x: p.x - 3, // Cain slightly to the left
-          id: p.id * 2,
-        }));
-        const abelSpawnPoint: NpcSpawnPoint[] = ABIREY_HALEV_BOSS_SPAWN_POINT.map((p) => ({
-          ...p,
-          x: p.x + 3, // Abel slightly to the right
-          id: p.id * 2 + 1,
-        }));
-
-        const cainSpawned = await spawnSceneBoss({
+      bossState.runBossSpawn(() =>
+        spawnSceneBoss({
           app,
           rigidbodySystem,
           npcs,
-          spawnPoint: cainSpawnPoint,
+          spawnPoint: ABIREY_HALEV_BOSS_SPAWN_POINT,
           bossOptions: DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
           groundYFallback: respawnGroundY,
-        });
-        const abelSpawned = await spawnSceneBoss({
-          app,
-          rigidbodySystem,
-          npcs,
-          spawnPoint: abelSpawnPoint,
-          bossOptions: DEFAULT_CAIN_AND_ABEL_BOSS_SPAWN_OPTIONS,
-          groundYFallback: respawnGroundY,
-        });
-        return [...cainSpawned, ...abelSpawned];
-      }).catch((err) => console.error(err));
+        }),
+      ).catch((err) => console.error(err));
     },
   });
 

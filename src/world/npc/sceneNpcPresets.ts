@@ -41,7 +41,9 @@ const NPC_MODEL_PATHS = {
   polishHussar: "models/npc/polish_hussar.glb",
   wingedHussarBoss: "models/npc/polish_hussar.glb",
   moses: "models/npc/boss/Moses.glb",
-  nineTailedFox: "models/npc/boss/nine-tailed_fox.glb"
+  nineTailedFox: "models/npc/boss/nine-tailed_fox.glb",
+  cain: "models/npc/boss/onlyCains.glb",
+  abel: "models/npc/boss/Abel.glb"
 };
 
 // Boss-specific defaults. These override size/rotation/offset for each boss model.
@@ -155,6 +157,26 @@ export const AIR_LADIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
 
 const CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
   modelPath: NPC_MODEL_PATHS.cainAndAbel,
+  modelRotation: new Vec3(-90, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+
+// Abirey-Halev has no combined CainAndAbel.glb on disk; onlyCains.glb and
+// Abel.glb ship individually so the scene spawns each brother separately.
+const CAIN_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.cain,
+  modelRotation: new Vec3(-90, 0, 0),
+  modelScale: new Vec3(4, 4, 4),
+  modelHeightOffset: 11,
+  facingYawOffsetDegrees: 0,
+  hitboxRadius: 2.4
+};
+
+const ABEL_BOSS_SPAWN_OVERRIDES: NpcSpawnOverrides = {
+  modelPath: NPC_MODEL_PATHS.abel,
   modelRotation: new Vec3(-90, 0, 0),
   modelScale: new Vec3(4, 4, 4),
   modelHeightOffset: 11,
@@ -327,6 +349,8 @@ export const NPC_TYPE_MODEL_PATHS: Record<string, string> = {
   vietnameseSoldier: NPC_MODEL_PATHS.vietnameseSoldier,
   binLadin: NPC_MODEL_PATHS.binLadin,
   cainAndAbel: NPC_MODEL_PATHS.cainAndAbel,
+  cain: "models/npc/boss/onlyCains.glb",
+  abel: "models/npc/boss/Abel.glb",
   kingGeorgeIII: NPC_MODEL_PATHS.kingGeorgeIII,
   kinGerorge: NPC_MODEL_PATHS.kinGerorge,
   lenin: NPC_MODEL_PATHS.lenin,
@@ -381,6 +405,8 @@ export const NPC_TYPE_SPAWN_OVERRIDES: Record<string, NpcSpawnOverrides> = {
   vietnameseSoldier: VIETNAMESE_SOLDIER_SPAWN_OVERRIDES,
   binLadin: BIN_LADIN_BOSS_SPAWN_OVERRIDES,
   cainAndAbel: CAIN_AND_ABEL_BOSS_SPAWN_OVERRIDES,
+  cain: CAIN_BOSS_SPAWN_OVERRIDES,
+  abel: ABEL_BOSS_SPAWN_OVERRIDES,
   kingGeorgeIII: KING_GEORGE_III_BOSS_SPAWN_OVERRIDES,
   kinGerorge: KIN_GERORGE_BOSS_SPAWN_OVERRIDES,
   lenin: LENIN_BOSS_SPAWN_OVERRIDES,
@@ -538,6 +564,7 @@ const GETTYSBURG_ENEMY_TYPE = "unionSoldier";
 const KYIV_ENEMY_TYPE = "russianSoldier";
 const STALINGRAD_ENEMY_TYPE = "russianSoldier";
 const THREE_EMPERORS_ENEMY_TYPE = "french";
+const ABIREY_HALEV_ENEMY_TYPE = "huntingrifledude";
 const VERDUN_ENEMY_TYPE = "modernFrenchSoldier";
 const YORKTOWN_ENEMY_TYPE = "americanRevolutionist";
 const SAIGON_ENEMY_TYPE = "vietnameseSoldier";
@@ -957,9 +984,18 @@ export const SAIGON_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
 ];
 export const SAIGON_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "vietnamDragonKing" }];
 
-// ginbirey Halev
-export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [];
-export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [{ id: 99, team: "foe", x: 0, z: 0, maxHealth: 500, type: "cainAndAbel" }];
+// ginbirey Halev — Suez canal assault. Rifle-cover squads hold the crossing
+// point, biblical twins Cain & Abel flank the boss pedestal.
+export const ABIREY_HALEV_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [
+  { id: 1, team: "foe", x: 20, z: 0, type: ABIREY_HALEV_ENEMY_TYPE },
+  { id: 2, team: "foe", x: 0, z: 20, type: ABIREY_HALEV_ENEMY_TYPE },
+  { id: 3, team: "foe", x: -20, z: 0, type: ABIREY_HALEV_ENEMY_TYPE },
+  { id: 4, team: "foe", x: 0, z: -20, type: ABIREY_HALEV_ENEMY_TYPE },
+];
+export const ABIREY_HALEV_BOSS_SPAWN_POINT: NpcSpawnPoint[] = [
+  { id: 99, team: "foe", x: -4, z: 0, maxHealth: 500, type: "cain" },
+  { id: 100, team: "foe", x: 4, z: 0, maxHealth: 500, type: "abel" },
+];
 
 // Anaconda
 export const ANACONDA_NPC_SPAWN_POINTS: NpcSpawnPoint[] = [

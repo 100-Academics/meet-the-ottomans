@@ -177,7 +177,7 @@ export async function loadBattleEnvAtlas(app: AppBase): Promise<void> {
     new Asset(
       "battle-env-atlas",
       "texture",
-      { url: "/environment-map.png" },
+      { url: `${import.meta.env.BASE_URL}environment-map.png` },
       { type: TEXTURETYPE_RGBP, mipmaps: false }, // RGBP = RGB + Parallax (cubemap)
     );
 
