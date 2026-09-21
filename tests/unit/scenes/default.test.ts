@@ -2,7 +2,7 @@
 // PlayCanvas graphics device for the sphere/starfield, so we drive it
 // against a faked app: only the pieces default.ts touches are stubbed.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { AssetListLoader } from 'playcanvas';
+import { AssetListLoader, Entity } from 'playcanvas';
 
 // The scene's AssetListLoader never resolves without a real assets
 // registry — call the completion callback immediately. Must be installed
@@ -13,6 +13,16 @@ vi.spyOn(AssetListLoader.prototype, 'load').mockImplementation(function (this: a
   return this as any;
 });
 
+// default.ts constructs real Entities (globe sphere, sun light, camera) and
+// calls addComponent on them; a stub app without full component systems makes
+// the real implementation throw before the scene ever reaches its DOM overlay
+// wiring. Components are irrelevant to these DOM tests, so no-op them.
+vi.spyOn(Entity.prototype, 'addComponent').mockImplementation(function (this: any, type: string) {
+  this.c = this.c ?? {};
+  this.c[type] = { enabled: true };
+  return this.c[type];
+} as any);
+
 const { defaultScene } = await import('../../../src/world/scenes/default');
 const { setSecretsFound, resetSecretsFound, TOTAL_SECRETS_AVAILABLE } = await import('../../../src/world/secrets');
 const { markBattleComplete, resetBattleProgress } = await import('../../../src/util/battleProgress');
@@ -21,10 +31,24 @@ const STORAGE_KEYS = ['meetTheOttomans.battleProgress', 'meetTheOttomans.secrets
 
 function makeAppStub() {
   const handlers: Array<() => void> = [];
+  // default.ts constructs real Entities and adds components; Entity.addComponent
+  // looks up app.systems[type] and throws if it's missing. Returning a benign
+  // stub for every component system keeps the scene constructor alive long
+  // enough to reach the DOM overlay wiring we're actually testing.
+  const systems = new Proxy(
+    {},
+    {
+      get: (_target, prop) =>
+        typeof prop === 'string'
+          ? { addComponent: () => ({ enabled: true }) }
+          : undefined,
+    },
+  );
   const app: any = {
     graphicsDevice: {}, // non-null so defaultScene skips createGraphicsDevice
     root: { addChild: () => {}, children: [] },
     assets: {},
+    systems,
     scene: {
       layers: { getLayerByName: () => null },
     },
@@ -159,7 +183,7 @@ describe('defaultScene time-period wiring', () => {
     expect(document.getElementById('legnica-beacon')).not.toBeNull();
     const hint = document.getElementById('globe-tutorial') as HTMLElement;
     expect(hint.textContent).toContain('Bob Jefferson');
-    expect(hint.textContent).toContain('Click a battle marker');
+    expect(hint.textContent).toContain('click the glowing marker');
     expect(hint.textContent).toContain('WASD');
   });
 

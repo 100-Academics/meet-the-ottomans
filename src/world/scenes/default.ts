@@ -83,7 +83,7 @@ const SPHERE_SEGMENTS = 256;
 
 // Assets to load
 const assets = {
-  envAtlas: new Asset('env-atlas', 'texture', { url: '/environment-map.png' }, {
+  envAtlas: new Asset('env-atlas', 'texture', { url: `${import.meta.env.BASE_URL}environment-map.png` }, {
     type: TEXTURETYPE_RGBP,
     mipmaps: false
   })
@@ -477,6 +477,17 @@ overlay.appendChild(overlayContainer.firstElementChild as HTMLElement);
     if (timePeriodText) {
       timePeriodText.textContent = 'Tutorial: complete the highlighted battle to unlock time travel.';
     }
+    // Mount the tutorial UI immediately. It is pure DOM plus a scene 'update'
+    // listener fed by getters, so it works before the sphere/camera exist —
+    // and must not depend on the 3D boot chain below succeeding (a graphics
+    // failure there previously swallowed the tutorial entirely).
+    showGlobeTutorial(
+      app,
+      battles,
+      () => tutorialCamera,
+      () => tutorialSphere,
+      () => tutorialRenderForPeriod,
+    );
   }
 
 // Set up environment lighting (no skybox, just IBL)
@@ -552,18 +563,8 @@ const skyboxLayer = app.scene.layers.getLayerByName('Skybox');
   camera.lookAt(sphere.getPosition());
   tutorialCamera = camera;
 
-  // Mount the tutorial AFTER sphere/camera exist. The texture is awaited below
-  // (before the first period render) so the globe never paints black, and the
-  // beacon's pins are child cylinders of the already-textured sphere.
-  if (tutorialActive) {
-    showGlobeTutorial(
-      app,
-      battles,
-      () => tutorialCamera,
-      () => tutorialSphere,
-      () => tutorialRenderForPeriod,
-    );
-  }
+  // The tutorial is mounted earlier (right after tutorial state is computed)
+  // so the overlay survives any failure in the 3D boot below.
 
   // Apply the Earth's texture before the tutorial pins render — otherwise the
   // sphere's first paint is the untextured black material.
