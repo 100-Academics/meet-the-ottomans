@@ -45,8 +45,9 @@ export function startBattleTutorial(app: AppBase, player: TutorialPlayer): void 
       done: () => { if (moved) return true; const p = player.getPosition();
         const dx = p.x - startPos.x, dz = p.z - startPos.z;
         if (dx * dx + dz * dz > 1.0) { moved = true; return true; } return false; } },
-    { html: 'Tutorial 2/4 — Press <b>2</b> to equip the bow',
-      done: () => { if (bowEquipped) return true; if (weaponIs('bow')) { bowEquipped = true; return true; } return false; } },
+    { html: 'Tutorial 2/4 — Press <b>2</b> to equip the musket',
+      done: () => { if (bowEquipped) return true; // Legnica key-2 weapon is the musket (wireBattleInput key2Weapon: 4)
+        if (weaponIs('musket')) { bowEquipped = true; return true; } return false; } },
     { html: 'Tutorial 3/4 — Press <b>1</b> to switch back to the sword',
       done: () => { if (swordReequipped) return true; if (weaponIs('sword')) { swordReequipped = true; return true; } return false; } },
     { html: 'Tutorial 4/4 — <b>Left-click</b> to attack. Defeat every Mongol!',
