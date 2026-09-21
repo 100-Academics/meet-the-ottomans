@@ -37,7 +37,7 @@ import { WingedHussarBoss } from "./bosses/wingedHussarBoss";
 import { NineTailedFox } from "./bosses/nineTailedFox";
 import { isDeathScreenVisible } from "../scenes/deathScreen";
 import { DevConsole } from "../../util/devConsole";
-import { bindSceneListener } from "../../util/sceneCleanup";
+import { bindSceneListener, getSceneGeneration } from "../../util/sceneCleanup";
 
 export type NpcSceneTeam = "friend" | "foe";
 
@@ -296,6 +296,13 @@ export async function spawnSceneNpcs(
     spawnPoints: NpcSpawnPoint[],
     options: NpcSceneSpawnOptions = {}
 ): Promise<npc[]> {
+    // Snapshot the scene generation: spawns are async (model loads), and the
+    // player can leave the battle (Home button) while a load is in flight.
+    // When the generation drifts, any model that finishes loading afterwards
+    // would be attached to a torn-down world — destroy it and bail out
+    // instead of corrupting the map scene.
+    const spawnGeneration = getSceneGeneration();
+    const sceneChanged = () => getSceneGeneration() !== spawnGeneration;
     const fallbackModelPath = options.modelPath ?? "test/armored_king.glb";
     const fallbackModelRotation = options.modelRotation ?? new Vec3(-90, 0, 0);
     const fallbackModelScale = options.modelScale ?? new Vec3(2, 2, 2);
@@ -369,6 +376,13 @@ export async function spawnSceneNpcs(
             // body (autoCollision = true) so the physics-raycast hit-test
             // in player/weapon/weapon.ts actually lands on them.
             const npcModel = await loadNpcModelWithFallback(app, modelPath, loadOptions);
+        if (sceneChanged()) {
+            // Scene was left mid-load (player went Home). Don't attach a
+            // fresh NPC to a torn-down world — destroy it and abort.
+            try { npcModel.modelEntity.destroy(); } catch { /* already gone */ }
+            console.log(`[NPC] Aborting spawn after scene change (ID=${spawn.id})`);
+            return npcs;
+        }
         npcModel.modelEntity.tags.add("npc");
         if (spawn.yaw !== undefined && Number.isFinite(spawn.yaw)) {
           const currentEuler = npcModel.modelEntity.getLocalEulerAngles();

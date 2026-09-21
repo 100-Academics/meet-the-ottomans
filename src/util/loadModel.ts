@@ -1,5 +1,6 @@
 import { Vec3, type AppBase, type Asset, type Entity } from "playcanvas";
 import { applyMeshCollision } from "./applyCollision";
+import { getSceneGeneration } from "./sceneCleanup";
 
 const modelAssetUrls = import.meta.glob("../assets/**/*.{glb,gltf}", {
   eager: true,
@@ -149,6 +150,12 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
     return Promise.reject(new Error("PlayCanvas `app` not found on globalThis and no appArg provided"));
   }
 
+  // Snapshot the scene generation: the load is async and the player can
+  // change scenes (Home button, victory/death screen) while it is in
+  // flight. Attaching the model to a torn-down scene afterwards corrupts
+  // the next scene — bail before the attach instead.
+  const loadGeneration = getSceneGeneration();
+
   const resolvedUrl = resolveModelUrl(url);
   if (!resolvedUrl) {
     return Promise.reject(
@@ -169,6 +176,12 @@ export function loadModel(url: string, appArg?: AppBase, options: LoadModelOptio
           const msg = "Asset loaded but no resource found";
           console.error(msg);
           return reject(new Error(msg));
+        }
+
+        if (getSceneGeneration() !== loadGeneration) {
+          // The scene changed while this model was loading (player went
+          // Home, died, or won). Do not attach it to the new scene.
+          return reject(new Error(`Model "${url}" finished loading after a scene change; discarded`));
         }
 
         const res: any = (asset as any).resource;
