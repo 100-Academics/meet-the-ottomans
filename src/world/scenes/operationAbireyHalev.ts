@@ -74,6 +74,8 @@ export async function operationAbireyHalevScene(
   const npcSpawnOptions = {
     ...DEFAULT_BATTLE_NPC_SPAWN_OPTIONS,
     groundYFallback: respawnGroundY,
+    playerSafeRadius: 20,
+    getPlayerPosition: () => player.getPosition(),
   };
   const npcs = await spawnSceneNpcs(app, rigidbodySystem, ABIREY_HALEV_NPC_SPAWN_POINTS, npcSpawnOptions);
 
